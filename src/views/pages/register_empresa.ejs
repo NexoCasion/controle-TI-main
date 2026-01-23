@@ -1,0 +1,38 @@
+<body>
+
+  <%- include("./../partials/header.ejs") %>
+  <%- include('../main') %>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-start mb-4">
+                  <a href="javascript:history.back()" class="btn btn-back">
+
+
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                  <h2 class="card-title mb-0 mx-auto">Registrar Empresa</h2>
+                </div>
+                <form action="/register-empresa" method="post">
+                  <div class="form-group">
+                    <label for="name">Nome da empresa</label>
+                    <input type="text" class="form-control" name="nome" placeholder="Nome da empresa">
+                  </div>
+                  <div class="form-group">
+                    <label for="description"></label>
+                    <textarea placeholder="Informações complementares" class="form-control" rows='10' name="descricao"></textarea>
+                  </div>
+                  <hr>
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Enviar</button>
+                  </div>      
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>    
+</body>  

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Manutenções</title>
+    <!-- Adicionando Bootstrap CSS (opcional, caso queira usar o framework para estilização) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adicionando Font Awesome  -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <%- include("../partials/header.ejs") %>
+    </header>
+
+    <div class="container">
+        <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
+        <a href="/register-manutencao" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">Registrar Manutenção</a>
+
+        <!-- Filtros -->
+        <select id="statusFiltro" class="form-select">
+    <option value="todas" selected>Todas as manutenções</option>
+
+    <!-- NOVO -->
+    <option value="pc_ativos">Apenas PCs ativos (não condenados)</option>
+    <option value="pc_condenados">Apenas PCs condenados</option>
+
+    <option value="em_manutencao">Em manutenção</option>
+    <option value="finalizadas">Já finalizadas</option>
+</select>
+
+            <div class="col-md-6">
+                <label for="empresaFiltro" class="form-label">Filtrar por Empresa:</label>
+                <select id="empresaFiltro" class="form-select">
+                    <option value="todas" selected>Todas as Empresas</option>
+                    <% empresas.forEach(function(empresa) { %>
+                        <option value="<%= empresa.nome %>"><%= empresa.nome %></option>
+                    <% }); %>
+                </select>
+            </div>
+        </div>
+            <div class="row mb-4">
+            <div class="col-12">
+                <label for="pesquisaFiltro" class="form-label">Pesquisar:</label>
+                <input
+                id="pesquisaFiltro"
+                type="text"
+                class="form-control"
+                placeholder="Patrimônio, empresa, local ou descrição..."
+                />
+            </div>
+        </div>
+        <!-- Tabela de manutenções -->
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(0)">#</th>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(1)">Número de patrimônio</th>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(2)">Empresa</th>
+                    <th scope="col">Setor</th>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(3)">Descrição</th>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(4)">Status</th>
+                    <th scope="col">Ações</th>
+
+                    
+                </tr>
+            </thead>
+
+            <tbody id="tableBody">
+                <% manutencoes.forEach(function(manutencao, index) { %>
+                    <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
+                    <tr data-status="<%= status %>" data-empresa="<%= manutencao.empresa %>">
+                        <th scope="row"><%= index + 1 %></th>
+                        <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
+                        <td><%= manutencao.empresa %></td>
+                        <td><%= manutencao.setor || '-' %></td>
+                        <td><%= manutencao.descricao || 'Sem descrição' %></td>
+                        <td class="align-middle">
+                            <% if (manutencao.pcCondenado) { %>
+                                <span class="badge bg-danger">PC CONDENADO</span>
+                            <% } else if (manutencao.dataSaida) { %>
+                                <i class="fas fa-square-check text-success"></i>
+                            <% } else { %>
+                                <i class="fas fa-clock text-warning"></i>
+                            <% } %>
+                        </td>
+
+
+                        <td class="align-middle">
+                            <div class="btn-group" role="group" aria-label="Ações">
+                                <a href="/ver-manutencao?id=<%= manutencao.id %>">
+                                    <button type="button" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-eye"></i> 
+                                        Ver
+                                    </button>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/08793a0919.js" crossorigin="anonymous"></script>
+    <script>
+    const statusFiltro = document.getElementById("statusFiltro");
+    const empresaFiltro = document.getElementById("empresaFiltro");
+    const searchInput = document.getElementById("pesquisaFiltro");
+    const tbody = document.getElementById("tableBody");
+
+    let direcaoOrdenacao = {}; // guarda ASC/DESC por coluna
+
+    function aplicarFiltros() {
+        const status = statusFiltro.value;
+        const empresa = empresaFiltro.value;
+        const termo = (searchInput.value || "").trim().toLowerCase();
+
+        const linhas = tbody.querySelectorAll("tr");
+
+        linhas.forEach(tr => {
+        const statusLinha = tr.getAttribute("data-status");
+        const empresaLinha = tr.getAttribute("data-empresa");
+
+        const textoLinha = tr.innerText.toLowerCase();
+
+        const statusMatch = (status === "todas" || status === statusLinha);
+        const empresaMatch = (empresa === "todas" || empresa === empresaLinha);
+        const termoMatch = (termo === "" || textoLinha.includes(termo));
+
+        tr.style.display = (statusMatch && empresaMatch && termoMatch) ? "" : "none";
+        });
+    }
+
+    // Ordena a tabela por coluna (índice)
+    function ordenarTabela(colunaIndex) {
+        const linhas = Array.from(tbody.querySelectorAll("tr"))
+        .filter(tr => tr.style.display !== "none"); // só as visíveis
+
+        direcaoOrdenacao[colunaIndex] = !direcaoOrdenacao[colunaIndex];
+        const asc = direcaoOrdenacao[colunaIndex];
+
+        linhas.sort((a, b) => {
+        let valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
+        let valorB = b.cells[colunaIndex].innerText.trim().toLowerCase();
+
+        // tenta número
+        let numA = parseFloat(valorA.replace(/\D/g, ''));
+        let numB = parseFloat(valorB.replace(/\D/g, ''));
+
+        const ambosNumeros = !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
+
+        if (ambosNumeros) {
+            return asc ? numA - numB : numB - numA;
+        }
+
+        return asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
+        });
+
+        // reanexa na ordem nova
+        linhas.forEach(l => tbody.appendChild(l));
+    }
+
+    // deixa global pro onclick funcionar
+    window.ordenarTabela = ordenarTabela;
+
+    statusFiltro.addEventListener("change", aplicarFiltros);
+    empresaFiltro.addEventListener("change", aplicarFiltros);
+    searchInput.addEventListener("input", aplicarFiltros);
+    window.addEventListener("DOMContentLoaded", aplicarFiltros);
+    </script>
+
+</body>
+

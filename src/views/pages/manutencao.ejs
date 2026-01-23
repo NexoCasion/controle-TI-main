@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informações de Manutenções</title>
+    <!-- Adicionando Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adicionando Font Awesome (opcional, caso queira usar os ícones) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+
+    <script src="/utils/formatDate.js"></script>
+
+</head>
+
+<body>
+    <header>
+
+        <%- include('../main') %>
+        <%- include("./../partials/header.ejs") %>
+        
+    </header>
+
+    <div class="container">
+        <h1>Informações da Manutenção número: <%=manutencao.id%>
+        </h1>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="info-container text-center col-md-12 ">
+
+                <!-- Wrap this on if data saida -->
+
+                <% if(!manutencao.dataSaida) { %>
+
+                    <h3 class="mb-0">Histórico</h3>
+                    <!-- Botão para abrir o modal -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#modalForm">Adicionar Procedimento</button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                        data-bs-target="#modalConfirmacao">Fechar manutenção</button>
+                    <button type="button" class="btn btn-danger" 
+                        data-bs-toggle="modal" data-bs-target="#modalCondenar">Condenar Máquina</button>
+
+
+                    <% } else { %>
+                    
+                        <small>
+                        Manutenção fechada em:
+                        <b><%= new Date(manutencao.dataSaida).toLocaleDateString('pt-BR') %></b>
+                        </small>
+
+
+
+                    <% } %>
+                    
+
+
+            </div>
+        </div>
+
+        <p>Computador: <%=manutencao.computador.dataValues.id%> - <%=manutencao.computador.dataValues.patrimonio%></p>
+
+        <p>
+        <b>Descrição da manutenção:</b>
+        <%= manutencao.descricao || 'Sem descrição' %>
+        </p>
+
+        <div id="manutencoesTable"></div> <!-- Local onde a tabela será inserida -->
+
+
+    <!-- Modal add procedimento-->
+    <div class="modal fade" id="modalForm" tabindex="-1" aria-labelledby="modalFormLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalFormLabel">Adicionar procedimento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/add-item-manutencao" method="post">
+                        <div class="mb-3">
+                            <!-- add outros campos -->
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea required class="form-control" id="descricao" rows="1" name="descricao"
+                                placeholder="Descreva os procedimentos realizados."></textarea>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <input type="hidden" name="manutencaoId" value="<%= manutencao.id %>">
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Confirmacao -->
+    <div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-labelledby="modalConfirmacaoLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmacaoLabel">Confirmação de Encerramento de Manutenção</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Deseja encerrar esta manutenção?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <a href="/encerrar-manutencao?id=<%= manutencao.id %>" class="btn btn-primary">Confirmar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalCondenar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Condenar Máquina</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form id="formCondenar" action="/condenar-maquina" method="post">
+            <div class="modal-body">
+            <p class="text-danger"><b>Atenção:</b> essa ação é irreversível e vai fechar a manutenção.</p>
+
+            <label class="form-label">Motivo da condenação</label>
+            <textarea class="form-control" name="motivo" required rows="3"
+                placeholder="Descreva o motivo..."></textarea>
+
+            <input type="hidden" name="manutencaoId" value="<%= manutencao.id %>">
+            </div>
+
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Condenar</button>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Função para carregar o histórico de manutenções
+            async function carregarManutencoes() {
+                try {
+                    const manutencoes = JSON.parse('<%- JSON.stringify(manutencoes) %>');
+
+                    const table = document.createElement('table');
+                    table.classList.add('table');
+
+                    // Cabeçalho da tabela
+                    const thead = document.createElement('thead');
+                    const trHead = document.createElement('tr');
+                    ['ID', 'Data da ocorrência', 'Descrição'].forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
+                    table.appendChild(thead);
+
+                    // Corpo da tabela
+                    const tbody = document.createElement('tbody');
+                    manutencoes.reverse()
+                    manutencoes.forEach(manut => {
+                        const trBody = document.createElement('tr');
+                        ['id', 'dataEntrada', 'descricao'].forEach(prop => {
+                            const td = document.createElement('td');
+                            if (prop === 'dataEntrada' || prop === 'dataSaida') {
+                                td.textContent = formatarData(manut[prop]);
+                            } else {
+                                td.textContent = manut[prop];
+                            }
+                            trBody.appendChild(td);
+                        });
+                        tbody.appendChild(trBody);
+                    });
+                    table.appendChild(tbody);
+
+                    // Adicionando a tabela ao DOM
+                    document.getElementById('manutencoesTable').appendChild(table);
+                } catch (error) {
+                    console.error('Erro ao carregar manutenções:', error);
+                }
+            }
+
+            // Chamando a função para carregar o histórico de manutenções
+            carregarManutencoes();
+        });
+    </script>
+
+    <!-- Adicionando Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+  document.getElementById("formCondenar")?.addEventListener("submit", function (e) {
+    const ok = confirm("Tem certeza que deseja CONDENAR? Isso é irreversível e fecha a manutenção.");
+    if (!ok) e.preventDefault();
+  });
+</script>
+
+</body>
+
+</html>

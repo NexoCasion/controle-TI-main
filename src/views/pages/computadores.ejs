@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informações do Computador</title>
+    <!-- Adicionando Bootstrap CSS (opcional, caso queira usar o framework para estilização) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Adicionando Font Awesome (opcional, caso queira usar os ícones) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .headerComponent {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+    
+</head>
+<body>
+    <header class="headerComponent">
+        <%- include("./../partials/header.ejs") %>
+    </header>
+
+    <div class="container">
+      
+        <h1 class="mt-4 mb-4">Lista de Computadores</h1>
+        <a href="/register-pc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">Adicionar Computador</a>
+        <div class="mt-3 mb-2">
+          <small class="text-muted" id="totalComputadores">Computadores exibidos: 0 / Total: 0</small>
+        </div>
+
+
+        
+        <!-- Dropdown para filtrar por empresa -->
+        <div class="mb-3">
+            <label for="selectEmpresa" class="form-label">Filtrar por Empresa:</label>
+            <select id="selectEmpresa" class="form-select">
+                <option value="">Todas as Empresas</option>
+                <% empresas.forEach(function(empresa) { %>
+                    <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+                <% }); %>
+            </select>
+            <div class="mb-3">
+                <label for="searchInput" class="form-label">Pesquisar:</label>
+                <input id="searchInput" class="form-control" type="text"
+                placeholder="Digite patrimônio, especificações ou empresa...">
+            </div>
+
+        </div>
+        <!-- Tabela de computadores -->
+        <table class="table">
+            <thead>
+              <tr>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('id')">#</th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')">Patrimônio</th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')">Especificações</th>
+
+                <!-- NOVO -->
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')">Setor</th>
+
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')">Empresa</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+
+
+            <tbody id="tableBody"></tbody>
+            </table>
+            </div>
+
+    <!-- Adicionando Bootstrap JS (opcional, caso queira usar funcionalidades como modals ou dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Adicionando script personalizado para filtrar computadores por empresa -->
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const selectEmpresa = document.getElementById("selectEmpresa");
+  const searchInput = document.getElementById("searchInput");
+  const tableBody = document.getElementById("tableBody");
+  const totalComputadoresEl = document.getElementById("totalComputadores");
+
+
+  // Se algum elemento não existir, para aqui e mostra no console
+  if (!selectEmpresa || !searchInput || !tableBody) {
+    console.error("IDs não encontrados. Verifique selectEmpresa/searchInput/tableBody no HTML.");
+    return;
+  }
+
+  let currentComputadores = [];
+  let direcaoOrdenacao = {};
+  let currentOrder = { coluna: null, asc: true };
+
+  function atualizarContadores(total, visiveis) {
+  if (totalComputadoresEl) {
+    totalComputadoresEl.textContent = `Computadores exibidos: ${visiveis} / Total: ${total}`;
+  }
+}
+
+
+
+  async function carregarComputadores(empresaId) {
+    try {
+      const response = await fetch(`/computadores-by-empresa?empresaId=${empresaId || ""}`);
+      const computadores = await response.json();
+      currentComputadores = Array.isArray(computadores) ? computadores : [];
+      aplicarFiltrosEOrdenacao();
+    } catch (error) {
+      console.log(`Erro ao buscar computadores: ${error}`);
+    }
+  }
+
+  function aplicarFiltrosEOrdenacao() {
+    const termo = (searchInput.value || "").trim().toLowerCase();
+
+    // total sempre do conjunto carregado (empresa selecionada ou todas)
+    const total = currentComputadores.length;
+
+    // filtra pelo termo
+    let filtrados = currentComputadores.filter((c) => {
+      const patrimonio = (c.patrimonio || "").toString().toLowerCase();
+      const specs = (c.specs || "").toString().toLowerCase();
+      const empresa = (c.empresa?.nome || "").toString().toLowerCase();
+      const setor = (c.setor || "").toString().toLowerCase();
+      const id = (c.id || "").toString().toLowerCase();
+
+      const texto = `${id} ${patrimonio} ${specs} ${empresa} ${setor}`;
+      return termo === "" || texto.includes(termo);
+    });
+
+    // ordena se tiver coluna selecionada
+    if (currentOrder.coluna !== null) {
+      const colunaIndex = currentOrder.coluna;
+      const asc = currentOrder.asc;
+
+      filtrados.sort((a, b) => {
+        let valorA = "";
+        let valorB = "";
+
+        // mapeia colunas: 0=id, 1=patrimonio, 2=specs, 3=empresa
+        if (colunaIndex === 0) {
+          valorA = (a.id ?? "").toString();
+          valorB = (b.id ?? "").toString();
+        } else if (colunaIndex === 1) {
+          valorA = (a.patrimonio ?? "").toString();
+          valorB = (b.patrimonio ?? "").toString();
+        } else if (colunaIndex === 2) {
+          valorA = (a.specs ?? "").toString();
+          valorB = (b.specs ?? "").toString();
+        } else if (colunaIndex === 3) {
+          valorA = (a.setor ?? "").toString();
+          valorB = (b.setor ?? "").toString();
+        } else if (colunaIndex === 4) {
+          valorA = (a.empresa?.nome ?? "").toString();
+          valorB = (b.empresa?.nome ?? "").toString();
+        }
+
+
+        // tenta número
+        const numA = parseFloat(valorA.replace(/\D/g, ""));
+        const numB = parseFloat(valorB.replace(/\D/g, ""));
+        const ambosNumeros = !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
+
+        if (ambosNumeros) return asc ? numA - numB : numB - numA;
+
+        valorA = valorA.trim().toLowerCase();
+        valorB = valorB.trim().toLowerCase();
+        return asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
+      });
+    }
+
+    renderizarComputadores(filtrados);
+    atualizarContadores(total, filtrados.length);
+  }
+
+  function renderizarComputadores(computadores) {
+    tableBody.innerHTML = "";
+
+    computadores.forEach((computador) => {
+      const row = `
+        <tr>
+          <th scope="row">${computador.id}</th>
+          <td>${computador.patrimonio ?? ""}</td>
+          <td>${computador.specs ?? "Sem descrição"}</td>
+
+          <!-- NOVO -->
+          <td>${computador.setor ?? ""}</td>
+
+          <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
+          <td>
+            <div class="btn-group" role="group">
+              <a href="/editar-pc?id=${computador.id}" class="btn btn-primary btn-sm">
+                <i class="fas fa-pencil-alt"></i> Editar
+              </a>
+              <a href="/ver-pc?id=${computador.id}" class="btn btn-info btn-sm">
+                <i class="fas fa-eye"></i> Ver
+              </a>
+            </div>
+          </td>
+        </tr>
+      `;
+
+      tableBody.innerHTML += row;
+    });
+  }
+
+  function ordenarTabela(colunaIndex) {
+    if (currentOrder.coluna === colunaIndex) {
+      currentOrder.asc = !currentOrder.asc;
+    } else {
+      currentOrder.coluna = colunaIndex;
+      currentOrder.asc = true;
+    }
+    aplicarFiltrosEOrdenacao();
+  }
+
+  function ordenarPor(tipo) {
+  const map = { id: 0, patrimonio: 1, specs: 2, setor: 3, empresa: 4 };
+  if (map[tipo] !== undefined) ordenarTabela(map[tipo]);
+}
+
+
+
+  // expõe pro onclick do <th>
+  window.ordenarTabela = ordenarTabela;
+  window.ordenarPor = ordenarPor;
+
+  selectEmpresa.addEventListener("change", function () {
+    carregarComputadores(this.value);
+  });
+
+  searchInput.addEventListener("input", aplicarFiltrosEOrdenacao);
+
+  // carrega tudo ao abrir
+  carregarComputadores("");
+});
+</script>
+
+
+
+</body>
+</html>

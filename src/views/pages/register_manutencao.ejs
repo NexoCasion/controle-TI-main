@@ -1,0 +1,85 @@
+<body>
+
+    <%- include("./../partials/header.ejs") %>
+    <%- include('../main') %>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="d-flex align-items-center justify-content-start mb-4">
+                            <a href="javascript:history.back()" class="btn btn-back">
+
+
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
+                        </div>
+                        <form id="manutencaoForm" action="/register-manutencao" method="post">
+                            <div class="form-group">
+                                <label for="empresa">Selecione a Empresa</label>
+                                <select class="form-control" id="empresa" name="empresa">
+                                    <option value="" selected disabled>Selecione a Empresa</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="computadorGroup" style="display: none;">
+                                <label for="computador">Selecione o Computador</label>
+                                <select class="form-control" id="computador" name="computadorId" required>
+                                <option value="" selected disabled>Selecione o Computador</option>
+                                </select>
+
+                            </div>
+                            <div class="form-group">
+                                <label for="descricao">Descrição</label>
+                                <textarea id="descricao" placeholder="Informe a queixa do usuário e as suspeitas do problema"
+                                class="form-control" rows="10" name="descricao" required></textarea>
+                              </div>
+                            <hr>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">Enviar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Função para carregar as opções de empresa
+            $.get("/get-empresas", function (data) {
+                $('#empresa').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
+                data.forEach(function (empresa) {
+                    $('#empresa').append($('<option>', {
+                        value: empresa.id,
+                        text: empresa.nome
+                    }));
+                });
+            });
+
+            // Função para carregar as opções de computador com base na empresa selecionada
+            $('#empresa').change(function () {
+                var empresaId = $(this).val();
+                $('#computador').empty(); // Limpa as opções atuais
+                if (empresaId) {
+                    $.get("/computadores-by-empresa?empresaId=" + empresaId, function (data) {
+                        $('#computador').empty();
+                        data.forEach(function (computador) {
+                            $('#computador').append($('<option>', {
+                                value: computador.id,
+                                text: `${computador.id} - ${computador.patrimonio}`
+                            }));
+                        });
+                        $('#computadorGroup').show(); // Exibe o grupo de seleção de computador
+                    });
+                } else {
+                    $('#computadorGroup').hide(); // Oculta o grupo de seleção de computador se nenhuma empresa for selecionada
+                }
+            });
+        });
+    </script>
+</body>
