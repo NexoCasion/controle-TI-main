@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const routes = require('./routes');
 const path = require('path')
@@ -9,6 +10,7 @@ require('./models/Computador');
 require('./models/Manutencao');
 require('./models/ManutencaoItem');
 require('./models/Transferencia');
+
 
 
 const app = express();
@@ -61,6 +63,8 @@ const PORT = process.env.PORT || 3000;
 
     app.listen(PORT, () => {
       console.log(`🔥 Server running at http://localhost:${PORT}`);
+      console.log("Senha admin carregada?", !!process.env.ADMIN_CLEAR_PASSWORD);
+
     });
   } catch (err) {
     console.error("Erro ao sincronizar o banco:", err);

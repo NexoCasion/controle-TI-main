@@ -54,17 +54,16 @@
         <a href="/register-manutencao" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">Registrar Manutenção</a>
 
         <!-- Filtros -->
-        <select id="statusFiltro" class="form-select">
-    <option value="todas" selected>Todas as manutenções</option>
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="statusFiltro" class="form-label">Filtrar por Status:</label>
+                <select id="statusFiltro" class="form-select">
+                    <option value="todas" selected>Todas as manutenções</option>
+                    <option value="em_manutencao">Em manutenção</option>
+                    <option value="finalizadas">Já finalizadas</option>
 
-    <!-- NOVO -->
-    <option value="pc_ativos">Apenas PCs ativos (não condenados)</option>
-    <option value="pc_condenados">Apenas PCs condenados</option>
-
-    <option value="em_manutencao">Em manutenção</option>
-    <option value="finalizadas">Já finalizadas</option>
-</select>
-
+                </select>
+            </div>
             <div class="col-md-6">
                 <label for="empresaFiltro" class="form-label">Filtrar por Empresa:</label>
                 <select id="empresaFiltro" class="form-select">
