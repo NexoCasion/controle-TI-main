@@ -1,0 +1,50 @@
+<% const _inModal = (typeof inModal !== 'undefined') ? inModal : false; %>
+
+
+<div class="d-flex align-items-center justify-content-start mb-4">
+  <% if (_inModal) { %>
+    <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+  <% } else { %>
+    <a href="javascript:history.back()" class="btn btn-back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+  <% } %>
+
+  <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
+</div>
+
+<form id="manutencaoForm" data-manutencao-form action="/register-manutencao" method="post">
+  <div class="form-group">
+    <label for="empresa">Selecione a Empresa</label>
+    <select class="form-control" id="empresa" name="empresa">
+      <option value="" selected disabled>Selecione a Empresa</option>
+    </select>
+  </div>
+
+  <div class="form-group" id="computadorGroup" style="display: none;">
+    <label for="computador">Selecione o Computador</label>
+    <select class="form-control" id="computador" name="computadorId" required>
+      <option value="" selected disabled>Selecione o Computador</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="descricao">Descrição</label>
+    <textarea
+      id="descricao"
+      placeholder="Informe a queixa do usuário e as suspeitas do problema"
+      class="form-control"
+      rows="10"
+      name="descricao"
+      required
+    ></textarea>
+  </div>
+
+  <hr>
+
+  <div class="text-center">
+    <button type="submit" class="btn btn-primary">Enviar</button>
+  </div>
+</form>

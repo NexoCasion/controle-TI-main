@@ -48,20 +48,20 @@ const PORT = process.env.PORT || 3000;
 
 (async () => {
   try {
-        // ✅ Limpa tabelas de backup que podem sobrar quando o Sequelize crasha no SQLite
-    await database.query("DROP TABLE IF EXISTS empresas_backup;");
-    await database.query("DROP TABLE IF EXISTS computadores_backup;");
-    await database.query("DROP TABLE IF EXISTS manutencoes_backup;");
-    await database.query("DROP TABLE IF EXISTS manutencaoItems_backup;");
-    await database.query("DROP TABLE IF EXISTS transferencias_backup;");
+    //     // ✅ Limpa tabelas de backup que podem sobrar quando o Sequelize crasha no SQLite
+    // await database.query("DROP TABLE IF EXISTS empresas_backup;");
+    // await database.query("DROP TABLE IF EXISTS computadores_backup;");
+    // await database.query("DROP TABLE IF EXISTS manutencoes_backup;");
+    // await database.query("DROP TABLE IF EXISTS manutencaoItems_backup;");
+    // await database.query("DROP TABLE IF EXISTS transferencias_backup;");
 
-    await database.query("PRAGMA foreign_keys = OFF;");
+    // await database.query("PRAGMA foreign_keys = OFF;");
 
-    await database.sync({ alter: true }); // <-- ISSO atualiza/cria colunas
+    // await database.sync({ alter: true }); // <-- ISSO atualiza/cria colunas
 
-    await database.query("PRAGMA foreign_keys = ON;");
+    // await database.query("PRAGMA foreign_keys = ON;");
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🔥 Server running at http://localhost:${PORT}`);
       console.log("Senha admin carregada?", !!process.env.ADMIN_CLEAR_PASSWORD);
 
@@ -71,4 +71,4 @@ const PORT = process.env.PORT || 3000;
   }
 })();
 
-
+app.listen()

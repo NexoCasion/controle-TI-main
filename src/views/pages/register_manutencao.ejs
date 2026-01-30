@@ -8,36 +8,9 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <div class="d-flex align-items-center justify-content-start mb-4">
-                            <a href="javascript:history.back()" class="btn btn-back">
+                        <%- include('../partials/forms/register_manutencao_form', { inModal: false }) %>
+                            <script src="/utils/manutencaoForm.js"></script>
 
-
-                                <i class="fas fa-arrow-left"></i>
-                            </a>
-                            <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
-                        </div>
-                        <form id="manutencaoForm" action="/register-manutencao" method="post">
-                            <div class="form-group">
-                                <label for="empresa">Selecione a Empresa</label>
-                                <select class="form-control" id="empresa" name="empresa">
-                                    <option value="" selected disabled>Selecione a Empresa</option>
-                                </select>
-                            </div>
-                            <div class="form-group" id="computadorGroup" style="display: none;">
-                                <label for="computador">Selecione o Computador</label>
-                                <select class="form-control" id="computador" name="computadorId" required>
-                                <option value="" selected disabled>Selecione o Computador</option>
-                                </select>
-
-                            </div>
-                            <div class="form-group">
-                                <label for="descricao">Descrição</label>
-                                <textarea id="descricao" placeholder="Informe a queixa do usuário e as suspeitas do problema"
-                                class="form-control" rows="10" name="descricao" required></textarea>
-                              </div>
-                            <hr>
-                            <div class="text-center">
-                                <button type="submit" class="btn btn-primary">Enviar</button>
                             </div>
                         </form>
                     </div>

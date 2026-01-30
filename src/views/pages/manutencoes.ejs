@@ -50,8 +50,16 @@
     </header>
 
     <div class="container">
-        <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
-        <a href="/register-manutencao" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">Registrar Manutenção</a>
+                <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
+                <button
+        type="button"
+        style="font-size: .75rem;"
+        class="btn btn-secondary btn-lg btn-block mb-2"
+        data-bs-toggle="modal"
+        data-bs-target="#modalRegisterManutencao"
+        >
+        Registrar Manutenção
+        </button>
 
         <!-- Filtros -->
         <div class="row mb-4">
@@ -59,8 +67,12 @@
                 <label for="statusFiltro" class="form-label">Filtrar por Status:</label>
                 <select id="statusFiltro" class="form-select">
                     <option value="todas" selected>Todas as manutenções</option>
+                    <option value="todas_sem_condenados">Todas sem condenados</option>
                     <option value="em_manutencao">Em manutenção</option>
-                    <option value="finalizadas">Já finalizadas</option>
+                    <option value="finalizadas_sem_condenacao">Já finalizadas</option>
+                    <option value="condenados">Condenados</option>
+                    
+
 
                 </select>
             </div>
@@ -89,13 +101,30 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(0)">#</th>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(1)">Número de patrimônio</th>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(2)">Empresa</th>
-                    <th scope="col">Setor</th>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(3)">Descrição</th>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(4)">Status</th>
-                    <th scope="col">Ações</th>
+                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(0)" data-sort-col="0">
+                # <span class="sort-indicator"></span>
+                </th>
+
+                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(1)" data-sort-col="1">
+                Número de patrimônio <span class="sort-indicator"></span>
+                </th>
+
+                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(2)" data-sort-col="2">
+                Empresa <span class="sort-indicator"></span>
+                </th>
+
+                <th scope="col">Setor</th>
+
+                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(3)" data-sort-col="3">
+                Descrição <span class="sort-indicator"></span>
+                </th>
+
+                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(4)" data-sort-col="4">
+                Status <span class="sort-indicator"></span>
+                </th>
+
+                <th scope="col">Ações</th>
+
 
                     
                 </tr>
@@ -104,7 +133,12 @@
             <tbody id="tableBody">
                 <% manutencoes.forEach(function(manutencao, index) { %>
                     <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
-                    <tr data-status="<%= status %>" data-empresa="<%= manutencao.empresa %>">
+                    <tr
+                        data-status="<%= status %>"
+                        data-empresa="<%= manutencao.empresa %>"
+                        data-condenado="<%= manutencao.pcCondenado ? '1' : '0' %>"
+                        >
+
                         <th scope="row"><%= index + 1 %></th>
                         <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
                         <td><%= manutencao.empresa %></td>
@@ -147,6 +181,26 @@
     const tbody = document.getElementById("tableBody");
 
     let direcaoOrdenacao = {}; // guarda ASC/DESC por coluna
+    
+    let lastSortCol = null;
+    let lastSortAsc = true;
+
+    function atualizarSetasOrdenacaoManutencoes() {
+    const ths = document.querySelectorAll("th[data-sort-col]");
+    ths.forEach(th => {
+        const span = th.querySelector(".sort-indicator");
+        if (!span) return;
+
+        span.innerHTML = "";
+        const col = parseInt(th.getAttribute("data-sort-col"), 10);
+
+        if (col === lastSortCol) {
+        span.innerHTML = lastSortAsc
+            ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
+            : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
+        }
+    });
+    }
 
     function aplicarFiltros() {
         const status = statusFiltro.value;
@@ -161,7 +215,22 @@
 
         const textoLinha = tr.innerText.toLowerCase();
 
-        const statusMatch = (status === "todas" || status === statusLinha);
+        const condenado = tr.getAttribute("data-condenado") === "1";
+
+        let statusMatch = true;
+
+        if (status === "todas") {
+        statusMatch = true;
+        } else if (status === "em_manutencao") {
+        statusMatch = (statusLinha === "em_manutencao") && !condenado;
+        } else if (status === "finalizadas_sem_condenacao") {
+        statusMatch = (statusLinha === "finalizadas") && !condenado;
+        } else if (status === "condenados") {
+        statusMatch = condenado;
+        } else if (status === "todas_sem_condenados") {
+        statusMatch = !condenado;
+        }
+
         const empresaMatch = (empresa === "todas" || empresa === empresaLinha);
         const termoMatch = (termo === "" || textoLinha.includes(termo));
 
@@ -176,6 +245,9 @@
 
         direcaoOrdenacao[colunaIndex] = !direcaoOrdenacao[colunaIndex];
         const asc = direcaoOrdenacao[colunaIndex];
+        lastSortCol = colunaIndex;
+        lastSortAsc = asc;
+        atualizarSetasOrdenacaoManutencoes();
 
         linhas.sort((a, b) => {
         let valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
@@ -206,6 +278,7 @@
     searchInput.addEventListener("input", aplicarFiltros);
     window.addEventListener("DOMContentLoaded", aplicarFiltros);
     </script>
+<%- include("../partials/modals/modal_register_manutencao") %>
 
 </body>
 

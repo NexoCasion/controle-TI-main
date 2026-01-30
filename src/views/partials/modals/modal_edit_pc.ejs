@@ -1,0 +1,22 @@
+<div class="modal fade" id="modalEditPc" tabindex="-1" aria-labelledby="modalEditPcLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="card">
+          <div class="card-body text-center">
+            <%- include('../forms/edit_pc_form', {
+              inModal: true,
+              actionUrl: '#',
+              ids: {
+                formId: 'formEditPc',
+                patrimonioId: 'editPatrimonio',
+                setorId: 'editSetor',
+                specsId: 'editSpecs'
+              }
+            }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

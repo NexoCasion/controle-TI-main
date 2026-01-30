@@ -1,0 +1,104 @@
+<div class="modal fade" id="modalRegisterManutencao" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="d-flex align-items-center justify-content-start mb-4">
+              <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+                <i class="fas fa-arrow-left"></i>
+              </button>
+              <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
+            </div>
+
+            <form id="manutencaoFormModal" action="/register-manutencao" method="post">
+              <div class="form-group">
+                <label for="empresaModal">Selecione a Empresa</label>
+                <select class="form-control" id="empresaModal" name="empresa">
+                  <option value="" selected disabled>Selecione a Empresa</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="computadorGroupModal" style="display: none;">
+                <label for="computadorModal">Selecione o Computador</label>
+                <select class="form-control" id="computadorModal" name="computadorId" required>
+                  <option value="" selected disabled>Selecione o Computador</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="descricao">Descrição</label>
+                <textarea
+                  placeholder="Informe a queixa do usuário e as suspeitas do problema"
+                  class="form-control"
+                  rows="10"
+                  name="descricao"
+                  required
+                ></textarea>
+              </div>
+
+              <hr>
+
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary">Enviar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+          // roda quando o modal abre
+          document.addEventListener("shown.bs.modal", function (ev) {
+            if (ev.target.id !== "modalRegisterManutencao") return;
+
+            // carregar empresas
+            $.get("/get-empresas", function (data) {
+              $('#empresaModal').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
+              data.forEach(function (empresa) {
+                $('#empresaModal').append($('<option>', { value: empresa.id, text: empresa.nome }));
+              });
+              if (window.__prefManutencao && window.__prefManutencao.empresaId) {
+                $('#empresaModal').val(window.__prefManutencao.empresaId).trigger('change');
+              }
+
+            });
+
+            // change empresa -> carrega computadores
+            $('#empresaModal').off('change').on('change', function () {
+              var empresaId = $(this).val();
+              $('#computadorModal').empty();
+              if (empresaId) {
+                $.get("/computadores-by-empresa?empresaId=" + empresaId, function (data) {
+                  $('#computadorModal').empty();
+                data.forEach(function (computador) {
+                  $('#computadorModal').append($('<option>', {
+                    value: computador.id,
+                    text: `${computador.id} - ${computador.patrimonio}`
+                  }));
+                });
+
+                  $('#computadorGroupModal').show();
+
+                  // seta o computador só no final
+                  if (window.__prefManutencao && window.__prefManutencao.computadorId) {
+                    $('#computadorModal').val(window.__prefManutencao.computadorId);
+
+                    // opcional: limpa depois de aplicar (pra não ficar "grudado")
+                    window.__prefManutencao = null;
+                  }
+
+                  $('#computadorGroupModal').show();
+                });
+              } else {
+                $('#computadorGroupModal').hide();
+              }
+            });
+          });
+        </script>
+
+      </div>
+    </div>
+  </div>
+</div>

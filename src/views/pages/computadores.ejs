@@ -65,7 +65,16 @@
     <div class="container">
       
         <h1 class="mt-4 mb-4">Lista de Computadores</h1>
-        <a href="/register-pc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">Adicionar Computador</a>
+        <button
+          type="button"
+          style="font-size: .75rem;"
+          class="btn btn-secondary btn-lg btn-block mb-2"
+          data-bs-toggle="modal"
+          data-bs-target="#modalRegisterPc"
+        >
+          Adicionar Computador
+        </button>
+
         <div class="mt-3 mb-2">
           <small class="text-muted" id="totalComputadores">Computadores exibidos: 0 / Total: 0</small>
         </div>
@@ -91,17 +100,22 @@
         <!-- Tabela de computadores -->
         <table class="table">
             <thead>
-              <tr>
-                <th scope="col" style="cursor:pointer" onclick="ordenarPor('id')">#</th>
-                <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')">Patrimônio</th>
-                <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')">Especificações</th>
-
-                <!-- NOVO -->
-                <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')">Setor</th>
-
-                <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')">Empresa</th>
-                <th scope="col">Ações</th>
-              </tr>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('id')" data-sort-col="0">
+                # <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')" data-sort-col="1">
+                Patrimônio <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')" data-sort-col="2">
+                Especificações <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')" data-sort-col="3">
+                Setor <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')" data-sort-col="4">
+                Empresa <span class="sort-indicator"></span>
+              </th>
+              <th scope="col">Ações</th>
             </thead>
 
 
@@ -112,6 +126,14 @@
     <!-- Adicionando Bootstrap JS (opcional, caso queira usar funcionalidades como modals ou dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Adicionando script personalizado para filtrar computadores por empresa -->
+     <%- include("../partials/modals/modal_register_pc", { empresas: empresas }) %>
+     <%- include("../partials/modals/modal_edit_pc") %>
+     <%- include("../partials/modals/modal_register_manutencao") %>
+     <%- include("../partials/modals/modal_transfer_pc", { empresas: empresas }) %>
+     <%- include("../partials/modals/modal_import_csv", { empresas: empresas }) %>
+      
+
+
     <script>
 document.addEventListener("DOMContentLoaded", function () {
   const selectEmpresa = document.getElementById("selectEmpresa");
@@ -134,6 +156,19 @@ document.addEventListener("DOMContentLoaded", function () {
   if (totalComputadoresEl) {
     totalComputadoresEl.textContent = `Computadores exibidos: ${visiveis} / Total: ${total}`;
   }
+}
+  // Importar CSV (fecha Register PC -> abre Import CSV)
+const btnOpenImport = document.getElementById("btnOpenImportCsvFromRegister");
+if (btnOpenImport) {
+  btnOpenImport.addEventListener("click", () => {
+    switchModal("modalRegisterPc", "modalImportCsv", () => {
+      // opcional: se você estiver filtrando uma empresa na tela, já preseleciona no import
+      const filtro = document.getElementById("selectEmpresa");
+      const empresaId = filtro ? filtro.value : "";
+      const empresaImport = document.getElementById("empresaImport");
+      if (empresaImport && empresaId) empresaImport.value = empresaId;
+    });
+  });
 }
 
 
@@ -228,9 +263,22 @@ document.addEventListener("DOMContentLoaded", function () {
           <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
           <td>
             <div class="btn-group" role="group">
-              <a href="/editar-pc?id=${computador.id}" class="btn btn-primary btn-sm">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm btn-edit"
+                data-id="${computador.id}"
+                data-patrimonio="${(computador.patrimonio ?? "").toString().replace(/"/g, '&quot;')}"
+                data-setor="${(computador.setor ?? "").toString().replace(/"/g, '&quot;')}"
+                data-specs="${(computador.specs ?? "").toString().replace(/"/g, '&quot;')}"
+                data-bs-toggle="modal"
+                data-bs-target="#modalEditPc"
+                data-empresa-id="${computador.empresaId ?? ''}"
+
+
+              >
                 <i class="fas fa-pencil-alt"></i> Editar
-              </a>
+              </button>
+
               <a href="/ver-pc?id=${computador.id}" class="btn btn-info btn-sm">
                 <i class="fas fa-eye"></i> Ver
               </a>
@@ -251,11 +299,130 @@ document.addEventListener("DOMContentLoaded", function () {
       currentOrder.asc = true;
     }
     aplicarFiltrosEOrdenacao();
+    atualizarSetasOrdenacaoComputadores();
+
   }
+function atualizarSetasOrdenacaoComputadores() {
+  const ths = document.querySelectorAll("th[data-sort-col]");
+  ths.forEach(th => {
+    const span = th.querySelector(".sort-indicator");
+    if (!span) return;
+
+    span.innerHTML = "";
+    const col = parseInt(th.getAttribute("data-sort-col"), 10);
+
+    if (col === currentOrder.coluna) {
+      span.innerHTML = currentOrder.asc
+        ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
+        : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
+    }
+  });
+}
 
   function ordenarPor(tipo) {
   const map = { id: 0, patrimonio: 1, specs: 2, setor: 3, empresa: 4 };
   if (map[tipo] !== undefined) ordenarTabela(map[tipo]);
+}
+    // Clique no botão "Editar" (event delegation)
+  tableBody.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-edit");
+    if (!btn) return;
+
+    const id = btn.getAttribute("data-id");
+    const patrimonio = btn.getAttribute("data-patrimonio") || "";
+    const setor = btn.getAttribute("data-setor") || "";
+    const specs = btn.getAttribute("data-specs") || "";
+    const empresaId = btn.getAttribute("data-empresa-id");
+    window.__editPcCtx = { computadorId: id, empresaId: empresaId };
+
+
+    const form = document.getElementById("formEditPc");
+    const inPatrimonio = document.getElementById("editPatrimonio");
+    const inSetor = document.getElementById("editSetor");
+    const inSpecs = document.getElementById("editSpecs");
+
+    if (!form || !inPatrimonio || !inSetor || !inSpecs) return;
+
+    form.action = `/editar-pc?id=${id}`;
+    inPatrimonio.value = patrimonio;
+    inSetor.value = setor;
+    inSpecs.value = specs;
+  });
+
+// ====== BOTÕES DO MODAL EDITAR + HELPERS (Bootstrap 5 beta3 compat) ======
+const btnAddMan = document.getElementById("btnAddManutencaoFromEdit");
+const btnTransf = document.getElementById("btnTransferirFromEdit");
+
+function ensureModal(modalId) {
+  const el = document.getElementById(modalId);
+  if (!el || !window.bootstrap || !bootstrap.Modal) return null;
+  return bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+}
+
+function openModal(modalId) {
+  const inst = ensureModal(modalId);
+  if (inst) inst.show();
+  return inst;
+}
+
+// Fecha um modal e só depois abre o outro (evita “backdrop” duplicado)
+function switchModal(fromId, toId, beforeShow) {
+  const fromEl = document.getElementById(fromId);
+  const fromInst = ensureModal(fromId);
+
+  if (!fromEl || !fromInst) {
+    if (typeof beforeShow === "function") beforeShow();
+    openModal(toId);
+    return;
+  }
+
+  fromEl.addEventListener(
+    "hidden.bs.modal",
+    () => {
+      if (typeof beforeShow === "function") beforeShow();
+      openModal(toId);
+    },
+    { once: true }
+  );
+
+  fromInst.hide();
+}
+
+// Adicionar Manutenção (fecha Editar -> abre Manutenção com prefill)
+if (btnAddMan) {
+  btnAddMan.addEventListener("click", () => {
+    if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
+      console.warn("Contexto do PC não encontrado. Clique em EDITAR primeiro.");
+      return;
+    }
+
+    window.__prefManutencao = {
+      empresaId: window.__editPcCtx.empresaId,
+      computadorId: window.__editPcCtx.computadorId,
+    };
+
+    switchModal("modalEditPc", "modalRegisterManutencao");
+  });
+}
+
+// Transferir Unidade (fecha Editar -> abre Transferência com hidden inputs)
+if (btnTransf) {
+  btnTransf.addEventListener("click", () => {
+    if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
+      console.warn("Contexto do PC não encontrado. Clique em EDITAR primeiro.");
+      return;
+    }
+
+    switchModal("modalEditPc", "modalTransferPc", () => {
+      const inputPc = document.getElementById("transferComputadorId");
+      const inputOrigem = document.getElementById("transferEmpOrigemId");
+      const selectDestino = document.getElementById("transferEmpDestinoId");
+
+      if (inputPc) inputPc.value = window.__editPcCtx.computadorId;
+      if (inputOrigem) inputOrigem.value = window.__editPcCtx.empresaId ?? "";
+      if (selectDestino) selectDestino.value = "";
+    });
+  });
 }
 
 
@@ -272,6 +439,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // carrega tudo ao abrir
   carregarComputadores("");
+
 });
 </script>
 

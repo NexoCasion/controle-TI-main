@@ -1,0 +1,76 @@
+<%
+  const _inModal = (typeof inModal !== 'undefined') ? inModal : false;
+  const _showImport = (typeof showImport !== 'undefined') ? showImport : true;
+%>
+
+
+<div class="d-flex align-items-center justify-content-start mb-4">
+  <% if (_inModal) { %>
+    <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+  <% } else { %>
+    <a href="javascript:history.back()" class="btn btn-back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+  <% } %>
+
+  <h2 class="card-title mb-0 mx-auto">Registrar Computador</h2>
+</div>
+
+<form action="/register-pc" method="post">
+  <div class="form-group">
+    <label for="name">Numero de patrimonio</label>
+    <input type="text" class="form-control" name="patrimonio" placeholder="Numero de patrimonio do computador">
+  </div>
+
+  <div class="form-group">
+    <label for="local">Local</label>
+    <input type="text" class="form-control" name="setor" placeholder="Local do computador">
+  </div>
+
+  <div class="form-group">
+    <label for="description">Especificações</label>
+    <textarea placeholder="Informações complementares" class="form-control" rows='10' name="specs"></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="empresa">Empresa</label>
+    <select class="form-select" name="empresaId">
+      <% (empresas || []).forEach(function(empresa) { %>
+        <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+      <% }); %>
+    </select>
+  </div>
+
+  <hr>
+
+  <div class="text-center">
+    <button type="submit" class="btn btn-primary">Enviar</button>
+  </div>
+
+  <% if (_showImport) { %>
+  <div class="mt-3">
+    <% if (_inModal) { %>
+      <button
+        type="button"
+        id="btnOpenImportCsvFromRegister"
+        style="font-size: .75rem;"
+        class="btn btn-secondary btn-lg btn-block mb-2"
+      >
+        Importar Computadores (CSV)
+      </button>
+    <% } else { %>
+      <a
+        href="/importar-csv"
+        style="font-size: .75rem;"
+        class="btn btn-secondary btn-lg btn-block mb-2"
+      >
+        Importar Computadores
+      </a>
+    <% } %>
+  </div>
+<% } %>
+
+
+</form>

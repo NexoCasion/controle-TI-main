@@ -55,6 +55,7 @@ class ComputadorController {
       patrimonio: computador.dataValues.patrimonio,
       specs: computador.dataValues.specs,
       setor: computador.dataValues.setor,
+      empresaId: computador.dataValues.empresaId,
       ativo: computador.dataValues.ativo,
       status: computador.dataValues.status, // <-- ID da manutenção que condenou (ou null)
       dataDescarte: computador.dataValues.dataDescarte,
@@ -96,6 +97,7 @@ async getByEmpresa(empresaId, { status = "ativos" } = {}) {
       patrimonio: computador.dataValues.patrimonio,
       specs: computador.dataValues.specs,
       setor: computador.dataValues.setor,
+      empresaId: computador.dataValues.empresaId,
       ativo: computador.dataValues.ativo,
       status: computador.dataValues.status,
       dataDescarte: computador.dataValues.dataDescarte,

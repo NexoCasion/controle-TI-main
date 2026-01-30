@@ -1,0 +1,49 @@
+<div class="modal fade" id="modalTransferPc" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+
+        <div class="card">
+          <div class="card-body text-center">
+
+            <div class="d-flex align-items-center justify-content-start mb-4">
+              <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+                <i class="fas fa-arrow-left"></i>
+              </button>
+              <h2 class="card-title mb-0 mx-auto">Transferir Unidade</h2>
+            </div>
+
+            <form action="/transferir" method="post" id="formTransferPc">
+              <!-- quem vai ser transferido -->
+              <input type="hidden" name="computador" id="transferComputadorId">
+              <input type="hidden" name="emp_origem" id="transferEmpOrigemId">
+
+              <div class="form-group">
+                <label>Empresa destino</label>
+                <select class="form-select" name="emp_destino" id="transferEmpDestinoId" required>
+                  <option value="" selected disabled>Selecione a empresa destino</option>
+                  <% (empresas || []).forEach(function(e) { %>
+                    <option value="<%= e.id %>"><%= e.nome %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Observação (opcional)</label>
+                <textarea class="form-control" rows="6" name="observacao" placeholder="Motivo / detalhes..."></textarea>
+              </div>
+
+              <hr>
+
+              <div class="text-center">
+                <button type="submit" class="btn btn-success">Transferir</button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
