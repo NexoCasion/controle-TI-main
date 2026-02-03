@@ -55,19 +55,17 @@
         <!-- Tabela de computadores -->
         <table class="table">
             <thead>
-              <th scope="col" style="cursor:pointer" onclick="ordenarPor('id')" data-sort-col="0">
-                # <span class="sort-indicator"></span>
-              </th>
-              <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')" data-sort-col="1">
+              
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')" data-sort-col="0">
                 Patrimônio <span class="sort-indicator"></span>
               </th>
-              <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')" data-sort-col="2">
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')" data-sort-col="1">
                 Especificações <span class="sort-indicator"></span>
               </th>
-              <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')" data-sort-col="3">
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')" data-sort-col="2">
                 Setor <span class="sort-indicator"></span>
               </th>
-              <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')" data-sort-col="4">
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')" data-sort-col="3">
                 Empresa <span class="sort-indicator"></span>
               </th>
               <th scope="col">Ações</th>
@@ -151,9 +149,9 @@ if (btnOpenImport) {
       const specs = (c.specs || "").toString().toLowerCase();
       const empresa = (c.empresa?.nome || "").toString().toLowerCase();
       const setor = (c.setor || "").toString().toLowerCase();
-      const id = (c.id || "").toString().toLowerCase();
+      
 
-      const texto = `${id} ${patrimonio} ${specs} ${empresa} ${setor}`;
+      const texto = ` ${patrimonio} ${specs} ${empresa} ${setor}`;
       return termo === "" || texto.includes(termo);
     });
 
@@ -166,23 +164,20 @@ if (btnOpenImport) {
         let valorA = "";
         let valorB = "";
 
-        // mapeia colunas: 0=id, 1=patrimonio, 2=specs, 3=empresa
-        if (colunaIndex === 0) {
-          valorA = (a.id ?? "").toString();
-          valorB = (b.id ?? "").toString();
-        } else if (colunaIndex === 1) {
-          valorA = (a.patrimonio ?? "").toString();
-          valorB = (b.patrimonio ?? "").toString();
-        } else if (colunaIndex === 2) {
-          valorA = (a.specs ?? "").toString();
-          valorB = (b.specs ?? "").toString();
-        } else if (colunaIndex === 3) {
-          valorA = (a.setor ?? "").toString();
-          valorB = (b.setor ?? "").toString();
-        } else if (colunaIndex === 4) {
-          valorA = (a.empresa?.nome ?? "").toString();
-          valorB = (b.empresa?.nome ?? "").toString();
-        }
+        // mapeia colunas: 0=patrimonio, 1=specs, 2=setor, 3=empresa
+if (colunaIndex === 0) {
+  valorA = (a.patrimonio ?? "").toString();
+  valorB = (b.patrimonio ?? "").toString();
+} else if (colunaIndex === 1) {
+  valorA = (a.specs ?? "").toString();
+  valorB = (b.specs ?? "").toString();
+} else if (colunaIndex === 2) {
+  valorA = (a.setor ?? "").toString();
+  valorB = (b.setor ?? "").toString();
+} else if (colunaIndex === 3) {
+  valorA = (a.empresa?.nome ?? "").toString();
+  valorB = (b.empresa?.nome ?? "").toString();
+}
 
 
         // tenta número
@@ -207,39 +202,35 @@ if (btnOpenImport) {
 
     computadores.forEach((computador) => {
       const row = `
-        <tr>
-          <th scope="row">${computador.id}</th>
-          <td>${computador.patrimonio ?? ""}</td>
-          <td>${computador.specs ?? "Sem descrição"}</td>
+  <tr>
+    <td>${computador.patrimonio ?? ""}</td>
+    <td>${computador.specs ?? "Sem descrição"}</td>
+    <td>${computador.setor ?? ""}</td>
+    <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
+    <td>
+      <div class="btn-group m-2" role="group">
+        <button
+          type="button"
+          class="btn btn-primary btn-sm btn-edit"
+          data-id="${computador.id}"
+          data-patrimonio="${(computador.patrimonio ?? "").toString().replace(/"/g, '&quot;')}"
+          data-setor="${(computador.setor ?? "").toString().replace(/"/g, '&quot;')}"
+          data-specs="${(computador.specs ?? "").toString().replace(/"/g, '&quot;')}"
+          data-bs-toggle="modal"
+          data-bs-target="#modalEditPc"
+          data-empresa-id="${computador.empresaId ?? ''}"
+        >
+          <i class="fas fa-pencil-alt"></i> Editar
+        </button>
 
-          <!-- NOVO -->
-          <td>${computador.setor ?? ""}</td>
+        <a href="/ver-pc?id=${computador.id}" class="btn m-1 btn-info btn-sm">
+          <i class="fas fa-eye"></i> Ver
+        </a>
+      </div>
+    </td>
+  </tr>
+`;
 
-          <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
-          <td>
-            <div class="btn-group m-2" role="group">
-              <button
-                type="button"
-                class="btn btn-primary btn-sm btn-edit"
-                data-id="${computador.id}"
-                data-patrimonio="${(computador.patrimonio ?? "").toString().replace(/"/g, '&quot;')}"
-                data-setor="${(computador.setor ?? "").toString().replace(/"/g, '&quot;')}"
-                data-specs="${(computador.specs ?? "").toString().replace(/"/g, '&quot;')}"
-                data-bs-toggle="modal"
-                data-bs-target="#modalEditPc"
-                data-empresa-id="${computador.empresaId ?? ''}"
-
-
-              >
-                <i class="fas fa-pencil-alt"></i> Editar </button>
-
-              <a href="/ver-pc?id=${computador.id}" class="btn m-1 btn-info btn-sm">
-                <i class="fas fa-eye"></i> Ver
-              </a>
-            </div>
-          </td>
-        </tr>
-      `;
 
       tableBody.innerHTML += row;
     });
@@ -274,7 +265,9 @@ function atualizarSetasOrdenacaoComputadores() {
 }
 
   function ordenarPor(tipo) {
-  const map = { id: 0, patrimonio: 1, specs: 2, setor: 3, empresa: 4 };
+  const map = { patrimonio: 0, specs: 1, setor: 2, empresa: 3 };
+
+
   if (map[tipo] !== undefined) ordenarTabela(map[tipo]);
 }
     // Clique no botão "Editar" (event delegation)

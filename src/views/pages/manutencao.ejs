@@ -36,15 +36,25 @@
         <div class="col-md-3">
           <div class="text-muted" style="font-size:.85rem;font-weight:700;">Entrada</div>
           <div style="font-weight:700;">
-            <%= manutencao.dataEntrada ? manutencao.dataEntrada : '-' %>
-          </div>
+            <span class="js-dt" data-iso="<%= manutencao.dataEntrada || '' %>">
+                <%= manutencao.dataEntrada ? manutencao.dataEntrada : '-' %>
+            </span>
+            </div>
+
         </div>
 
         <div class="col-md-3">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Saída</div>
-          <div style="font-weight:700;">
-            <%= manutencao.dataSaida ? manutencao.dataSaida : 'Em andamento' %>
-          </div>
+        <div class="text-muted" style="font-size:.85rem;font-weight:700;">Saída</div>
+         <div style="font-weight:700;">
+            <% if (manutencao.dataSaida) { %>
+                <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
+                <%= manutencao.dataSaida %>
+                </span>
+            <% } else { %>
+                Em andamento
+            <% } %>
+            </div>
+
         </div>
 
         <div class="col-md-6">
@@ -123,7 +133,12 @@
               <tr>
                 <td><%= idx + 1 %></td>
                 <td><%= item.descricao || '-' %></td>
-                <td><%= item.data || '-' %></td>
+               <td>
+                <span class="js-dt" data-iso="<%= (item.data || item.dataEntrada || item.createdAt || '') %>">
+                    <%= item.data || item.dataEntrada || item.createdAt || '-' %>
+                </span>
+                </td>
+
               </tr>
             <% }) %>
           </tbody>
@@ -136,6 +151,28 @@
     <% } %>
 
   </div>
+  <script>
+  function formatDateTimeBR(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value; // se não for ISO, mantém como veio
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".js-dt").forEach((el) => {
+      const iso = (el.getAttribute("data-iso") || "").trim();
+      if (!iso) return;
+      el.textContent = formatDateTimeBR(iso);
+    });
+  });
+    </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
