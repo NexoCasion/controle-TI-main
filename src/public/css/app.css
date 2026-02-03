@@ -557,3 +557,82 @@ header + .container #totalComputadores,
   font-weight: 800;
   letter-spacing: .2px;
 }
+/* ====== VER MANUTENÇÃO ====== */
+.maintenance-page .meta-label{
+  font-size: .85rem;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.maintenance-page .meta-value{
+  font-weight: 750;
+  color: var(--text);
+}
+
+.maintenance-page .maintenance-nav,
+.maintenance-page .maintenance-actions{
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.maintenance-page .maintenance-nav .btn,
+.maintenance-page .maintenance-actions .btn{
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 750;
+  letter-spacing: .15px;
+  min-width: 230px;
+}
+
+@media (max-width: 576px){
+  .maintenance-page .maintenance-nav .btn,
+  .maintenance-page .maintenance-actions .btn{
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+.maintenance-page .maintenance-status{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(17,24,39,.14);
+  background: rgba(17,24,39,.04);
+  color: var(--muted);
+  font-weight: 750;
+}
+/* =========================
+   Botão que fica azul no hover (na tela manutenção) -> vinho
+   ========================= */
+
+:root{
+  --wine: #6d0f1b;              /* vinho */
+  --wine-hover: #721622;        /* vinho mais escuro */
+}
+
+/* Caso o botão seja btn-info (azul do Bootstrap) */
+.maintenance-page .btn-info,
+.maintenance-page .btn-info:focus,
+.maintenance-page .btn-info:active{
+  background: var(--wine) !important;
+  border-color: var(--wine) !important;
+  color: #fff !important;
+}
+
+.maintenance-page .btn-info:hover{
+  background: var(--wine-hover) !important;
+  border-color: var(--wine-hover) !important;
+  color: #fff !important;
+}
+
+/* Caso o botão seja btn-primary mas algum CSS esteja deixando azul no hover */
+.maintenance-page .btn-primary:hover{
+  background: var(--wine-hover) !important;
+  border-color: var(--wine-hover) !important;
+}

@@ -19,105 +19,135 @@
     <script>alert('<%= alert %>');</script>
   <% } %>
 
-  <div class="container">
-    <h1 class="mt-4 mb-4">Informações da Manutenção</h1>
+  <div class="container maintenance-page">
+    <h1 class="mt-4 mb-4 text-center">Informações da Manutenção</h1>
 
-    <!-- “Título forte” igual ao Ver PC -->
-    <h2 class=" mb-2">
+    <h2 class="pc-title mb-3">
       Manutenção #<%= manutencao.id %>
       <% if (manutencao?.computador?.status) { %>
         <span class="badge bg-danger ms-2">PC CONDENADO</span>
       <% } %>
     </h2>
 
-    <!-- Card principal (mesma linguagem do Ver PC) -->
-    <div class="card p-3 mb-3" style="border:0;">
-      <div class="row g-3 text-start">
-        <div class="col-md-3">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Entrada</div>
-          <div style="font-weight:700;">
-            <span class="js-dt" data-iso="<%= manutencao.dataEntrada || '' %>">
-                <%= manutencao.dataEntrada ? manutencao.dataEntrada : '-' %>
-            </span>
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-        <div class="text-muted" style="font-size:.85rem;font-weight:700;">Saída</div>
-         <div style="font-weight:700;">
-            <% if (manutencao.dataSaida) { %>
-                <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
-                <%= manutencao.dataSaida %>
-                </span>
-            <% } else { %>
-                Em andamento
-            <% } %>
-            </div>
-
-        </div>
-
-        <div class="col-md-6">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Descrição</div>
-          <div style="font-weight:700;">
-            <%= manutencao.descricao ? manutencao.descricao : '-' %>
-          </div>
-        </div>
-
+    <!-- Card principal -->
+     
+    <div class="card p-3 mb-4" style="border:0;">
+      <div class="row g-3 justify-content-center  text-start">
         <div class="col-md-4">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Computador</div>
-          <div style="font-weight:700;">
+          <div class="meta-label text-center">Computador</div>
+          <div class="meta-value text-center">
             <% if (manutencao?.computador) { %>
               <%= manutencao.computador.patrimonio %>
             <% } else { %>
-              Não possui numero de Patrimonio
+              Não possui número de Patrimônio
+            <% } %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="meta-label text-center">Entrada</div>
+          <div class="meta-value text-center">
+            <span class="js-dt" data-iso="<%= manutencao.dataEntrada || '' %>">
+              <%= manutencao.dataEntrada ? manutencao.dataEntrada : '-' %>
+            </span>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="meta-label text-center">Saída</div>
+          <div class="meta-value text-center">
+            <% if (manutencao.dataSaida) { %>
+              <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
+                <%= manutencao.dataSaida %>
+              </span>
+            <% } else { %>
+              Em andamento
             <% } %>
           </div>
         </div>
 
         <div class="col-md-4">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Local</div>
-          <div style="font-weight:700;">
+          <div class="meta-label text-center">Local</div>
+          <div class="meta-value text-center">
             <%= manutencao?.computador?.setor ? manutencao.computador.setor : '-' %>
           </div>
         </div>
 
         <div class="col-md-4">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Pertence à</div>
-          <div style="font-weight:700;">
+          <div class="meta-label text-center">Pertence à</div>
+          <div class="meta-value text-center">
             <%= manutencao?.computador?.empresa?.nome ? manutencao.computador.empresa.nome : '-' %>
           </div>
         </div>
-
+        <div class="col-md-4">
+          <div class="meta-label text-center">Descrição</div>
+          <div class="meta-value text-center">
+            <%= manutencao.descricao ? manutencao.descricao : '-' %>
+          </div>
+        </div>
         <div class="col-12">
-          <div class="text-muted" style="font-size:.85rem;font-weight:700;">Specs</div>
-          <div class="text-muted">
+          <div class="meta-label text-center">Specs</div>
+          <div class="text-muted text-center">
             <%= manutencao?.computador?.specs ? manutencao.computador.specs : '-' %>
           </div>
         </div>
       </div>
-
-      <!-- Ações (igual estilo clean) -->
-      <div class="d-flex gap-2 flex-wrap mt-3">
-        <a class="btn btn-outline-secondary btn-sm" href="/manutencoes">
-          <i class="fas fa-arrow-left"></i> Voltar para Manutenções
-        </a>
-
-        <% if (manutencao?.computador?.id) { %>
-          <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
-            <i class="fas fa-desktop"></i> Ver PC
-          </a>
-        <% } %>
-      </div>
     </div>
 
-    <!-- Se você tiver “itens”/histórico da manutenção, mostra aqui -->
-    <h5 class="mb-2">Histórico de Procedimentos
-    </h5>
+    <!-- Botões Voltar / Ver PC (centralizados) -->
+    <div class="maintenance-nav">
+      <a class="btn btn-outline-secondary btn-sm" href="/manutencoes">
+        <i class="fas fa-arrow-left"></i> Voltar para Manutenções
+      </a>
+
+      <% if (manutencao?.computador?.id) { %>
+        <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
+          <i class="fas fa-desktop"></i> Ver PC
+        </a>
+      <% } %>
+    </div>
+    <!-- Histórico -->
+    <h1 class="mt-4 mb-3">Histórico de Procedimentos</h1>
+    <!-- Botões de ações (centralizados, acima do histórico) -->
+    <% if (!manutencao.dataSaida) { %>
+      <div class="maintenance-actions mb-3 align-items-center justify-content-center">
+        
+
+        <a
+          class="btn btn-outline-secondary btn-sm"
+          href="/encerrar-manutencao?id=<%= manutencao.id %>"
+          onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');"
+        >
+          <i class="fas fa-check"></i> Fechar manutenção
+        </a>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#modalAddProcedimento"
+        >
+          <i class="fas fa-plus"></i> Adicionar procedimento
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#modalCondenarMaquina"
+        >
+          <i class="fas fa-ban"></i> Condenar máquina
+        </button>
+      </div>
+    <% } else { %>
+      <div class="maintenance-actions">
+        <span class="maintenance-status">
+          <i class="fas fa-check-circle"></i> Manutenção finalizada.
+        </span>
+      </div>
+    <% } %>
+
+    
 
     <% const itensSafe = (typeof manutencoes !== 'undefined' && manutencoes) ? manutencoes : []; %>
-<% if (itensSafe.length) { %>
-
+    <% if (itensSafe.length) { %>
       <div class="table-responsive">
         <table class="table">
           <thead>
@@ -127,18 +157,17 @@
               <th>Data</th>
             </tr>
           </thead>
+
           <tbody>
             <% itensSafe.forEach((item, idx) => { %>
-
               <tr>
                 <td><%= idx + 1 %></td>
                 <td><%= item.descricao || '-' %></td>
-               <td>
-                <span class="js-dt" data-iso="<%= (item.data || item.dataEntrada || item.createdAt || '') %>">
+                <td>
+                  <span class="js-dt" data-iso="<%= (item.data || item.dataEntrada || item.createdAt || '') %>">
                     <%= item.data || item.dataEntrada || item.createdAt || '-' %>
-                </span>
+                  </span>
                 </td>
-
               </tr>
             <% }) %>
           </tbody>
@@ -149,30 +178,99 @@
         Nenhum item adicional para esta manutenção.
       </div>
     <% } %>
-
   </div>
-  <script>
-  function formatDateTimeBR(value) {
-    if (!value) return "";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return value; // se não for ISO, mantém como veio
-    return d.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".js-dt").forEach((el) => {
-      const iso = (el.getAttribute("data-iso") || "").trim();
-      if (!iso) return;
-      el.textContent = formatDateTimeBR(iso);
+  <!-- Script de formatação de datas -->
+  <script>
+    function formatDateTimeBR(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value;
+      return d.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".js-dt").forEach((el) => {
+        const iso = (el.getAttribute("data-iso") || "").trim();
+        if (!iso) return;
+        el.textContent = formatDateTimeBR(iso);
+      });
     });
-  });
-    </script>
+  </script>
+
+  <!-- Modal: Adicionar Procedimento -->
+  <div class="modal fade" id="modalAddProcedimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" method="POST" action="/add-item-manutencao">
+        <div class="modal-header">
+          <h5 class="modal-title">Adicionar procedimento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="manutencaoId" value="<%= manutencao.id %>">
+
+          <label class="form-label">Descrição</label>
+          <textarea
+            class="form-control"
+            name="descricao"
+            rows="3"
+            required
+            placeholder="Ex: Troca de HD, limpeza, reinstalação do Windows..."
+          ></textarea>
+
+          <small class="text-muted d-block mt-2">
+            Isso vai aparecer no “Histórico de Procedimentos”.
+          </small>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Condenar Máquina -->
+  <div class="modal fade" id="modalCondenarMaquina" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" method="POST" action="/condenar-maquina">
+        <div class="modal-header">
+          <h5 class="modal-title">Condenar máquina</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="manutencaoId" value="<%= manutencao.id %>">
+
+          <div class="alert alert-warning mb-3">
+            <b>Atenção:</b> condenar é irreversível. O PC será marcado como condenado e a manutenção será encerrada.
+          </div>
+
+          <label class="form-label">Motivo</label>
+          <textarea
+            class="form-control"
+            name="motivo"
+            rows="3"
+            required
+            placeholder="Ex: Placa-mãe queimada, custo inviável, sem peças..."
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Condenar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

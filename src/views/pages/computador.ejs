@@ -124,7 +124,7 @@
               const tdVerManutencao = document.createElement('td');
               const linkVerManutencao = document.createElement('a');
               linkVerManutencao.href = `/ver-manutencao?id=${manut.id}`;
-              linkVerManutencao.textContent = 'Ver';
+              linkVerManutencao.innerHTML = '<i class="fas fa-eye"></i>';
               linkVerManutencao.className = "btn btn-primary btn-sm";
               tdVerManutencao.appendChild(linkVerManutencao);
               trBody.appendChild(tdVerManutencao);
