@@ -1,8 +1,8 @@
 // src/models/ManutencaoItem.js
-const Sequelize = require("sequelize");
-const database = require("../db/init.js");
+const Sequelize = require('sequelize');
+const database = require('../db/init.js');
 
-const ManutencaoItem = database.define("manutencaoItems", {
+const ManutencaoItem = database.define('manutencaoItems', {
   id: {
     type: Sequelize.INTEGER,
     autoIncrement: true,

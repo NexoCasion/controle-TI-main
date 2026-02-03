@@ -1,187 +1,148 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informações do Computador</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Informações do Computador</title>
 
-
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        tbody tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        .add-manutencao {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-
-    </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
 </head>
+
 <body>
-    
-    <%- include("./../partials/header.ejs") %>
-    <%- include("../main.ejs") %>
+  <header class="headerComponent">
+    <%- include("../partials/header.ejs") %>
+  </header>
 
-    <% if (alert) { %>
-        <script>
-          alert('<%= alert %>');
-        </script>
-      <% } %>
-    <div class="container">
-        <h1>Informações do computador</h1>
-        <div class="container">
-            <h3><%=computador.id%>: <%= computador.patrimonio %></h3>
-            <p>Pertence à: <b><%= computador.empresa.patrimonio%></b></p>
-            <p>Local: <b><%= computador.setor %></b></p>
-            <small><%= computador.specs %></small>
+  <% if (alert) { %>
+    <script>
+      alert('<%= alert %>');
+    </script>
+  <% } %>
 
-            
+  <div class="container">
+    <h1 class="mt-4 mb-4">Informações do Computador</h1>
 
-            <div id="manutencoesTable"></div> <!-- Local onde a tabela será inserida -->
+    <div class="card p-3 mb-3" style="border: 0;">
+      <h2 class="pc-title mb-1"> <%= computador.patrimonio %></h2>
 
-            <small id="createdAtFormatted"></small>
-        </div>
+
+
+      <p class="mb-1">Pertence à: <b><%= computador.empresa ? computador.empresa.nome : '-' %></b></p>
+
+      <p class="mb-1">Local: <b><%= computador.setor %></b></p>
+      <small class="text-muted"><%= computador.specs %></small>
+
+      <div class="mt-2">
+        <small id="createdAtFormatted" class="text-muted"></small>
+      </div>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const createdAt = "<%= computador.createdAt %>"; // Data fornecida pelo servidor
-            // Formatar a data de registro do computador para o formato brasileiro
-            const createdAtFormatted = new Date(createdAt).toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+    <h5 class="mb-2">Histórico de Manutenções</h5>
+    <div class="table-responsive" id="manutencoesTable"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const createdAt = "<%= computador.createdAt %>";
+      const createdAtFormatted = new Date(createdAt).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      document.getElementById("createdAtFormatted").textContent = "Registrado em: " + createdAtFormatted;
+
+      function carregarManutencoes() {
+        const computadorId = "<%= computador.id %>";
+
+        fetch(`/manutencoes-by-computador?id=${computadorId}`)
+          .then(response => response.json())
+          .then(data => {
+            data.sort((a, b) => new Date(b.dataEntrada) - new Date(a.dataEntrada));
+
+            const table = document.createElement('table');
+            table.classList.add('table');
+            table.id = 'tabela-manutencoes';
+
+            const thead = document.createElement('thead');
+            const trHead = document.createElement('tr');
+            const headers = [
+              { label: 'ID', index: 0 },
+              { label: 'Data de Entrada', index: 1 },
+              { label: 'Data de Saída', index: 2 },
+              { label: 'Descrição', index: 3 },
+              { label: 'Ver Manutenção', index: null }
+            ];
+
+            headers.forEach(h => {
+              const th = document.createElement('th');
+              th.textContent = h.label;
+
+              if (h.index !== null) {
+                th.style.cursor = 'pointer';
+                th.onclick = () => ordenarTabela(h.index);
+              }
+
+              trHead.appendChild(th);
             });
-            document.getElementById("createdAtFormatted").textContent = "Registrado em: " + createdAtFormatted;
 
-            // Função para carregar o histórico de manutenções
-            function carregarManutencoes() {
+            thead.appendChild(trHead);
+            table.appendChild(thead);
 
-                const computadorId = "<%= computador.id %>"; // ID do computador
+            const tbody = document.createElement('tbody');
+            data.forEach(manut => {
+              const trBody = document.createElement('tr');
 
-                fetch(`/manutencoes-by-computador?id=${computadorId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Ordenar as manutenções pela data de entrada, da mais recente para a mais antiga
-                        data.sort((a, b) => new Date(b.dataEntrada) - new Date(a.dataEntrada));
+              ['id', 'dataEntrada', 'dataSaida', 'descricao'].forEach(prop => {
+                const td = document.createElement('td');
 
-                        const table = document.createElement('table');
-                        table.classList.add('table');
-                        table.id = 'tabela-manutencoes';
+                if (prop === 'dataEntrada' || prop === 'dataSaida') {
+                  if (prop === 'dataSaida' && manut[prop] === null) {
+                    td.textContent = 'Manutenção em andamento';
+                  } else {
+                    const date = new Date(manut[prop]).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    td.textContent = date;
+                  }
+                } else {
+                  td.textContent = manut[prop];
+                }
 
+                trBody.appendChild(td);
+              });
 
-                        // Cabeçalho da tabela
-                        const thead = document.createElement('thead');
-                        const trHead = document.createElement('tr');
-                        const headers = [
-                        { label: 'ID', index: 0 },
-                        { label: 'Data de Entrada', index: 1 },
-                        { label: 'Data de Saída', index: 2 },
-                        { label: 'Descrição', index: 3 },
-                        { label: 'Ver Manutenção', index: null }
-                         ];
+              const tdVerManutencao = document.createElement('td');
+              const linkVerManutencao = document.createElement('a');
+              linkVerManutencao.href = `/ver-manutencao?id=${manut.id}`;
+              linkVerManutencao.textContent = 'Ver';
+              linkVerManutencao.className = "btn btn-primary btn-sm";
+              tdVerManutencao.appendChild(linkVerManutencao);
+              trBody.appendChild(tdVerManutencao);
 
-                        headers.forEach(h => {
-                            const th = document.createElement('th');
-                            th.textContent = h.label;
+              tbody.appendChild(trBody);
+            });
 
-                            if (h.index !== null) {
-                                th.style.cursor = 'pointer';
-                                th.onclick = () => ordenarTabela(h.index);
-                            }
+            table.appendChild(tbody);
 
-                            trHead.appendChild(th);
-                        });
+            // garante que não acumula tabela se recarregar
+            document.getElementById('manutencoesTable').innerHTML = '';
+            document.getElementById('manutencoesTable').appendChild(table);
+          })
+          .catch(error => console.error('Erro ao carregar manutenções:', error));
+      }
 
-                        thead.appendChild(trHead);
-                        table.appendChild(thead);
-
-                        // Corpo da tabela
-                        const tbody = document.createElement('tbody');
-                        data.forEach(manut => {
-                            const trBody = document.createElement('tr');
-                            ['id', 'dataEntrada', 'dataSaida', 'descricao'].forEach(prop => {
-                                const td = document.createElement('td');
-                                if (prop === 'dataEntrada' || prop === 'dataSaida') {
-                                    if (prop === 'dataSaida' && manut[prop] === null){
-                                        td.textContent = 'Manutenção em andamento';
-                                    } else {
-
-                                        
-                                        const date = new Date(manut[prop]).toLocaleString('pt-BR', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        });
-                                        td.textContent = date;
-                                    }
-                                } else {
-                                    td.textContent = manut[prop];
-                                }
-                                trBody.appendChild(td);
-                            });
-
-                            // Coluna para visualizar a manutenção
-                            const tdVerManutencao = document.createElement('td');
-                            const linkVerManutencao = document.createElement('a');
-                            linkVerManutencao.href = `/ver-manutencao?id=${manut.id}`;
-                            linkVerManutencao.textContent = 'Ver';
-                            linkVerManutencao.className = "btn btn-primary btn-sm"
-                            tdVerManutencao.appendChild(linkVerManutencao);
-                            trBody.appendChild(tdVerManutencao);
-
-                            tbody.appendChild(trBody);
-                        });
-                        table.appendChild(tbody);
-
-                        // Adicionando a tabela ao DOM
-                        document.getElementById('manutencoesTable').appendChild(table);
-                    })
-                    .catch(error => console.error('Erro ao carregar manutenções:', error));
-            }
-
-            // Chamando a função para carregar o histórico de manutenções
-            carregarManutencoes();
-        });
-    </script>
-    
+      carregarManutencoes();
+    });
+  </script>
 </body>
 </html>

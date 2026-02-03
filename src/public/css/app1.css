@@ -1,0 +1,600 @@
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+
+  /* cor de destaque (pode trocar depois) */
+  --brand: #d6001c;
+
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Base */
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  max-width: 75%;
+  height: auto;
+}
+
+/* Navbar (usa Bootstrap, a gente só dá “um toque”) */
+.navbar {
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-soft);
+}
+
+.navbar .btn {
+  border-radius: 10px;
+}
+
+/* Containers das páginas (vocês usam .container bastante) */
+.container {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-top: 18px;
+  margin-bottom: 24px;
+
+  /* tira o “tudo centralizado” que está nos inline styles */
+  text-align: left;
+}
+
+/* Títulos */
+h1 {
+  font-weight: 700;
+  font-size: 1.6rem;
+  margin: 0 0 14px;
+}
+
+.lead {
+  color: var(--muted);
+}
+
+/* Botões */
+.btn {
+  border-radius: 12px;
+}
+
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.btn-outline-info,
+.btn-info {
+  border-radius: 12px;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+label.form-label {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Tabelas */
+.table {
+  margin-top: 14px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.table thead th {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px;
+}
+
+.table tbody td,
+.table tbody th {
+  padding: 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Colunas ordenáveis (vocês usam data-sort-col) */
+th[data-sort-col] {
+  user-select: none;
+}
+
+th[data-sort-col]:hover {
+  background: #eef2f7;
+}
+
+/* Badges (ex: PC CONDENADO) */
+.badge {
+  border-radius: 999px;
+  padding: 0.5em 0.8em;
+  letter-spacing: 0.2px;
+}
+
+/* Cards (home) */
+.card {
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+
+.card .card-title {
+  font-weight: 800;
+}
+
+/* Ajuste fino do contador (computadores) */
+#totalComputadores {
+  color: var(--muted);
+}
+/* =========================
+   HOME (src/views/pages/home.ejs)
+   Botões mais profissionais
+   ========================= */
+
+.btn-group-vertical {
+  gap: 10px; /* espaçamento moderno entre botões */
+}
+
+.btn-group-vertical .btn {
+  /* layout */
+  width: 100%;
+  border-radius: 14px !important;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  /* tipografia */
+  font-weight: 700;
+  letter-spacing: 0.2px;
+
+  /* visual */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+
+  /* interação */
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.btn-group-vertical .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  filter: brightness(0.98);
+}
+
+.btn-group-vertical .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* deixa o texto do warning mais legível (Bootstrap warning às vezes fica claro) */
+.btn-group-vertical .btn.btn-warning {
+  color: #111;
+}
+
+/* =========================
+   NAVBAR - Ícone do Home menor
+   (src/views/partials/header.ejs)
+   Funciona se tiver <i class="fas fa-home ...">
+   ========================= */
+
+.navbar .btn-outline-dark {
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Se você usou fa-2x/fa-3x, isso aqui “domina” e reduz */
+.navbar .btn-outline-dark i,
+.navbar .btn-outline-dark .fa,
+.navbar .btn-outline-dark .fas,
+.navbar .btn-outline-dark .far,
+.navbar .btn-outline-dark .fab {
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+}
+
+/* (Opcional) Se o ícone estiver grande por causa de padding/altura */
+.navbar .btn-outline-dark svg,
+.navbar .btn-outline-dark img {
+  width: 18px;
+  height: 18px;
+}
+/* =========================
+   NAVBAR - Botão Home mais fluido/“chip”
+   (src/views/partials/header.ejs)
+   ========================= */
+
+.navbar .btn-outline-dark.me-2 {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(17, 24, 39, 0.03);
+  color: #111827;
+
+  font-weight: 650;
+  letter-spacing: 0.2px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.navbar .btn-outline-dark.me-2:hover {
+  background: rgba(17, 24, 39, 0.06);
+  border-color: rgba(17, 24, 39, 0.18);
+  transform: translateY(-1px);
+}
+
+.navbar .btn-outline-dark.me-2:active {
+  transform: translateY(0);
+}
+
+/* Se você colocou ícone no Home, isso reduz o tamanho dele */
+.navbar .btn-outline-dark.me-2 i,
+.navbar .btn-outline-dark.me-2 .fa,
+.navbar .btn-outline-dark.me-2 .fas,
+.navbar .btn-outline-dark.me-2 .far,
+.navbar .btn-outline-dark.me-2 .fab {
+  font-size: 0.9rem !important;
+  line-height: 1 !important;
+}
+
+/* =========================
+   COMPUTADORES - botões Editar/Ver mais clean
+   (src/views/pages/computadores.ejs)
+   ========================= */
+
+/* Base da “barra” de ações */
+.table .btn-group .btn {
+  border-radius: 12px !important;
+  padding: 7px 10px;
+  font-weight: 650;
+  letter-spacing: 0.15px;
+
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #fff;
+  color: #111827;
+
+  box-shadow: none;
+  transition: background 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
+}
+
+.table .btn-group .btn:hover {
+  background: #f3f4f6;
+  border-color: rgba(17, 24, 39, 0.16);
+  transform: translateY(-1px);
+}
+
+.table .btn-group .btn:active {
+  transform: translateY(0);
+}
+
+/* Editar (tem classe .btn-edit no seu HTML) */
+.table .btn-group .btn-edit {
+  background: rgba(214, 0, 28, 0.08);           /* usa seu --brand, mas “soft” */
+  border-color: rgba(214, 0, 28, 0.22);
+  color: #b00016;
+}
+
+.table .btn-group .btn-edit:hover {
+  background: rgba(214, 0, 28, 0.12);
+}
+
+/* Ver (no seu HTML está como .btn-info) — tira aquele azul chamativo */
+.table .btn-group .btn-info {
+  background: rgba(17, 24, 39, 0.06);
+  border-color: rgba(17, 24, 39, 0.14);
+  color: #111827;
+}
+
+.table .btn-group .btn-info:hover {
+  background: rgba(17, 24, 39, 0.09);
+}
+
+/* Ícones mais proporcionais nos botões da tabela */
+.table .btn-group .btn i {
+  font-size: 0.95em;
+}
+
+/* =========================
+   MODAIS - visual mais moderno e limpo
+   (src/views/partials/modals/*.ejs)
+   ========================= */
+
+.modal-content {
+  border: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+}
+
+.modal-body {
+  padding: 18px 18px 22px;
+}
+
+/* Os seus modais têm um card dentro — tira “cara de card dentro de card” */
+.modal .card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* Traz os botões do modal pra mesma “linguagem” clean */
+.modal .btn {
+  border-radius: 12px;
+}
+
+/* Variantes “soft” só dentro de modal (não mexe na Home) */
+.modal .btn-success {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.22);
+  color: #065f46;
+}
+
+.modal .btn-warning {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.24);
+  color: #92400e;
+}
+
+.modal .btn-danger {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.22);
+  color: #991b1b;
+}
+
+/* Botão voltar do form (classe existe no seu register_computer_form.ejs) */
+.btn-back {
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(17, 24, 39, 0.04);
+  color: #111827;
+}
+
+.btn-back:hover {
+  background: rgba(17, 24, 39, 0.07);
+}
+/* =========================
+   FIX: fundo igual no site todo
+   (porque vários EJS forçam #f0f0f0)
+   ========================= */
+
+html,
+body {
+  background: var(--bg) !important;
+}
+
+/* Alguns arquivos usam .headerComponent com fundo branco e padding
+   (ex: src/views/pages/computadores.ejs) — deixa ele “sumir” no fundo */
+.headerComponent {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* =========================
+   HEADER/NAVBAR mais proporcional
+   (src/views/partials/header.ejs)
+   ========================= */
+
+header {
+  background: transparent !important;
+  padding: 18px 0; /* dá um respiro igual ao resto */
+}
+
+/* tira a barra branca full-width e transforma em “card” central */
+.navbar.navbar-light.bg-light {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* o card do header (logo + botão) */
+.navbar.navbar-light.bg-light > .container {
+  background: var(--surface) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-soft) !important;
+  padding: 16px 18px !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  /* IMPORTANTE: evita o estilo antigo da .container do <style> interno */
+  text-align: left !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+
+
+/* Botão Home ainda mais fluido e proporcional */
+.navbar .btn-outline-dark.me-2 {
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  background: rgba(17, 24, 39, 0.03) !important;
+  color: #111827 !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.2px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.navbar .btn-outline-dark.me-2:hover {
+  background: rgba(17, 24, 39, 0.06) !important;
+  border-color: rgba(17, 24, 39, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+/* =========================
+   CTA: Adicionar Computador / Registrar Manutenção
+   (src/views/pages/computadores.ejs e manutencoes.ejs)
+   ========================= */
+
+/* Pega exatamente os botões que abrem modal */
+.container button.btn.btn-secondary[data-bs-toggle="modal"] {
+  font-size: 0.85rem !important; /* sobrescreve o inline style .75rem */
+  border-radius: 999px !important;
+  padding: 10px 16px !important;
+
+  background: rgba(17, 24, 39, 0.06) !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  color: #111827 !important;
+
+  font-weight: 700 !important;
+  letter-spacing: 0.15px;
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.container button.btn.btn-secondary[data-bs-toggle="modal"]:hover {
+  background: rgba(17, 24, 39, 0.09) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+.container button.btn.btn-secondary[data-bs-toggle="modal"]:active {
+  transform: translateY(0);
+}
+
+/* Se quiser que esses CTAs fiquem “centralizados” mesmo com texto alinhado,
+   isso ajuda sem mexer no HTML */
+.container > button.btn.btn-secondary[data-bs-toggle="modal"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* =========================
+   FIX CENTRALIZAÇÃO (Listagens)
+   Baseado no HTML do controle-TI-main14.zip:
+   - computadores.ejs: <header class="headerComponent"> ... </header> + <div class="container">
+   - manutencoes.ejs: <header> ... </header> + <div class="container">
+   ========================= */
+
+/* garante que o card principal (conteúdo) fique consistente */
+body > .container,
+header + .container,
+.headerComponent + .container {
+  max-width: 1100px;         /* deixa tudo “proporcional” */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* centraliza só o TÍTULO das listas */
+header + .container > h1,
+.headerComponent + .container > h1 {
+  text-align: center;
+  margin-top: 6px;           /* dá um respiro */
+}
+
+/* centraliza o botão "Adicionar/Registrar" (abre modal) */
+header + .container > button.btn[data-bs-toggle="modal"],
+.headerComponent + .container > button.btn[data-bs-toggle="modal"] {
+  display: block;            /* permite margin auto centralizar */
+  width: fit-content;
+  margin: 10px auto 14px !important;
+}
+
+/* centraliza o contador (Computadores exibidos...) */
+header + .container #totalComputadores,
+.headerComponent + .container #totalComputadores {
+  display: block;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Home (container-fluid) às vezes dá sensação de “desalinhado” com o resto */
+.container-fluid.bg-light {
+  background: transparent !important; /* deixa o fundo igual ao site todo */
+  padding-top: 0 !important;
+}
+/* =========================
+   CENTRALIZAÇÃO GLOBAL DAS PÁGINAS
+   (após remover os <style> inline dos EJS)
+   Arquivos impactados:
+   - src/views/pages/computadores.ejs (usa <header class="headerComponent"> + <div class="container">)
+   - src/views/pages/manutencoes.ejs (usa <header> + <div class="container">)
+   - src/views/pages/empresas.ejs (usa <div class="container"> direto no body)
+   ========================= */
+
+/* Centraliza o conteúdo geral das páginas (título, botões e textos) */
+header + .container,
+.headerComponent + .container,
+body > .container {
+  text-align: center;
+}
+
+/* Mantém blocos de filtros/formulários centralizados como “bloco”, mas com texto interno alinhado */
+header + .container .row,
+.headerComponent + .container .row,
+header + .container .mb-3,
+.headerComponent + .container .mb-3 {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+/* Tabelas: ficam centralizadas pelo container, mas texto interno permanece legível */
+header + .container .table,
+.headerComponent + .container .table,
+body > .container .table {
+  text-align: left;
+}
+
+/* Centraliza o botão “Adicionar/Registrar” (quando é filho direto do container) */
+header + .container > button.btn[data-bs-toggle="modal"],
+.headerComponent + .container > button.btn[data-bs-toggle="modal"] {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Centraliza o contador (Computadores exibidos...) */
+#totalComputadores {
+  display: block;
+  text-align: center;
+}
