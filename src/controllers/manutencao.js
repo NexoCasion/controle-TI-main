@@ -76,10 +76,18 @@ class ManutencaoController {
     }
   }
 
-  async findById(id) {
+    async findById(id) {
     try {
       const manutencao = await Manutencao.findByPk(id, {
-        include: 'computador',
+        include: [
+          {
+            model: Computador,
+            as: 'computador',
+            include: [
+              { model: Empresa, as: 'empresa', attributes: ['nome'] },
+            ],
+          },
+        ],
       });
 
       return manutencao;
@@ -87,6 +95,7 @@ class ManutencaoController {
       throw new Error('Erro ao buscar manutenções por ID: ' + error.message);
     }
   }
+
 
   async findByEmpresa(empresaId) {
     try {

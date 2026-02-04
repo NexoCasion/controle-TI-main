@@ -152,6 +152,7 @@ th[data-sort-col]:hover {
 #totalComputadores {
   color: var(--muted);
 }
+
 /* =========================
    HOME (src/views/pages/home.ejs)
    Botões mais profissionais
@@ -229,6 +230,7 @@ th[data-sort-col]:hover {
   width: 18px;
   height: 18px;
 }
+
 /* =========================
    NAVBAR - Botão Home mais fluido/“chip”
    (src/views/partials/header.ejs)
@@ -303,7 +305,7 @@ th[data-sort-col]:hover {
 
 /* Editar (tem classe .btn-edit no seu HTML) */
 .table .btn-group .btn-edit {
-  background: rgba(214, 0, 28, 0.08);           /* usa seu --brand, mas “soft” */
+  background: rgba(214, 0, 28, 0.08); /* usa seu --brand, mas “soft” */
   border-color: rgba(214, 0, 28, 0.22);
   color: #b00016;
 }
@@ -393,6 +395,7 @@ th[data-sort-col]:hover {
 .btn-back:hover {
   background: rgba(17, 24, 39, 0.07);
 }
+
 /* =========================
    FIX: fundo igual no site todo
    (porque vários EJS forçam #f0f0f0)
@@ -443,8 +446,6 @@ header {
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
-
-
 
 /* Botão Home ainda mais fluido e proporcional */
 .navbar .btn-outline-dark.me-2 {
@@ -508,18 +509,16 @@ header {
   align-items: center;
   justify-content: center;
 }
+
 /* =========================
    FIX CENTRALIZAÇÃO (Listagens)
-   Baseado no HTML do controle-TI-main14.zip:
-   - computadores.ejs: <header class="headerComponent"> ... </header> + <div class="container">
-   - manutencoes.ejs: <header> ... </header> + <div class="container">
    ========================= */
 
 /* garante que o card principal (conteúdo) fique consistente */
 body > .container,
 header + .container,
 .headerComponent + .container {
-  max-width: 1100px;         /* deixa tudo “proporcional” */
+  max-width: 1100px; /* deixa tudo “proporcional” */
   margin-left: auto;
   margin-right: auto;
 }
@@ -528,13 +527,13 @@ header + .container,
 header + .container > h1,
 .headerComponent + .container > h1 {
   text-align: center;
-  margin-top: 6px;           /* dá um respiro */
+  margin-top: 6px; /* dá um respiro */
 }
 
 /* centraliza o botão "Adicionar/Registrar" (abre modal) */
 header + .container > button.btn[data-bs-toggle="modal"],
 .headerComponent + .container > button.btn[data-bs-toggle="modal"] {
-  display: block;            /* permite margin auto centralizar */
+  display: block; /* permite margin auto centralizar */
   width: fit-content;
   margin: 10px auto 14px !important;
 }
@@ -552,26 +551,28 @@ header + .container #totalComputadores,
   background: transparent !important; /* deixa o fundo igual ao site todo */
   padding-top: 0 !important;
 }
-.pc-title{
+
+.pc-title {
   font-size: 1.9rem;
   font-weight: 800;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
 }
+
 /* ====== VER MANUTENÇÃO ====== */
-.maintenance-page .meta-label{
-  font-size: .85rem;
+.maintenance-page .meta-label {
+  font-size: 0.85rem;
   font-weight: 800;
   color: var(--muted);
   margin-bottom: 2px;
 }
 
-.maintenance-page .meta-value{
+.maintenance-page .meta-value {
   font-weight: 750;
   color: var(--text);
 }
 
 .maintenance-page .maintenance-nav,
-.maintenance-page .maintenance-actions{
+.maintenance-page .maintenance-actions {
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -580,59 +581,174 @@ header + .container #totalComputadores,
 }
 
 .maintenance-page .maintenance-nav .btn,
-.maintenance-page .maintenance-actions .btn{
+.maintenance-page .maintenance-actions .btn {
   border-radius: 999px;
   padding: 10px 16px;
   font-weight: 750;
-  letter-spacing: .15px;
+  letter-spacing: 0.15px;
   min-width: 230px;
 }
 
-@media (max-width: 576px){
+@media (max-width: 576px) {
   .maintenance-page .maintenance-nav .btn,
-  .maintenance-page .maintenance-actions .btn{
+  .maintenance-page .maintenance-actions .btn {
     width: 100%;
     min-width: unset;
   }
 }
 
-.maintenance-page .maintenance-status{
+.maintenance-page .maintenance-status {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(17,24,39,.14);
-  background: rgba(17,24,39,.04);
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(17, 24, 39, 0.04);
   color: var(--muted);
   font-weight: 750;
 }
+
 /* =========================
    Botão que fica azul no hover (na tela manutenção) -> vinho
    ========================= */
 
-:root{
-  --wine: #6d0f1b;              /* vinho */
-  --wine-hover: #721622;        /* vinho mais escuro */
+:root {
+  --wine: #6d0f1b; /* vinho */
+  --wine-hover: #721622; /* vinho mais escuro */
 }
 
 /* Caso o botão seja btn-info (azul do Bootstrap) */
 .maintenance-page .btn-info,
 .maintenance-page .btn-info:focus,
-.maintenance-page .btn-info:active{
+.maintenance-page .btn-info:active {
   background: var(--wine) !important;
   border-color: var(--wine) !important;
   color: #fff !important;
 }
 
-.maintenance-page .btn-info:hover{
+.maintenance-page .btn-info:hover {
   background: var(--wine-hover) !important;
   border-color: var(--wine-hover) !important;
   color: #fff !important;
 }
 
 /* Caso o botão seja btn-primary mas algum CSS esteja deixando azul no hover */
-.maintenance-page .btn-primary:hover{
+.maintenance-page .btn-primary:hover {
   background: var(--wine-hover) !important;
   border-color: var(--wine-hover) !important;
+}
+
+/* =========================
+   Ver PC -> Tabela "Histórico de Manutenções"
+   Botão do olhinho: hover/fade vinho
+   (gerado no computador.ejs como btn btn-primary btn-sm)
+   ========================= */
+
+:root {
+  --wine: #b00016;
+  --wine-hover: #520a13;
+  --wine-glow: rgba(109, 15, 27, 0.35);
+}
+
+/* mira especificamente a tabela criada no computador.ejs */
+#tabela-manutencoes .btn.btn-primary {
+  background: var(--wine) !important;
+  border-color: var(--wine) !important;
+  color: #fff !important;
+
+  /* deixa o botão redondinho e proporcional ao ícone */
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 999px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HOVER (o "fade" que estava azul) */
+#tabela-manutencoes .btn.btn-primary:hover {
+  background: var(--wine-hover) !important;
+  border-color: var(--wine-hover) !important;
+}
+
+/* foco/click (tira aquele glow azul do bootstrap) */
+#tabela-manutencoes .btn.btn-primary:focus,
+#tabela-manutencoes .btn.btn-primary:active,
+#tabela-manutencoes .btn.btn-primary:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem var(--wine-glow) !important;
+}
+
+/* =========================================================
+   FIX NECESSÁRIO:
+   "Fechar manutenção" é <a>, então não pegava o estilo do CTA
+   que hoje só mira em button[data-bs-toggle="modal"].
+   Este bloco faz o <a class="btn btn-secondary"> ficar igual.
+   ========================================================= */
+
+.maintenance-page .maintenance-actions a.btn.btn-secondary {
+  font-size: 0.85rem !important;
+  border-radius: 999px !important;
+  padding: 10px 16px !important;
+
+  background: rgba(17, 24, 39, 0.06) !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  color: #111827 !important;
+
+  font-weight: 700 !important;
+  letter-spacing: 0.15px;
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.maintenance-page .maintenance-actions a.btn.btn-secondary:hover {
+  background: rgba(17, 24, 39, 0.09) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+.maintenance-page .maintenance-actions a.btn.btn-secondary:active {
+  transform: translateY(0);
+}
+/* =========================
+   Manutenção: status FINALIZADA verdinho ao lado oposto do título
+   ========================= */
+
+.maintenance-page .maint-titlebar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.maintenance-page .maint-finalizada{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 14px;
+  border-radius: 999px;
+
+  background: rgba(16, 185, 129, 0.14);   /* verdinho soft */
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #065f46;
+
+  font-weight: 800;
+  letter-spacing: 0.15px;
+}
+
+.maintenance-page .maint-finalizada i{
+  color: #10b981; /* ícone verdinho */
+}
+
+/* Em telas pequenas, status vai pra linha de baixo (ainda alinhado) */
+@media (max-width: 576px){
+  .maintenance-page .maint-finalizada{
+    width: fit-content;
+  }
 }

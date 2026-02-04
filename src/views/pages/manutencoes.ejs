@@ -64,6 +64,7 @@
                 />
             </div>
         </div>
+        
         <!-- Filtro por data (dataEntrada) -->
             <div class="row mb-4">
             <div class="col-md-6">
@@ -75,9 +76,7 @@
                 <label for="dataFimFiltro" class="form-label">Data da manutenção (até):</label>
                 <div class="d-flex gap-2">
                 <input id="dataFimFiltro" type="date" class="form-control" />
-                <button id="limparDatas" type="button" class="btn btn-outline-secondary" title="Limpar datas">
-                    <i class="fas fa-eraser"></i>
-                </button>
+                
                 </div>
             </div>
             </div>
@@ -103,10 +102,12 @@
                 <th scope="col" style="cursor:pointer" onclick="ordenarTabela(3)" data-sort-col="3">
                 Descrição <span class="sort-indicator"></span>
                 </th>
-
+                
                 <th scope="col" style="cursor:pointer" onclick="ordenarTabela(4)" data-sort-col="4">
                 Status <span class="sort-indicator"></span>
                 </th>
+
+                <th scope="col">Data da manutenção</th>
 
                 <th scope="col">Ações</th>
 
@@ -118,6 +119,13 @@
             <tbody id="tableBody">
                 <% manutencoes.forEach(function(manutencao, index) { %>
                     <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
+                    <%
+                const dataManutencao =
+                    (manutencao.dataSaida && String(manutencao.dataSaida).trim() !== "")
+                    ? manutencao.dataSaida
+                    : manutencao.dataEntrada;%>
+                    
+
                     <tr
                         data-status="<%= status %>"
                         data-empresa="<%= manutencao.empresa %>"
@@ -138,6 +146,15 @@
                                 <i class="fas fa-clock text-warning"></i>
                             <% } %>
                         </td>
+                        <td class="align-middle">
+  <% if (dataManutencao) { %>
+    <time class="dt js-dt" datetime="<%= dataManutencao %>" data-iso="<%= dataManutencao %>"></time>
+  <% } else { %>
+    -
+  <% } %>
+</td>
+
+
 
 
                         <td class="align-middle">
@@ -164,6 +181,28 @@
     const empresaFiltro = document.getElementById("empresaFiltro");
     const searchInput = document.getElementById("pesquisaFiltro");
     const tbody = document.getElementById("tableBody");
+    const dataDeInput = document.getElementById("dataManutencaoDe");
+const dataAteInput = document.getElementById("dataManutencaoAte");
+const limparDatasBtn = document.getElementById("limparDataManutencao");
+
+function parseDateSafe(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateTimeBR(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
     let direcaoOrdenacao = {}; // guarda ASC/DESC por coluna
     
@@ -218,8 +257,27 @@
 
         const empresaMatch = (empresa === "todas" || empresa === empresaLinha);
         const termoMatch = (termo === "" || textoLinha.includes(termo));
+                // --- Filtro por data da manutenção (de/até) ---
+        let dataMatch = true;
 
-        tr.style.display = (statusMatch && empresaMatch && termoMatch) ? "" : "none";
+        const deValue = dataDeInput?.value || "";
+        const ateValue = dataAteInput?.value || "";
+
+        const de = deValue ? new Date(deValue + "T00:00:00") : null;
+        const ate = ateValue ? new Date(ateValue + "T23:59:59.999") : null;
+
+        const rowIso = (tr.getAttribute("data-data-manutencao") || "").trim();
+        const rowDate = parseDateSafe(rowIso);
+
+        if ((de || ate) && !rowDate) {
+          dataMatch = false;
+        } else {
+          if (de && rowDate < de) dataMatch = false;
+          if (ate && rowDate > ate) dataMatch = false;
+        }
+
+        tr.style.display = (statusMatch && empresaMatch && termoMatch && dataMatch) ? "" : "none";
+
         });
     }
 
@@ -264,7 +322,56 @@
     window.addEventListener("DOMContentLoaded", () => {
     statusFiltro.value = "todas_sem_condenados";
     aplicarFiltros();
+
+    dataDeInput?.addEventListener("change", aplicarFiltros);
+    dataAteInput?.addEventListener("change", aplicarFiltros);
+
+    limparDatasBtn?.addEventListener("click", () => {
+    if (dataDeInput) dataDeInput.value = "";
+    if (dataAteInput) dataAteInput.value = "";
+    aplicarFiltros();
     });
+    window.addEventListener("DOMContentLoaded", () => {
+  // formata datas visíveis na coluna
+    document.querySelectorAll(".js-dt").forEach((el) => {
+        const iso = (el.getAttribute("data-iso") || "").trim();
+        if (!iso) return;
+        el.textContent = formatDateTimeBR(iso);
+    });
+
+    statusFiltro.value = "todas_sem_condenados";
+    aplicarFiltros();
+    });
+
+    });
+    const dtFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+// converte ISO -> "dd/mm/aaaa, hh:mm"
+function formatDT(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso; // se não for ISO, mantém
+  return dtFormatter.format(d);
+}
+
+// aplica em todos os elementos .js-dt
+function applyDateFormatting() {
+  document.querySelectorAll(".js-dt").forEach((el) => {
+    const iso = (el.getAttribute("data-iso") || el.getAttribute("datetime") || "").trim();
+    if (!iso) return;
+    el.textContent = formatDT(iso);
+  });
+}
+window.addEventListener("DOMContentLoaded", () => {
+  applyDateFormatting();
+  aplicarFiltros(); // se você já chama filtros aqui, mantém
+});
 
     </script>
 <%- include("../partials/modals/modal_register_manutencao") %>
