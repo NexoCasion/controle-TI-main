@@ -115,14 +115,21 @@ router.get('/ver-pc', async (req, res) => {
   try {
     console.log(res.locals.alert);
     const { id } = req.query;
-    const pc = await computadorController.getById(id);
 
-    return res.render('pages/computador', { alert: res.locals.alert, computador: pc });
+    const pc = await computadorController.getById(id);
+    const empresasList = await empresaController.getAll(); // <-- necessário pro modal de transferir
+
+    return res.render('pages/computador', {
+      alert: res.locals.alert,
+      computador: pc,
+      empresas: empresasList
+    });
   } catch (error) {
     console.error('Erro ao procurar pc:', error);
     res.status(500).send('Erro ao procurar pc' + error);
   }
 });
+
 router.post('/descartar-pc', async (req, res) => {
   try {
     const { id, motivo } = req.body;

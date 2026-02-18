@@ -752,3 +752,153 @@ header + .container #totalComputadores,
     width: fit-content;
   }
 }
+/* =========================
+   COMPUTADORES (Tabela) — Botões "Editar" e "Ver" iguais (pílulas idênticas)
+   ========================= */
+
+.table .btn-group {
+  display: inline-flex;
+  gap: 10px;
+}
+
+/* força os dois botões da coluna Ações a ficarem do mesmo tamanho */
+.table .btn-group .btn {
+  min-width: 86px;                 /* mesma largura */
+  height: 44px;                    /* mesma altura */
+  padding: 0 14px !important;      /* padding consistente */
+  border-radius: 14px !important;  /* “pílula” */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ícones com tamanho consistente */
+.table .btn-group .btn i {
+  font-size: 0.95em;
+}
+/* Ver: tira o azul chamativo e deixa clean */
+.table .btn-group .btn.btn-outline-info,
+.table .btn-group .btn.btn-info {
+  background: rgba(17, 24, 39, 0.06) !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  color: #111827 !important;
+}
+
+.table .btn-group .btn.btn-outline-info:hover,
+.table .btn-group .btn.btn-info:hover {
+  background: rgba(17, 24, 39, 0.09) !important;
+  border-color: rgba(17, 24, 39, 0.18) !important;
+}
+/* =========================
+   MODAL EDITAR PC (modalEditPc)
+   - Enviar: vermelho igual "Ver manutenção" + hover vinho
+   - Adicionar Manutenção / Transferir Unidade: padrão clean (tipo Adicionar procedimento)
+   ========================= */
+
+/* garante que o modal certo seja atingido */
+#modalEditPc .btn {
+  border-radius: 999px !important;
+  padding: 10px 16px !important;
+  font-weight: 750 !important;
+  letter-spacing: .15px;
+}
+
+/* 1) ENVIAR (hoje é btn-success no edit_pc_form.ejs) -> vermelho + hover vinho */
+#modalEditPc .btn.btn-success {
+  background: var(--brand) !important;       /* seu vermelho padrão */
+  border-color: var(--brand) !important;
+  color: #fff !important;
+}
+
+/* hover vinho */
+#modalEditPc .btn.btn-success:hover {
+  background: var(--wine-hover) !important;
+  border-color: var(--wine-hover) !important;
+}
+
+/* tira o “glow” azul/verde de foco e coloca vinho */
+#modalEditPc .btn.btn-success:focus,
+#modalEditPc .btn.btn-success:active,
+#modalEditPc .btn.btn-success:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem var(--wine-glow) !important;
+}
+
+/* 2) Adicionar Manutenção + Transferir Unidade -> padrão clean e igual */
+#modalEditPc #btnAddManutencaoFromEdit,
+#modalEditPc #btnTransferirFromEdit {
+  background: rgba(17, 24, 39, 0.06) !important;
+  border: 1px solid rgba(17, 24, 39, 0.14) !important;
+  color: #111827 !important;
+
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+/* hover igual “clean” */
+#modalEditPc #btnAddManutencaoFromEdit:hover,
+#modalEditPc #btnTransferirFromEdit:hover {
+  background: rgba(17, 24, 39, 0.09) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-1px);
+}
+
+#modalEditPc #btnAddManutencaoFromEdit:active,
+#modalEditPc #btnTransferirFromEdit:active {
+  transform: translateY(0);
+}
+
+/* foco sem azul */
+#modalEditPc #btnAddManutencaoFromEdit:focus,
+#modalEditPc #btnTransferirFromEdit:focus,
+#modalEditPc #btnAddManutencaoFromEdit:focus-visible,
+#modalEditPc #btnTransferirFromEdit:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.15) !important;
+}
+/* =========================
+   MODAIS DE REGISTRO — "Enviar" vermelho + hover vinho
+   (PC / Empresa / Manutenção)
+   ========================= */
+
+/* base: garante a “pílula” igual ao resto do seu padrão */
+#modalRegisterPc .btn.btn-primary,
+#modalRegisterEmpresa .btn.btn-primary,
+#modalRegisterManutencao .btn.btn-primary{
+  border-radius: 999px !important;
+  padding: 10px 16px !important;
+  font-weight: 750 !important;
+  letter-spacing: .15px;
+
+  /* vermelho padrão do seu site */
+  background: var(--brand, #d6001c) !important;
+  border-color: var(--brand, #d6001c) !important;
+  color: #fff !important;
+}
+
+/* hover vinho (tira o hover “azulado / brightness” e força vinho) */
+#modalRegisterPc .btn.btn-primary:hover,
+#modalRegisterEmpresa .btn.btn-primary:hover,
+#modalRegisterManutencao .btn.btn-primary:hover{
+  background: var(--wine-hover, #520a13) !important;
+  border-color: var(--wine-hover, #520a13) !important;
+  color: #fff !important;
+}
+
+/* foco/click sem glow azul do bootstrap */
+#modalRegisterPc .btn.btn-primary:focus,
+#modalRegisterPc .btn.btn-primary:active,
+#modalRegisterPc .btn.btn-primary:focus-visible,
+#modalRegisterEmpresa .btn.btn-primary:focus,
+#modalRegisterEmpresa .btn.btn-primary:active,
+#modalRegisterEmpresa .btn.btn-primary:focus-visible,
+#modalRegisterManutencao .btn.btn-primary:focus,
+#modalRegisterManutencao .btn.btn-primary:active,
+#modalRegisterManutencao .btn.btn-primary:focus-visible{
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem var(--wine-glow, rgba(109, 15, 27, 0.35)) !important;
+}
+

@@ -1,380 +1,400 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lista de Manutenções</title>
-    <!-- Adicionando Bootstrap CSS (opcional, caso queira usar o framework para estilização) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Adicionando Font Awesome  -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/app.css">
 
-</head>
-<body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+  </head>
+
+  <body>
     <header>
-        <%- include("../partials/header.ejs") %>
+      <%- include("../partials/header.ejs") %>
     </header>
 
     <div class="container text-center align-items-center">
-                <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
-                <button
+      <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
+
+      <button
         type="button"
-        style="font-size: .75rem;"
+        style="font-size: 0.75rem"
         class="btn btn-secondary btn-lg btn-block mb-2"
         data-bs-toggle="modal"
         data-bs-target="#modalRegisterManutencao"
-        >
+      >
         Registrar Manutenção
-        </button>
+      </button>
 
-        <!-- Filtros -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <label for="statusFiltro" class="form-label">Filtrar por Status:</label>
-                <select id="statusFiltro" class="form-select">
-                    <option value="todas" >Todas as manutenções</option>
-                    <option value="todas_sem_condenados"selected>Todas sem condenados</option>
-                    <option value="em_manutencao">Em manutenção</option>
-                    <option value="finalizadas_sem_condenacao">Já finalizadas</option>
-                    <option value="condenados">Condenados</option>
-                    
-
-
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label for="empresaFiltro" class="form-label">Filtrar por Empresa:</label>
-                <select id="empresaFiltro" class="form-select">
-                    <option value="todas" selected>Todas as Empresas</option>
-                    <% empresas.forEach(function(empresa) { %>
-                        <option value="<%= empresa.nome %>"><%= empresa.nome %></option>
-                    <% }); %>
-                </select>
-            </div>
+      <!-- Filtros -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <label for="statusFiltro" class="form-label">Filtrar por Status:</label>
+          <select id="statusFiltro" class="form-select">
+            <option value="todas">Todas as manutenções</option>
+            <option value="todas_sem_condenados" selected>Todas sem condenados</option>
+            <option value="em_manutencao">Em manutenção</option>
+            <option value="finalizadas_sem_condenacao">Já finalizadas</option>
+            <option value="condenados">Condenados</option>
+          </select>
         </div>
-            <div class="row mb-4">
-            <div class="col-12">
-                <label for="pesquisaFiltro" class="form-label">Pesquisar:</label>
-                <input
-                id="pesquisaFiltro"
-                type="text"
-                class="form-control"
-                placeholder="Patrimônio, empresa, local ou descrição..."
-                />
-            </div>
-        </div>
-        
-        <!-- Filtro por data (dataEntrada) -->
-            <div class="row mb-4">
-            <div class="col-md-6">
-                <label for="dataInicioFiltro" class="form-label">Data da manutenção (de):</label>
-                <input id="dataInicioFiltro" type="date" class="form-control" />
-            </div>
 
-            <div class="col-md-6">
-                <label for="dataFimFiltro" class="form-label">Data da manutenção (até):</label>
-                <div class="d-flex gap-2">
-                <input id="dataFimFiltro" type="date" class="form-control" />
-                
+        <div class="col-md-6">
+          <label for="empresaFiltro" class="form-label">Filtrar por Empresa:</label>
+          <select id="empresaFiltro" class="form-select">
+            <option value="todas" selected>Todas as Empresas</option>
+            <% empresas.forEach(function(empresa) { %>
+              <option value="<%= empresa.nome %>"><%= empresa.nome %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-12">
+          <label for="pesquisaFiltro" class="form-label">Pesquisar:</label>
+          <input
+            id="pesquisaFiltro"
+            type="text"
+            class="form-control"
+            placeholder="Patrimônio, empresa, local ou descrição..."
+          />
+        </div>
+      </div>
+
+      <!-- Filtro por data (Data da manutenção = saída se existir, senão entrada) -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <label for="dataInicioFiltro" class="form-label">Data da manutenção (de):</label>
+          <input id="dataInicioFiltro" type="date" class="form-control" />
+        </div>
+
+        <div class="col-md-6">
+        <label for="dataFimFiltro" class="form-label">Data da manutenção (até):</label>
+
+        <div class="input-group">
+            <input id="dataFimFiltro" type="date" class="form-control" />
+            <button
+            id="limparDataBtn"
+            class="btn btn-outline-secondary"
+            type="button"
+            title="Limpar datas"
+            >
+            <i class="fas fa-eraser"></i>
+            </button>
+        </div>
+        </div>
+
+
+      <!-- Tabela de manutenções -->
+      <table class="table">
+        <thead>
+          <tr>
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(0)"
+              data-sort-col="0"
+            >
+              # <span class="sort-indicator"></span>
+            </th>
+
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(1)"
+              data-sort-col="1"
+            >
+              Número de patrimônio <span class="sort-indicator"></span>
+            </th>
+
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(2)"
+              data-sort-col="2"
+            >
+              Empresa <span class="sort-indicator"></span>
+            </th>
+
+            <th scope="col">Setor</th>
+
+            <!-- ATENÇÃO: índices corrigidos (Descrição é coluna 4) -->
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(4)"
+              data-sort-col="4"
+            >
+              Descrição <span class="sort-indicator"></span>
+            </th>
+
+            <!-- Status é coluna 5 -->
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(5)"
+              data-sort-col="5"
+            >
+              Status <span class="sort-indicator"></span>
+            </th>
+
+            <!-- Data é coluna 6 -->
+            <th
+              scope="col"
+              style="cursor: pointer"
+              onclick="ordenarTabela(6)"
+              data-sort-col="6"
+            >
+              Data da manutenção <span class="sort-indicator"></span>
+            </th>
+
+            <th scope="col">Ações</th>
+          </tr>
+        </thead>
+
+        <tbody id="tableBody">
+          <% manutencoes.forEach(function(manutencao, index) { %>
+            <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
+            <%
+              const dataManutencao =
+                (manutencao.dataSaida && String(manutencao.dataSaida).trim() !== "")
+                  ? manutencao.dataSaida
+                  : manutencao.dataEntrada;
+            %>
+
+            <tr
+              data-status="<%= status %>"
+              data-empresa="<%= manutencao.empresa %>"
+              data-condenado="<%= manutencao.pcCondenado ? '1' : '0' %>"
+              data-data-manutencao="<%= dataManutencao || '' %>"
+            >
+              <th scope="row"><%= index + 1 %></th>
+
+              <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
+              <td><%= manutencao.empresa %></td>
+              <td><%= manutencao.setor || '-' %></td>
+              <td><%= manutencao.descricao || 'Sem descrição' %></td>
+
+              <td class="align-middle">
+                <% if (manutencao.pcCondenado) { %>
+                  <span class="badge bg-danger">PC CONDENADO</span>
+                  <span class="visually-hidden">condenado</span>
+                <% } else if (manutencao.dataSaida) { %>
+                  <i class="fas fa-square-check text-success"></i>
+                  <span class="visually-hidden">finalizada</span>
+                <% } else { %>
+                  <i class="fas fa-clock text-warning"></i>
+                  <span class="visually-hidden">em andamento</span>
+                <% } %>
+              </td>
+
+              <td class="align-middle">
+                <% if (dataManutencao) { %>
+                  <time
+                    class="dt js-dt"
+                    datetime="<%= dataManutencao %>"
+                    data-iso="<%= dataManutencao %>"
+                  ><%= dataManutencao %></time>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+
+              <td class="align-middle">
+                <div class="btn-group" role="group" aria-label="Ações">
+                  <a class="btn btn-outline-info btn-sm" href="/ver-manutencao?id=<%= manutencao.id %>">
+                    <i class="fas fa-eye"></i> Ver
+                  </a>
                 </div>
-            </div>
-            </div>
-
-        <!-- Tabela de manutenções -->
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col" style="cursor:pointer" onclick="ordenarTabela(0)" data-sort-col="0">
-                # <span class="sort-indicator"></span>
-                </th>
-
-                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(1)" data-sort-col="1">
-                Número de patrimônio <span class="sort-indicator"></span>
-                </th>
-
-                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(2)" data-sort-col="2">
-                Empresa <span class="sort-indicator"></span>
-                </th>
-
-                <th scope="col">Setor</th>
-
-                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(3)" data-sort-col="3">
-                Descrição <span class="sort-indicator"></span>
-                </th>
-                
-                <th scope="col" style="cursor:pointer" onclick="ordenarTabela(4)" data-sort-col="4">
-                Status <span class="sort-indicator"></span>
-                </th>
-
-                <th scope="col">Data da manutenção</th>
-
-                <th scope="col">Ações</th>
-
-
-                    
-                </tr>
-            </thead>
-
-            <tbody id="tableBody">
-                <% manutencoes.forEach(function(manutencao, index) { %>
-                    <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
-                    <%
-                const dataManutencao =
-                    (manutencao.dataSaida && String(manutencao.dataSaida).trim() !== "")
-                    ? manutencao.dataSaida
-                    : manutencao.dataEntrada;%>
-                    
-
-                    <tr
-                        data-status="<%= status %>"
-                        data-empresa="<%= manutencao.empresa %>"
-                        data-condenado="<%= manutencao.pcCondenado ? '1' : '0' %>"
-                        >
-
-                        <th scope="row"><%= index + 1 %></th>
-                        <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
-                        <td><%= manutencao.empresa %></td>
-                        <td><%= manutencao.setor || '-' %></td>
-                        <td><%= manutencao.descricao || 'Sem descrição' %></td>
-                        <td class="align-middle">
-                            <% if (manutencao.pcCondenado) { %>
-                                <span class="badge bg-danger">PC CONDENADO</span>
-                            <% } else if (manutencao.dataSaida) { %>
-                                <i class="fas fa-square-check text-success"></i>
-                            <% } else { %>
-                                <i class="fas fa-clock text-warning"></i>
-                            <% } %>
-                        </td>
-                        <td class="align-middle">
-  <% if (dataManutencao) { %>
-    <time class="dt js-dt" datetime="<%= dataManutencao %>" data-iso="<%= dataManutencao %>"></time>
-  <% } else { %>
-    -
-  <% } %>
-</td>
-
-
-
-
-                        <td class="align-middle">
-                            <div class="btn-group" role="group" aria-label="Ações">
-                                <a href="/ver-manutencao?id=<%= manutencao.id %>">
-                                    <button type="button" class="btn btn-outline-info btn-sm">
-                                        <i class="fas fa-eye"></i> 
-                                        Ver
-                                    </button>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://kit.fontawesome.com/08793a0919.js" crossorigin="anonymous"></script>
+
     <script>
-    const statusFiltro = document.getElementById("statusFiltro");
-    const empresaFiltro = document.getElementById("empresaFiltro");
-    const searchInput = document.getElementById("pesquisaFiltro");
-    const tbody = document.getElementById("tableBody");
-    const dataDeInput = document.getElementById("dataManutencaoDe");
-const dataAteInput = document.getElementById("dataManutencaoAte");
-const limparDatasBtn = document.getElementById("limparDataManutencao");
+      const statusFiltro = document.getElementById("statusFiltro");
+      const empresaFiltro = document.getElementById("empresaFiltro");
+      const searchInput = document.getElementById("pesquisaFiltro");
+      const tbody = document.getElementById("tableBody");
+      const dataDeInput = document.getElementById("dataInicioFiltro");
+      const dataAteInput = document.getElementById("dataFimFiltro");
+      const limparDataBtn = document.getElementById("limparDataBtn");
 
-function parseDateSafe(v) {
-  if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
+      function parseDateSafe(v) {
+        if (!v) return null;
+        const d = new Date(v);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
 
-function formatDateTimeBR(value) {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+      // dd/mm/aaaa hh:mm (mais clean, sem segundos e sem vírgula)
+      function formatDT(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
 
-    let direcaoOrdenacao = {}; // guarda ASC/DESC por coluna
-    
-    let lastSortCol = null;
-    let lastSortAsc = true;
+        const data = d.toLocaleDateString("pt-BR");
+        const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        return `${data} ${hora}`;
+      }
 
-    function atualizarSetasOrdenacaoManutencoes() {
-    const ths = document.querySelectorAll("th[data-sort-col]");
-    ths.forEach(th => {
-        const span = th.querySelector(".sort-indicator");
-        if (!span) return;
+      function applyDateFormatting() {
+        document.querySelectorAll(".js-dt").forEach((el) => {
+          const iso = (el.getAttribute("data-iso") || el.getAttribute("datetime") || "").trim();
+          if (!iso) return;
+          el.textContent = formatDT(iso);
+        });
+      }
 
-        span.innerHTML = "";
-        const col = parseInt(th.getAttribute("data-sort-col"), 10);
-
-        if (col === lastSortCol) {
-        span.innerHTML = lastSortAsc
-            ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
-            : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
-        }
-    });
-    }
-
-    function aplicarFiltros() {
+      function aplicarFiltros() {
         const status = statusFiltro.value;
         const empresa = empresaFiltro.value;
         const termo = (searchInput.value || "").trim().toLowerCase();
 
-        const linhas = tbody.querySelectorAll("tr");
-
-        linhas.forEach(tr => {
-        const statusLinha = tr.getAttribute("data-status");
-        const empresaLinha = tr.getAttribute("data-empresa");
-
-        const textoLinha = tr.innerText.toLowerCase();
-
-        const condenado = tr.getAttribute("data-condenado") === "1";
-
-        let statusMatch = true;
-
-        if (status === "todas") {
-        statusMatch = true;
-        } else if (status === "em_manutencao") {
-        statusMatch = (statusLinha === "em_manutencao") && !condenado;
-        } else if (status === "finalizadas_sem_condenacao") {
-        statusMatch = (statusLinha === "finalizadas") && !condenado;
-        } else if (status === "condenados") {
-        statusMatch = condenado;
-        } else if (status === "todas_sem_condenados") {
-        statusMatch = !condenado;
-        }
-
-        const empresaMatch = (empresa === "todas" || empresa === empresaLinha);
-        const termoMatch = (termo === "" || textoLinha.includes(termo));
-                // --- Filtro por data da manutenção (de/até) ---
-        let dataMatch = true;
-
-        const deValue = dataDeInput?.value || "";
-        const ateValue = dataAteInput?.value || "";
+        const deValue = (dataDeInput && dataDeInput.value) ? dataDeInput.value : "";
+        const ateValue = (dataAteInput && dataAteInput.value) ? dataAteInput.value : "";
 
         const de = deValue ? new Date(deValue + "T00:00:00") : null;
         const ate = ateValue ? new Date(ateValue + "T23:59:59.999") : null;
 
-        const rowIso = (tr.getAttribute("data-data-manutencao") || "").trim();
-        const rowDate = parseDateSafe(rowIso);
+        const linhas = tbody.querySelectorAll("tr");
 
-        if ((de || ate) && !rowDate) {
-          dataMatch = false;
-        } else {
-          if (de && rowDate < de) dataMatch = false;
-          if (ate && rowDate > ate) dataMatch = false;
-        }
+        linhas.forEach((tr) => {
+          const statusLinha = tr.getAttribute("data-status");
+          const empresaLinha = tr.getAttribute("data-empresa");
+          const condenado = tr.getAttribute("data-condenado") === "1";
+          const textoLinha = tr.innerText.toLowerCase();
 
-        tr.style.display = (statusMatch && empresaMatch && termoMatch && dataMatch) ? "" : "none";
+          let statusMatch = true;
+          if (status === "todas") {
+            statusMatch = true;
+          } else if (status === "em_manutencao") {
+            statusMatch = statusLinha === "em_manutencao" && !condenado;
+          } else if (status === "finalizadas_sem_condenacao") {
+            statusMatch = statusLinha === "finalizadas" && !condenado;
+          } else if (status === "condenados") {
+            statusMatch = condenado;
+          } else if (status === "todas_sem_condenados") {
+            statusMatch = !condenado;
+          }
 
+          const empresaMatch = empresa === "todas" || empresa === empresaLinha;
+          const termoMatch = termo === "" || textoLinha.includes(termo);
+
+          // filtro por data usando a data “oficial” da manutenção (saida ou entrada)
+          let dataMatch = true;
+          const rowIso = (tr.getAttribute("data-data-manutencao") || "").trim();
+          const rowDate = parseDateSafe(rowIso);
+
+          if ((de || ate) && !rowDate) {
+            dataMatch = false;
+          } else {
+            if (de && rowDate < de) dataMatch = false;
+            if (ate && rowDate > ate) dataMatch = false;
+          }
+
+          tr.style.display = (statusMatch && empresaMatch && termoMatch && dataMatch) ? "" : "none";
         });
-    }
+      }
 
-    // Ordena a tabela por coluna (índice)
-    function ordenarTabela(colunaIndex) {
+      // ===== Ordenação =====
+      let lastSortCol = null;
+      let lastSortAsc = true;
+
+      function atualizarSetasOrdenacaoManutencoes() {
+        const ths = document.querySelectorAll("th[data-sort-col]");
+        ths.forEach((th) => {
+          const span = th.querySelector(".sort-indicator");
+          if (!span) return;
+
+          span.innerHTML = "";
+          const col = parseInt(th.getAttribute("data-sort-col"), 10);
+
+          if (col === lastSortCol) {
+            span.innerHTML = lastSortAsc
+              ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
+              : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
+          }
+        });
+      }
+
+      function ordenarTabela(colunaIndex) {
         const linhas = Array.from(tbody.querySelectorAll("tr"))
-        .filter(tr => tr.style.display !== "none"); // só as visíveis
+          .filter((tr) => tr.style.display !== "none");
 
-        direcaoOrdenacao[colunaIndex] = !direcaoOrdenacao[colunaIndex];
-        const asc = direcaoOrdenacao[colunaIndex];
+        const asc = (lastSortCol === colunaIndex) ? !lastSortAsc : true;
         lastSortCol = colunaIndex;
         lastSortAsc = asc;
         atualizarSetasOrdenacaoManutencoes();
 
         linhas.sort((a, b) => {
-        let valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
-        let valorB = b.cells[colunaIndex].innerText.trim().toLowerCase();
+          // Ordenação especial pra coluna de Data (coluna 6)
+          if (colunaIndex === 6) {
+            const da = parseDateSafe((a.getAttribute("data-data-manutencao") || "").trim());
+            const db = parseDateSafe((b.getAttribute("data-data-manutencao") || "").trim());
 
-        // tenta número
-        let numA = parseFloat(valorA.replace(/\D/g, ''));
-        let numB = parseFloat(valorB.replace(/\D/g, ''));
+            const va = da ? da.getTime() : 0;
+            const vb = db ? db.getTime() : 0;
 
-        const ambosNumeros = !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
+            return asc ? va - vb : vb - va;
+          }
 
-        if (ambosNumeros) {
+          const valorA = (a.cells[colunaIndex]?.innerText || "").trim().toLowerCase();
+          const valorB = (b.cells[colunaIndex]?.innerText || "").trim().toLowerCase();
+
+          const numA = parseFloat(valorA.replace(/\D/g, ""));
+          const numB = parseFloat(valorB.replace(/\D/g, ""));
+
+          const ambosNumeros =
+            !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
+
+          if (ambosNumeros) {
             return asc ? numA - numB : numB - numA;
-        }
+          }
 
-        return asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
+          return asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
         });
 
-        // reanexa na ordem nova
-        linhas.forEach(l => tbody.appendChild(l));
-    }
+        linhas.forEach((l) => tbody.appendChild(l));
+      }
 
-    // deixa global pro onclick funcionar
-    window.ordenarTabela = ordenarTabela;
+      window.ordenarTabela = ordenarTabela;
 
-    statusFiltro.addEventListener("change", aplicarFiltros);
-    empresaFiltro.addEventListener("change", aplicarFiltros);
-    searchInput.addEventListener("input", aplicarFiltros);
-    window.addEventListener("DOMContentLoaded", () => {
-    statusFiltro.value = "todas_sem_condenados";
-    aplicarFiltros();
-
-    dataDeInput?.addEventListener("change", aplicarFiltros);
-    dataAteInput?.addEventListener("change", aplicarFiltros);
-
-    limparDatasBtn?.addEventListener("click", () => {
-    if (dataDeInput) dataDeInput.value = "";
-    if (dataAteInput) dataAteInput.value = "";
-    aplicarFiltros();
-    });
-    window.addEventListener("DOMContentLoaded", () => {
-  // formata datas visíveis na coluna
-    document.querySelectorAll(".js-dt").forEach((el) => {
-        const iso = (el.getAttribute("data-iso") || "").trim();
-        if (!iso) return;
-        el.textContent = formatDateTimeBR(iso);
+      // Eventos
+      statusFiltro.addEventListener("change", aplicarFiltros);
+      empresaFiltro.addEventListener("change", aplicarFiltros);
+      searchInput.addEventListener("input", aplicarFiltros);
+      dataDeInput.addEventListener("change", aplicarFiltros);
+      dataAteInput.addEventListener("change", aplicarFiltros);
+      limparDataBtn.addEventListener("click", () => {
+      dataDeInput.value = "";
+      dataAteInput.value = "";
+      aplicarFiltros();
     });
 
-    statusFiltro.value = "todas_sem_condenados";
-    aplicarFiltros();
-    });
+    
 
-    });
-    const dtFormatter = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-// converte ISO -> "dd/mm/aaaa, hh:mm"
-function formatDT(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso; // se não for ISO, mantém
-  return dtFormatter.format(d);
-}
-
-// aplica em todos os elementos .js-dt
-function applyDateFormatting() {
-  document.querySelectorAll(".js-dt").forEach((el) => {
-    const iso = (el.getAttribute("data-iso") || el.getAttribute("datetime") || "").trim();
-    if (!iso) return;
-    el.textContent = formatDT(iso);
-  });
-}
-window.addEventListener("DOMContentLoaded", () => {
-  applyDateFormatting();
-  aplicarFiltros(); // se você já chama filtros aqui, mantém
-});
-
+      window.addEventListener("DOMContentLoaded", () => {
+        // garante default (mesmo que já esteja no HTML)
+        statusFiltro.value = "todas_sem_condenados";
+        applyDateFormatting();
+        aplicarFiltros();
+      });
     </script>
-<%- include("../partials/modals/modal_register_manutencao") %>
 
-</body>
-
+    <%- include("../partials/modals/modal_register_manutencao") %>
+  </body>
+</html>

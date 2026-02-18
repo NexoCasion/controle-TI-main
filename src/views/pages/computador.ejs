@@ -22,14 +22,15 @@
   <% } %>
 
   <div class="container">
+    
     <h1 class="mt-4 mb-4">Informações do Computador</h1>
 
     <div class="card p-3 mb-3" style="border: 0;">
-      <h2 class="pc-title mb-1"> Patrimônio: <%= computador.patrimonio %></h2>
+      <h2 class="pc-title mb-1">Patrimônio: <%= computador.patrimonio %></h2>
 
-
-
-      <p class="mb-1">Pertence à: <b><%= computador.empresa ? computador.empresa.nome : '-' %></b></p>
+      <p class="mb-1">
+        Pertence à: <b><%= computador.empresa ? computador.empresa.nome : '-' %></b>
+      </p>
 
       <p class="mb-1">Local: <b><%= computador.setor %></b></p>
       <small class="text-muted"><%= computador.specs %></small>
@@ -39,52 +40,165 @@
       </div>
     </div>
 
-    <h5 class="mb-2">Histórico de Manutenções</h5>
+    <!-- Botões (Editar = igual "Ver PC" na manutenção | Transferir = igual "Voltar") -->
+    <div class="d-flex gap-2 justify-content-center flex-wrap mb-3">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        id="btnEditPcFromView"
+        data-bs-toggle="modal"
+        data-bs-target="#modalEditPc"
+      >
+        <i class="fas fa-pencil-alt"></i> Editar PC
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        id="btnTransferPcFromView"
+        data-bs-toggle="modal"
+        data-bs-target="#modalTransferPc"
+      >
+        <i class="fas fa-exchange-alt"></i> Transferir Unidade
+      </button>
+    </div>
+
+    <h1 class="mt-4 mb-3">Histórico de Manutenções</h1>
     <div class="table-responsive" id="manutencoesTable"></div>
   </div>
+
+  <!-- MODAIS (antes dos scripts é o mais seguro) -->
+  <%- include("../partials/modals/modal_edit_pc") %>
+  <%- include("../partials/modals/modal_transfer_pc", { empresas: (typeof empresas !== 'undefined' ? empresas : []) }) %>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
+      // ====== Data de cadastro (clean) ======
       const createdAt = "<%= computador.createdAt %>";
-      const createdAtFormatted = new Date(createdAt).toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      const createdAtFormatted = new Date(createdAt).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
-      document.getElementById("createdAtFormatted").textContent = "Registrado em: " + createdAtFormatted;
+      document.getElementById("createdAtFormatted").textContent =
+        "Registrado em: " + createdAtFormatted;
+
+      // ====== Contexto do PC (injeção segura) ======
+      const pcCtx = <%- JSON.stringify({
+        id: computador.id,
+        patrimonio: computador.patrimonio || "",
+        setor: computador.setor || "",
+        specs: computador.specs || "",
+        empresaId: computador.empresaId || ""
+      }) %>;
+
+      // ====== MODAL EDITAR (preenche campos + action correta) ======
+      const btnEdit = document.getElementById("btnEditPcFromView");
+      if (btnEdit) {
+        btnEdit.addEventListener("click", () => {
+          const form = document.getElementById("formEditPc");
+          const inPatrimonio = document.getElementById("editPatrimonio");
+          const inSetor = document.getElementById("editSetor");
+          const inSpecs = document.getElementById("editSpecs");
+
+          // action correta pro backend
+          if (form) form.action = `/editar-pc?id=${pcCtx.id}`;
+
+          // preenche inputs do modal
+          if (inPatrimonio) inPatrimonio.value = pcCtx.patrimonio;
+          if (inSetor) inSetor.value = pcCtx.setor;
+          if (inSpecs) inSpecs.value = pcCtx.specs;
+        });
+      }
+
+      // ====== MODAL TRANSFERIR (preenche hidden inputs) ======
+      const btnTransferView = document.getElementById("btnTransferPcFromView");
+      if (btnTransferView) {
+        btnTransferView.addEventListener("click", () => {
+          const inputPc = document.getElementById("transferComputadorId");
+          const inputOrigem = document.getElementById("transferEmpOrigemId");
+          const selectDestino = document.getElementById("transferEmpDestinoId");
+
+          if (inputPc) inputPc.value = pcCtx.id;
+          if (inputOrigem) inputOrigem.value = pcCtx.empresaId || "";
+          if (selectDestino) selectDestino.value = "";
+        });
+      }
+
+      // ====== Tabela (Histórico) ======
+      let sortCol = null;
+      let sortAsc = true;
+
+      function ordenarTabela(index) {
+        const table = document.getElementById("tabela-manutencoes");
+        if (!table) return;
+        const tbody = table.querySelector("tbody");
+        if (!tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        const asc = (sortCol === index) ? !sortAsc : true;
+        sortCol = index;
+        sortAsc = asc;
+
+        rows.sort((ra, rb) => {
+          const aCell = ra.children[index];
+          const bCell = rb.children[index];
+
+          const aIso = aCell?.getAttribute("data-iso") || "";
+          const bIso = bCell?.getAttribute("data-iso") || "";
+
+          // tenta ordenar por data quando tiver ISO
+          const aDate = aIso ? new Date(aIso) : null;
+          const bDate = bIso ? new Date(bIso) : null;
+
+          if (aDate && bDate && !Number.isNaN(aDate) && !Number.isNaN(bDate)) {
+            return asc ? (aDate - bDate) : (bDate - aDate);
+          }
+
+          const a = (aCell?.textContent || "").trim().toLowerCase();
+          const b = (bCell?.textContent || "").trim().toLowerCase();
+          return asc ? a.localeCompare(b) : b.localeCompare(a);
+        });
+
+        rows.forEach((r) => tbody.appendChild(r));
+      }
+
+      // deixa ordenação disponível pros onclick do header
+      window.ordenarTabela = ordenarTabela;
 
       function carregarManutencoes() {
-        const computadorId = "<%= computador.id %>";
+        const computadorId = pcCtx.id;
 
         fetch(`/manutencoes-by-computador?id=${computadorId}`)
-          .then(response => response.json())
-          .then(data => {
+          .then((response) => response.json())
+          .then((data) => {
             data.sort((a, b) => new Date(b.dataEntrada) - new Date(a.dataEntrada));
 
-            const table = document.createElement('table');
-            table.classList.add('table');
-            table.id = 'tabela-manutencoes';
+            const table = document.createElement("table");
+            table.classList.add("table");
+            table.id = "tabela-manutencoes";
 
-            const thead = document.createElement('thead');
-            const trHead = document.createElement('tr');
+            const thead = document.createElement("thead");
+            const trHead = document.createElement("tr");
+
             const headers = [
-              { label: 'ID', index: 0 },
-              { label: 'Data de Entrada', index: 1 },
-              { label: 'Data de Saída', index: 2 },
-              { label: 'Descrição', index: 3 },
-              { label: 'Ver Manutenção', index: null }
+              { label: "ID", index: 0 },
+              { label: "Data de Entrada", index: 1 },
+              { label: "Data de Saída", index: 2 },
+              { label: "Descrição", index: 3 },
+              { label: "Ver Manutenção", index: null },
             ];
 
-            headers.forEach(h => {
-              const th = document.createElement('th');
+            headers.forEach((h) => {
+              const th = document.createElement("th");
               th.textContent = h.label;
 
               if (h.index !== null) {
-                th.style.cursor = 'pointer';
+                th.style.cursor = "pointer";
                 th.onclick = () => ordenarTabela(h.index);
               }
 
@@ -94,23 +208,26 @@
             thead.appendChild(trHead);
             table.appendChild(thead);
 
-            const tbody = document.createElement('tbody');
-            data.forEach(manut => {
-              const trBody = document.createElement('tr');
+            const tbody = document.createElement("tbody");
 
-              ['id', 'dataEntrada', 'dataSaida', 'descricao'].forEach(prop => {
-                const td = document.createElement('td');
+            data.forEach((manut) => {
+              const trBody = document.createElement("tr");
 
-                if (prop === 'dataEntrada' || prop === 'dataSaida') {
-                  if (prop === 'dataSaida' && manut[prop] === null) {
-                    td.textContent = 'Manutenção em andamento';
+              ["id", "dataEntrada", "dataSaida", "descricao"].forEach((prop) => {
+                const td = document.createElement("td");
+
+                if (prop === "dataEntrada" || prop === "dataSaida") {
+                  if (prop === "dataSaida" && manut[prop] === null) {
+                    td.textContent = "Manutenção em andamento";
+                    td.setAttribute("data-iso", "");
                   } else {
-                    const date = new Date(manut[prop]).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                    td.setAttribute("data-iso", manut[prop] || "");
+                    const date = new Date(manut[prop]).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     });
                     td.textContent = date;
                   }
@@ -121,8 +238,8 @@
                 trBody.appendChild(td);
               });
 
-              const tdVerManutencao = document.createElement('td');
-              const linkVerManutencao = document.createElement('a');
+              const tdVerManutencao = document.createElement("td");
+              const linkVerManutencao = document.createElement("a");
               linkVerManutencao.href = `/ver-manutencao?id=${manut.id}`;
               linkVerManutencao.innerHTML = '<i class="fas fa-eye"></i>';
               linkVerManutencao.className = "btn btn-primary btn-sm";
@@ -135,10 +252,10 @@
             table.appendChild(tbody);
 
             // garante que não acumula tabela se recarregar
-            document.getElementById('manutencoesTable').innerHTML = '';
-            document.getElementById('manutencoesTable').appendChild(table);
+            document.getElementById("manutencoesTable").innerHTML = "";
+            document.getElementById("manutencoesTable").appendChild(table);
           })
-          .catch(error => console.error('Erro ao carregar manutenções:', error));
+          .catch((error) => console.error("Erro ao carregar manutenções:", error));
       }
 
       carregarManutencoes();
