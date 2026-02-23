@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
     <title>Lista de Manutenções</title>
 
     <link
@@ -21,7 +22,11 @@
       <%- include("../partials/header.ejs") %>
     </header>
 
-    <div class="container text-center align-items-center">
+    <div class="container">
+      <a href="javascript:history.back()" class="btn btn-back">
+       <i class="fas fa-arrow-left"></i>
+       </a>
+      <div class="text-center align-items-center">
       <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
 
       <button
@@ -92,7 +97,7 @@
             </button>
         </div>
         </div>
-
+        </div>
 
       <!-- Tabela de manutenções -->
       <table class="table">

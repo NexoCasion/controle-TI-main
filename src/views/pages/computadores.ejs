@@ -18,7 +18,9 @@
     </header>
 
     <div class="container">
-      
+        <a href="javascript:history.back()" class="btn btn-back">
+       <i class="fas fa-arrow-left"></i>
+       </a>
         <h1 class="mt-4 mb-4">Lista de Computadores</h1>
         <button
           type="button"
@@ -202,13 +204,13 @@ if (colunaIndex === 0) {
 
     computadores.forEach((computador) => {
       const row = `
-  <tr>
+  <tr class= editar-pcs>
     <td>${computador.patrimonio ?? ""}</td>
     <td>${computador.specs ?? "Sem descrição"}</td>
     <td>${computador.setor ?? ""}</td>
     <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
     <td>
-      <div class="btn-group m-2 align-items-center" role="group">
+      <div  class="btn-group m-2 align-items-center " role="group">
         <button
           type="button"
           class="btn btn-primary btn-sm btn-edit"

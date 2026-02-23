@@ -20,6 +20,9 @@
   <% } %>
 
   <div class="container maintenance-page">
+    <a href="javascript:history.back()" class="btn btn-back">
+       <i class="fas fa-arrow-left"></i>
+       </a>
     <h1 class="mt-4 mb-4 text-center">Informações da Manutenção</h1>
 
 
@@ -29,21 +32,21 @@
     <!-- Card principal -->
      
     <div class="card p-3 mb-4" style="border:0;">
-      <div class="row g-3 justify-content-center  text-start">
-          <div class="maint-titlebar mb-3">
-  <h2 class="pc-title mb-0">
-    Manutenção #<%= manutencao.id %>
-    <% if (manutencao?.computador?.status) { %>
-      <span class="badge bg-danger ms-2">PC CONDENADO</span>
-    <% } %>
-  </h2>
+            <div class="row g-3 justify-content-center  text-start">
+                <div class="maint-titlebar mb-3">
+        <h2 class="pc-title mb-0">
+          Manutenção #<%= manutencao.id %>
+          <% if (manutencao?.computador?.status) { %>
+            <span class="badge bg-danger ms-2">PC CONDENADO</span>
+          <% } %>
+        </h2>
 
-  <% if (manutencao.dataSaida) { %>
-    <span class="maint-finalizada">
-      <i class="fas fa-check-circle"></i> Finalizada
-    </span>
-  <% } %>
-</div>
+        <% if (manutencao.dataSaida) { %>
+          <span class="maint-finalizada">
+            <i class="fas fa-check-circle"></i> Finalizada
+          </span>
+        <% } %>
+      </div>
         <div class="col-md-4">
           <div class="meta-label text-center">Computador</div>
           <div class="meta-value text-center">
