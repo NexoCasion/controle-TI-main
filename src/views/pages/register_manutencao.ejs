@@ -1,58 +1,58 @@
 <body>
 
-    <%- include("./../partials/header.ejs") %>
-    <%- include('../main') %>
-    <link rel="stylesheet" href="/css/app.css">
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <%- include('../partials/forms/register_manutencao_form', { inModal: false }) %>
-                            <script src="/utils/manutencaoForm.js"></script>
+  <%- include("./../partials/header.ejs") %>
+  <%- include('../main') %>
+  <link rel="stylesheet" href="/css/app.css">
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body text-center">
+            <%- include('../partials/forms/register_manutencao_form', { inModal: false }) %>
+            <script src="/utils/manutencaoForm.js"></script>
 
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+          </div>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
+  </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <script>
-        $(document).ready(function () {
-            // Função para carregar as opções de empresa
-            $.get("/get-empresas", function (data) {
-                $('#empresa').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
-                data.forEach(function (empresa) {
-                    $('#empresa').append($('<option>', {
-                        value: empresa.id,
-                        text: empresa.nome
-                    }));
-                });
-            });
-
-            // Função para carregar as opções de computador com base na empresa selecionada
-            $('#empresa').change(function () {
-                var empresaId = $(this).val();
-                $('#computador').empty(); // Limpa as opções atuais
-                if (empresaId) {
-                    $.get("/computadores-by-empresa?empresaId=" + empresaId, function (data) {
-                        $('#computador').empty();
-                        data.forEach(function (computador) {
-                            $('#computador').append($('<option>', {
-                                value: computador.id,
-                                text: `${computador.id} - ${computador.patrimonio}`
-                            }));
-                        });
-                        $('#computadorGroup').show(); // Exibe o grupo de seleção de computador
-                    });
-                } else {
-                    $('#computadorGroup').hide(); // Oculta o grupo de seleção de computador se nenhuma empresa for selecionada
-                }
-            });
+  <script>
+    $(document).ready(function() {
+      // Função para carregar as opções de empresa
+      $.get("/get-empresas", function(data) {
+        $('#empresa').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
+        data.forEach(function(empresa) {
+          $('#empresa').append($('<option>', {
+            value: empresa.id,
+            text: empresa.nome
+          }));
         });
-    </script>
+      });
+
+      // Função para carregar as opções de computador com base na empresa selecionada
+      $('#empresa').change(function() {
+        var empresaId = $(this).val();
+        $('#computador').empty(); // Limpa as opções atuais
+        if (empresaId) {
+          $.get("/computadores-by-empresa?empresaId=" + empresaId, function(data) {
+            $('#computador').empty();
+            data.forEach(function(computador) {
+              $('#computador').append($('<option>', {
+                value: computador.id,
+                text: `${computador.id} - ${computador.patrimonio}`
+              }));
+            });
+            $('#computadorGroup').show(); // Exibe o grupo de seleção de computador
+          });
+        } else {
+          $('#computadorGroup').hide(); // Oculta o grupo de seleção de computador se nenhuma empresa for selecionada
+        }
+      });
+    });
+  </script>
 </body>

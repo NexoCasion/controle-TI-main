@@ -159,7 +159,8 @@ th[data-sort-col]:hover {
    ========================= */
 
 .btn-group-vertical {
-  gap: 10px; /* espaçamento moderno entre botões */
+  gap: 10px;
+  /* espaçamento moderno entre botões */
 }
 
 .btn-group-vertical .btn {
@@ -305,7 +306,8 @@ th[data-sort-col]:hover {
 
 /* Editar (tem classe .btn-edit no seu HTML) */
 .table .btn-group .btn-edit {
-  background: rgba(214, 0, 28, 0.08); /* usa seu --brand, mas “soft” */
+  background: rgba(214, 0, 28, 0.08);
+  /* usa seu --brand, mas “soft” */
   border-color: rgba(214, 0, 28, 0.22);
   color: #b00016;
 }
@@ -420,7 +422,8 @@ body {
 
 header {
   background: transparent !important;
-  padding: 18px 0; /* dá um respiro igual ao resto */
+  padding: 18px 0;
+  /* dá um respiro igual ao resto */
 }
 
 /* tira a barra branca full-width e transforma em “card” central */
@@ -431,7 +434,7 @@ header {
 }
 
 /* o card do header (logo + botão) */
-.navbar.navbar-light.bg-light > .container {
+.navbar.navbar-light.bg-light>.container {
   background: var(--surface) !important;
   border-radius: var(--radius) !important;
   box-shadow: var(--shadow-soft) !important;
@@ -477,7 +480,8 @@ header {
 
 /* Pega exatamente os botões que abrem modal */
 .container button.btn.btn-secondary[data-bs-toggle="modal"] {
-  font-size: 0.85rem !important; /* sobrescreve o inline style .75rem */
+  font-size: 0.85rem !important;
+  /* sobrescreve o inline style .75rem */
   border-radius: 999px !important;
   padding: 10px 16px !important;
 
@@ -493,7 +497,8 @@ header {
 }
 
 .btn-importcsv {
-  font-size: 0.85rem !important; /* sobrescreve o inline style .75rem */
+  font-size: 0.85rem !important;
+  /* sobrescreve o inline style .75rem */
   border-radius: 999px !important;
   padding: 10px 16px !important;
 
@@ -520,7 +525,7 @@ header {
 
 /* Se quiser que esses CTAs fiquem “centralizados” mesmo com texto alinhado,
    isso ajuda sem mexer no HTML */
-.container > button.btn.btn-secondary[data-bs-toggle="modal"] {
+.container>button.btn.btn-secondary[data-bs-toggle="modal"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -531,32 +536,35 @@ header {
    ========================= */
 
 /* garante que o card principal (conteúdo) fique consistente */
-body > .container,
-header + .container,
-.headerComponent + .container {
-  max-width: 1100px; /* deixa tudo “proporcional” */
+body>.container,
+header+.container,
+.headerComponent+.container {
+  max-width: 1100px;
+  /* deixa tudo “proporcional” */
   margin-left: auto;
   margin-right: auto;
 }
 
 /* centraliza só o TÍTULO das listas */
-header + .container > h1,
-.headerComponent + .container > h1 {
+header+.container>h1,
+.headerComponent+.container>h1 {
   text-align: center;
-  margin-top: 6px; /* dá um respiro */
+  margin-top: 6px;
+  /* dá um respiro */
 }
 
 /* centraliza o botão "Adicionar/Registrar" (abre modal) */
-header + .container > button.btn[data-bs-toggle="modal"],
-.headerComponent + .container > button.btn[data-bs-toggle="modal"] {
-  display: block; /* permite margin auto centralizar */
+header+.container>button.btn[data-bs-toggle="modal"],
+.headerComponent+.container>button.btn[data-bs-toggle="modal"] {
+  display: block;
+  /* permite margin auto centralizar */
   width: fit-content;
   margin: 10px auto 14px !important;
 }
 
 /* centraliza o contador (Computadores exibidos...) */
-header + .container #totalComputadores,
-.headerComponent + .container #totalComputadores {
+header+.container #totalComputadores,
+.headerComponent+.container #totalComputadores {
   display: block;
   text-align: center;
   margin-top: 6px;
@@ -564,7 +572,8 @@ header + .container #totalComputadores,
 
 /* Home (container-fluid) às vezes dá sensação de “desalinhado” com o resto */
 .container-fluid.bg-light {
-  background: transparent !important; /* deixa o fundo igual ao site todo */
+  background: transparent !important;
+  /* deixa o fundo igual ao site todo */
   padding-top: 0 !important;
 }
 
@@ -604,7 +613,8 @@ header + .container #totalComputadores,
   letter-spacing: 0.15px;
   min-width: 230px;
 }
-.btn-verpcs{
+
+.btn-verpcs {
   border-radius: 999px;
   padding: 10px 16px;
   font-weight: 750;
@@ -612,7 +622,9 @@ header + .container #totalComputadores,
   min-width: 230px;
 
 }
+
 @media (max-width: 576px) {
+
   .maintenance-page .maintenance-nav .btn,
   .maintenance-page .maintenance-actions .btn {
     width: 100%;
@@ -637,8 +649,10 @@ header + .container #totalComputadores,
    ========================= */
 
 :root {
-  --wine: #6d0f1b; /* vinho */
-  --wine-hover: #721622; /* vinho mais escuro */
+  --wine: #6d0f1b;
+  /* vinho */
+  --wine-hover: #721622;
+  /* vinho mais escuro */
 }
 
 /* Caso o botão seja btn-info (azul do Bootstrap) */
@@ -656,12 +670,12 @@ header + .container #totalComputadores,
   color: #fff !important;
 }
 
-.btn-group-vertical .btn-primary{
+.btn-group-vertical .btn-primary {
   color: black !important;
 }
 
-.btn-group-vertical .btn-primary:hover{
-  background:#2b80ff !important;
+.btn-group-vertical .btn-primary:hover {
+  background: #2b80ff !important;
   border-color: #0d6efd !important;
   color: black !important;
 }
@@ -747,11 +761,12 @@ header + .container #totalComputadores,
 .maintenance-page .maintenance-actions a.btn.btn-secondary:active {
   transform: translateY(0);
 }
+
 /* =========================
    Manutenção: status FINALIZADA verdinho ao lado oposto do título
    ========================= */
 
-.maintenance-page .maint-titlebar{
+.maintenance-page .maint-titlebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -759,7 +774,7 @@ header + .container #totalComputadores,
   flex-wrap: wrap;
 }
 
-.maintenance-page .maint-finalizada{
+.maintenance-page .maint-finalizada {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -767,7 +782,8 @@ header + .container #totalComputadores,
   padding: 10px 14px;
   border-radius: 999px;
 
-  background: rgba(16, 185, 129, 0.14);   /* verdinho soft */
+  background: rgba(16, 185, 129, 0.14);
+  /* verdinho soft */
   border: 1px solid rgba(16, 185, 129, 0.28);
   color: #065f46;
 
@@ -775,16 +791,18 @@ header + .container #totalComputadores,
   letter-spacing: 0.15px;
 }
 
-.maintenance-page .maint-finalizada i{
-  color: #10b981; /* ícone verdinho */
+.maintenance-page .maint-finalizada i {
+  color: #10b981;
+  /* ícone verdinho */
 }
 
 /* Em telas pequenas, status vai pra linha de baixo (ainda alinhado) */
-@media (max-width: 576px){
-  .maintenance-page .maint-finalizada{
+@media (max-width: 576px) {
+  .maintenance-page .maint-finalizada {
     width: fit-content;
   }
 }
+
 /* =========================
    COMPUTADORES (Tabela) — Botões "Editar" e "Ver" iguais (pílulas idênticas)
    ========================= */
@@ -796,10 +814,14 @@ header + .container #totalComputadores,
 
 /* força os dois botões da coluna Ações a ficarem do mesmo tamanho */
 .table .btn-group .btn {
-  min-width: 86px;                 /* mesma largura */
-  height: 44px;                    /* mesma altura */
-  padding: 0 14px !important;      /* padding consistente */
-  border-radius: 14px !important;  /* “pílula” */
+  min-width: 86px;
+  /* mesma largura */
+  height: 44px;
+  /* mesma altura */
+  padding: 0 14px !important;
+  /* padding consistente */
+  border-radius: 14px !important;
+  /* “pílula” */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -812,6 +834,7 @@ header + .container #totalComputadores,
 .table .btn-group .btn i {
   font-size: 0.95em;
 }
+
 /* Ver: tira o azul chamativo e deixa clean */
 .table .btn-group .btn.btn-outline-info,
 .table .btn-group .btn.btn-info {
@@ -825,6 +848,7 @@ header + .container #totalComputadores,
   background: rgba(17, 24, 39, 0.09) !important;
   border-color: rgba(17, 24, 39, 0.18) !important;
 }
+
 /* =========================
    MODAL EDITAR PC (modalEditPc)
    - Enviar: vermelho igual "Ver manutenção" + hover vinho
@@ -841,7 +865,8 @@ header + .container #totalComputadores,
 
 /* 1) ENVIAR (hoje é btn-success no edit_pc_form.ejs) -> vermelho + hover vinho */
 #modalEditPc .btn.btn-success {
-  background: var(--brand) !important;       /* seu vermelho padrão */
+  background: var(--brand) !important;
+  /* seu vermelho padrão */
   border-color: var(--brand) !important;
   color: #fff !important;
 }
@@ -892,6 +917,7 @@ header + .container #totalComputadores,
   outline: none !important;
   box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.15) !important;
 }
+
 /* =========================
    MODAIS DE REGISTRO — "Enviar" vermelho + hover vinho
    (PC / Empresa / Manutenção)
@@ -900,7 +926,7 @@ header + .container #totalComputadores,
 /* base: garante a “pílula” igual ao resto do seu padrão */
 #modalRegisterPc .btn.btn-primary,
 #modalRegisterEmpresa .btn.btn-primary,
-#modalRegisterManutencao .btn.btn-primary{
+#modalRegisterManutencao .btn.btn-primary {
   border-radius: 999px !important;
   padding: 10px 16px !important;
   font-weight: 750 !important;
@@ -915,7 +941,7 @@ header + .container #totalComputadores,
 /* hover vinho (tira o hover “azulado / brightness” e força vinho) */
 #modalRegisterPc .btn.btn-primary:hover,
 #modalRegisterEmpresa .btn.btn-primary:hover,
-#modalRegisterManutencao .btn.btn-primary:hover{
+#modalRegisterManutencao .btn.btn-primary:hover {
   background: var(--wine-hover, #520a13) !important;
   border-color: var(--wine-hover, #520a13) !important;
   color: #fff !important;
@@ -930,12 +956,14 @@ header + .container #totalComputadores,
 #modalRegisterEmpresa .btn.btn-primary:focus-visible,
 #modalRegisterManutencao .btn.btn-primary:focus,
 #modalRegisterManutencao .btn.btn-primary:active,
-#modalRegisterManutencao .btn.btn-primary:focus-visible{
+#modalRegisterManutencao .btn.btn-primary:focus-visible {
   outline: none !important;
   box-shadow: 0 0 0 0.25rem var(--wine-glow, rgba(109, 15, 27, 0.35)) !important;
 }
+
 .editar-pcs .btn-edit {
-  background: rgba(214, 0, 28, 0.08) !important; /* usa seu --brand, mas “soft” */
+  background: rgba(214, 0, 28, 0.08) !important;
+  /* usa seu --brand, mas “soft” */
   border-color: rgba(214, 0, 28, 0.22) !important;
   color: #b00016 !important;
 }

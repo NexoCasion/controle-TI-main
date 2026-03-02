@@ -297,7 +297,7 @@ router.post('/condenar-maquina', async (req, res) => {
 });
 
 //TRANSFERENCIAS
-router.get('/transferir', async (req, res) => {});
+router.get('/transferir', async (req, res) => { });
 
 router.post('/transferir', async (req, res) => {
   console.log(req.body);

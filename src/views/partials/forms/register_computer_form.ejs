@@ -6,13 +6,13 @@
 
 <div class="d-flex align-items-center justify-content-start mb-4">
   <% if (_inModal) { %>
-    <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
-      <i class="fas fa-arrow-left"></i>
-    </button>
+  <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+    <i class="fas fa-arrow-left"></i>
+  </button>
   <% } else { %>
-    <a href="javascript:history.back()" class="btn btn-back">
-      <i class="fas fa-arrow-left"></i>
-    </a>
+  <a href="javascript:history.back()" class="btn btn-back">
+    <i class="fas fa-arrow-left"></i>
+  </a>
   <% } %>
 
   <h2 class="card-title mb-0 mx-auto">Registrar Computador</h2>
@@ -38,7 +38,7 @@
     <label for="empresa">Empresa</label>
     <select class="form-select" name="empresaId">
       <% (empresas || []).forEach(function(empresa) { %>
-        <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+      <option value="<%= empresa.id %>"><%= empresa.nome %></option>
       <% }); %>
     </select>
   </div>
@@ -52,25 +52,16 @@
   <% if (_showImport) { %>
   <div class="mt-3">
     <% if (_inModal) { %>
-      <button
-        type="button"
-        id="btnOpenImportCsvFromRegister"
-        style="font-size: .75rem;"
-        class="btn btn-secondary btn-lg btn-block mb-2 btn-importcsv"
-      >
-        Importar Computadores (CSV)
-      </button>
+    <button type="button" id="btnOpenImportCsvFromRegister" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2 btn-importcsv">
+      Importar Computadores (CSV)
+    </button>
     <% } else { %>
-      <a
-        href="/importar-csv"
-        style="font-size: .75rem;"
-        class="btn btn-secondary btn-lg btn-block mb-2 "
-      >
-        Importar Computadores
-      </a>
+    <a href="/importar-csv" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2 ">
+      Importar Computadores
+    </a>
     <% } %>
   </div>
-<% } %>
+  <% } %>
 
 
 </form>

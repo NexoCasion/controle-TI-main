@@ -1,41 +1,30 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>Lista de Manutenções</title>
 
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/css/app.css" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <body>
-    <header>
-      <%- include("../partials/header.ejs") %>
-    </header>
+  <title>Lista de Manutenções</title>
 
-    <div class="container">
-      <a href="javascript:history.back()" class="btn btn-back">
-       <i class="fas fa-arrow-left"></i>
-       </a>
-      <div class="text-center align-items-center">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+
+<body>
+  <header>
+    <%- include("../partials/header.ejs") %>
+  </header>
+
+  <div class="container">
+    <a href="javascript:history.back()" class="btn btn-back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="text-center align-items-center">
       <h1 class="mt-4 mb-4">Lista de Manutenções</h1>
 
-      <button
-        type="button"
-        style="font-size: 0.75rem"
-        class="btn btn-secondary btn-lg btn-block mb-2"
-        data-bs-toggle="modal"
-        data-bs-target="#modalRegisterManutencao"
-      >
+      <button type="button" style="font-size: 0.75rem" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterManutencao">
         Registrar Manutenção
       </button>
 
@@ -57,7 +46,7 @@
           <select id="empresaFiltro" class="form-select">
             <option value="todas" selected>Todas as Empresas</option>
             <% empresas.forEach(function(empresa) { %>
-              <option value="<%= empresa.nome %>"><%= empresa.nome %></option>
+            <option value="<%= empresa.nome %>"><%= empresa.nome %></option>
             <% }); %>
           </select>
         </div>
@@ -66,12 +55,7 @@
       <div class="row mb-4">
         <div class="col-12">
           <label for="pesquisaFiltro" class="form-label">Pesquisar:</label>
-          <input
-            id="pesquisaFiltro"
-            type="text"
-            class="form-control"
-            placeholder="Patrimônio, empresa, local ou descrição..."
-          />
+          <input id="pesquisaFiltro" type="text" class="form-control" placeholder="Patrimônio, empresa, local ou descrição..." />
         </div>
       </div>
 
@@ -83,82 +67,47 @@
         </div>
 
         <div class="col-md-6">
-        <label for="dataFimFiltro" class="form-label">Data da manutenção (até):</label>
+          <label for="dataFimFiltro" class="form-label">Data da manutenção (até):</label>
 
-        <div class="input-group">
+          <div class="input-group">
             <input id="dataFimFiltro" type="date" class="form-control" />
-            <button
-            id="limparDataBtn"
-            class="btn btn-outline-secondary"
-            type="button"
-            title="Limpar datas"
-            >
-            <i class="fas fa-eraser"></i>
+            <button id="limparDataBtn" class="btn btn-outline-secondary" type="button" title="Limpar datas">
+              <i class="fas fa-eraser"></i>
             </button>
+          </div>
         </div>
-        </div>
-        </div>
+      </div>
 
       <!-- Tabela de manutenções -->
       <table class="table">
         <thead>
           <tr>
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(0)"
-              data-sort-col="0"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(0)" data-sort-col="0">
               # <span class="sort-indicator"></span>
             </th>
 
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(1)"
-              data-sort-col="1"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(1)" data-sort-col="1">
               Número de patrimônio <span class="sort-indicator"></span>
             </th>
 
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(2)"
-              data-sort-col="2"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(2)" data-sort-col="2">
               Empresa <span class="sort-indicator"></span>
             </th>
 
             <th scope="col">Setor</th>
 
             <!-- ATENÇÃO: índices corrigidos (Descrição é coluna 4) -->
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(4)"
-              data-sort-col="4"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(4)" data-sort-col="4">
               Descrição <span class="sort-indicator"></span>
             </th>
 
             <!-- Status é coluna 5 -->
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(5)"
-              data-sort-col="5"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(5)" data-sort-col="5">
               Status <span class="sort-indicator"></span>
             </th>
 
             <!-- Data é coluna 6 -->
-            <th
-              scope="col"
-              style="cursor: pointer"
-              onclick="ordenarTabela(6)"
-              data-sort-col="6"
-            >
+            <th scope="col" style="cursor: pointer" onclick="ordenarTabela(6)" data-sort-col="6">
               Data da manutenção <span class="sort-indicator"></span>
             </th>
 
@@ -168,60 +117,51 @@
 
         <tbody id="tableBody">
           <% manutencoes.forEach(function(manutencao, index) { %>
-            <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
-            <%
+          <% let status = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao'; %>
+          <%
               const dataManutencao =
                 (manutencao.dataSaida && String(manutencao.dataSaida).trim() !== "")
                   ? manutencao.dataSaida
                   : manutencao.dataEntrada;
             %>
 
-            <tr
-              data-status="<%= status %>"
-              data-empresa="<%= manutencao.empresa %>"
-              data-condenado="<%= manutencao.pcCondenado ? '1' : '0' %>"
-              data-data-manutencao="<%= dataManutencao || '' %>"
-            >
-              <th scope="row"><%= index + 1 %></th>
+          <tr data-status="<%= status %>" data-empresa="<%= manutencao.empresa %>" data-condenado="<%= manutencao.pcCondenado ? '1' : '0' %>" data-data-manutencao="<%= dataManutencao || '' %>">
+            <th scope="row"><%= index + 1 %></th>
 
-              <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
-              <td><%= manutencao.empresa %></td>
-              <td><%= manutencao.setor || '-' %></td>
-              <td><%= manutencao.descricao || 'Sem descrição' %></td>
+            <td><%= manutencao.computadorId %> - <%= manutencao.pcName %></td>
+            <td><%= manutencao.empresa %></td>
+            <td><%= manutencao.setor || '-' %></td>
+            <td><%= manutencao.descricao || 'Sem descrição' %></td>
 
-              <td class="align-middle">
-                <% if (manutencao.pcCondenado) { %>
-                  <span class="badge bg-danger">PC CONDENADO</span>
-                  <span class="visually-hidden">condenado</span>
-                <% } else if (manutencao.dataSaida) { %>
-                  <i class="fas fa-square-check text-success"></i>
-                  <span class="visually-hidden">finalizada</span>
-                <% } else { %>
-                  <i class="fas fa-clock text-warning"></i>
-                  <span class="visually-hidden">em andamento</span>
-                <% } %>
-              </td>
+            <td class="align-middle">
+              <% if (manutencao.pcCondenado) { %>
+              <span class="badge bg-danger">PC CONDENADO</span>
+              <span class="visually-hidden">condenado</span>
+              <% } else if (manutencao.dataSaida) { %>
+              <i class="fas fa-square-check text-success"></i>
+              <span class="visually-hidden">finalizada</span>
+              <% } else { %>
+              <i class="fas fa-clock text-warning"></i>
+              <span class="visually-hidden">em andamento</span>
+              <% } %>
+            </td>
 
-              <td class="align-middle">
-                <% if (dataManutencao) { %>
-                  <time
-                    class="dt js-dt"
-                    datetime="<%= dataManutencao %>"
-                    data-iso="<%= dataManutencao %>"
-                  ><%= dataManutencao %></time>
-                <% } else { %>
-                  -
-                <% } %>
-              </td>
+            <td class="align-middle">
+              <% if (dataManutencao) { %>
+              <time class="dt js-dt" datetime="<%= dataManutencao %>" data-iso="<%= dataManutencao %>"><%= dataManutencao %></time>
+              <% } else { %>
+              -
+              <% } %>
+            </td>
 
-              <td class="align-middle">
-                <div class="btn-group" role="group" aria-label="Ações">
-                  <a class="btn btn-outline-info btn-sm" href="/ver-manutencao?id=<%= manutencao.id %>">
-                    <i class="fas fa-eye"></i> Ver
-                  </a>
-                </div>
-              </td>
-            </tr>
+            <td class="align-middle">
+              <div class="btn-group" role="group" aria-label="Ações">
+                <a class="btn btn-outline-info btn-sm" href="/ver-manutencao?id=<%= manutencao.id %>">
+                  <i class="fas fa-eye"></i> Ver
+                </a>
+              </div>
+            </td>
+          </tr>
           <% }); %>
         </tbody>
       </table>
@@ -252,7 +192,10 @@
         if (Number.isNaN(d.getTime())) return iso;
 
         const data = d.toLocaleDateString("pt-BR");
-        const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const hora = d.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
         return `${data} ${hora}`;
       }
 
@@ -329,9 +272,9 @@
           const col = parseInt(th.getAttribute("data-sort-col"), 10);
 
           if (col === lastSortCol) {
-            span.innerHTML = lastSortAsc
-              ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
-              : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
+            span.innerHTML = lastSortAsc ?
+              '<i class="fas fa-sort-up" style="margin-left:6px;"></i>' :
+              '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
           }
         });
       }
@@ -363,8 +306,7 @@
           const numA = parseFloat(valorA.replace(/\D/g, ""));
           const numB = parseFloat(valorB.replace(/\D/g, ""));
 
-          const ambosNumeros =
-            !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
+          const ambosNumeros = !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
 
           if (ambosNumeros) {
             return asc ? numA - numB : numB - numA;
@@ -385,12 +327,12 @@
       dataDeInput.addEventListener("change", aplicarFiltros);
       dataAteInput.addEventListener("change", aplicarFiltros);
       limparDataBtn.addEventListener("click", () => {
-      dataDeInput.value = "";
-      dataAteInput.value = "";
-      aplicarFiltros();
-    });
+        dataDeInput.value = "";
+        dataAteInput.value = "";
+        aplicarFiltros();
+      });
 
-    
+
 
       window.addEventListener("DOMContentLoaded", () => {
         // garante default (mesmo que já esteja no HTML)
@@ -401,5 +343,6 @@
     </script>
 
     <%- include("../partials/modals/modal_register_manutencao") %>
-  </body>
+</body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,15 +17,15 @@
   </header>
 
   <% if (alert) { %>
-    <script>
-      alert('<%= alert %>');
-    </script>
+  <script>
+    alert('<%= alert %>');
+  </script>
   <% } %>
 
   <div class="container">
     <a href="javascript:history.back()" class="btn btn-back">
-       <i class="fas fa-arrow-left"></i>
-       </a>
+      <i class="fas fa-arrow-left"></i>
+    </a>
     <h1 class="mt-4 mb-4">Informações do Computador</h1>
 
     <div class="card p-3 mb-3" style="border: 0;">
@@ -43,24 +44,12 @@
     </div>
 
     <!-- Botões (Editar = igual "Ver PC" na manutenção | Transferir = igual "Voltar") -->
-    <div class="maintenance-"> 
+    <div class="maintenance-">
       <div class="d-flex gap-2 justify-content-center flex-wrap  ">
-        <button
-          type="button"
-          class="btn btn-outline-secondary btn-sm btn-verpcs"
-          id="btnTransferPcFromView"
-          data-bs-toggle="modal"
-          data-bs-target="#modalTransferPc"
-        >
+        <button type="button" class="btn btn-outline-secondary btn-sm btn-verpcs" id="btnTransferPcFromView" data-bs-toggle="modal" data-bs-target="#modalTransferPc">
           <i class="fas fa-exchange-alt  "></i> Transferir Unidade
         </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-sm btn-verpcs"
-          id="btnEditPcFromView"
-          data-bs-toggle="modal"
-          data-bs-target="#modalEditPc"
-        >
+        <button type="button" class="btn btn-primary btn-sm btn-verpcs" id="btnEditPcFromView" data-bs-toggle="modal" data-bs-target="#modalEditPc">
           <i class="fas fa-pencil-alt "></i> Editar PC
         </button>
 
@@ -80,7 +69,7 @@
 
   <script>
     // @ts-nocheck
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
       // ====== Data de cadastro (clean) ======
       const createdAt = "<%= computador.createdAt %>";
       const createdAtFormatted = new Date(createdAt).toLocaleString("pt-BR", {
@@ -191,12 +180,26 @@
             const thead = document.createElement("thead");
             const trHead = document.createElement("tr");
 
-            const headers = [
-              { label: "ID", index: 0 },
-              { label: "Data de Entrada", index: 1 },
-              { label: "Data de Saída", index: 2 },
-              { label: "Descrição", index: 3 },
-              { label: "Ver Manutenção", index: null },
+            const headers = [{
+                label: "ID",
+                index: 0
+              },
+              {
+                label: "Data de Entrada",
+                index: 1
+              },
+              {
+                label: "Data de Saída",
+                index: 2
+              },
+              {
+                label: "Descrição",
+                index: 3
+              },
+              {
+                label: "Ver Manutenção",
+                index: null
+              },
             ];
 
             headers.forEach((h) => {
@@ -268,4 +271,5 @@
     });
   </script>
 </body>
+
 </html>

@@ -1,90 +1,81 @@
 <body>
-    
-    <%- include('../main') %>
-    <%- include("./../partials/header.ejs") %>
-    <link rel="stylesheet" href="/css/app.css">
-   
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-      rel="stylesheet"
-    />
-    <div class="container ">
-        
-        <a href="javascript:history.back()" class="btn btn-back">
-       <i class="fas fa-arrow-left"></i>
-       </a>
-        <div class="text-center align-items-center">
-        <h1 class="mt-4 mb-4">Lista de Empresas</h1>
-            <button
-        type="button"
-        style="font-size: .75rem;"
-        class="btn btn-secondary btn-lg btn-block mb-2"
-        data-bs-toggle="modal"
-        data-bs-target="#modalRegisterEmpresa"
-        >
+
+  <%- include('../main') %>
+  <%- include("./../partials/header.ejs") %>
+  <link rel="stylesheet" href="/css/app.css">
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <div class="container ">
+
+    <a href="javascript:history.back()" class="btn btn-back">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="text-center align-items-center">
+      <h1 class="mt-4 mb-4">Lista de Empresas</h1>
+      <button type="button" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterEmpresa">
         Inserir Empresa
-        </button>
-        </div>
-        
-        <table class="table">
-            <thead>
-            <tr>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(0)">#</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(1)">Nome</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(2)">Descrição</th>
-            </tr>
-            </thead>
-            <tbody id="tableBodyEmpresas">
-            <% empresas.forEach(function(empresa, index) { %>
-                <tr>
-                <th scope="row"><%= index + 1 %></th>
-                <td><%= empresa.nome %></td>
-                <td><%= empresa.descricao || 'Sem descrição' %></td>
-                </tr>
-            <% }); %>
-            </tbody>
-        </table>
+      </button>
     </div>
-    <!-- Adicionando Bootstrap JS (opcional, caso queira usar funcionalidades como modals ou dropdowns) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
-    <%- include("../partials/modals/modal_register_empresa") %>
-    <script>
-  const tbodyEmpresas = document.getElementById("tableBodyEmpresas");
 
-  let ultimaColuna = null;
-  let ordemAscendente = true;
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="cursor:pointer" onclick="ordenarEmpresas(0)">#</th>
+          <th style="cursor:pointer" onclick="ordenarEmpresas(1)">Nome</th>
+          <th style="cursor:pointer" onclick="ordenarEmpresas(2)">Descrição</th>
+        </tr>
+      </thead>
+      <tbody id="tableBodyEmpresas">
+        <% empresas.forEach(function(empresa, index) { %>
+        <tr>
+          <th scope="row"><%= index + 1 %></th>
+          <td><%= empresa.nome %></td>
+          <td><%= empresa.descricao || 'Sem descrição' %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <!-- Adicionando Bootstrap JS (opcional, caso queira usar funcionalidades como modals ou dropdowns) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+  <%- include("../partials/modals/modal_register_empresa") %>
+  <script>
+    const tbodyEmpresas = document.getElementById("tableBodyEmpresas");
 
-  function ordenarEmpresas(colunaIndex) {
-    const linhas = Array.from(tbodyEmpresas.querySelectorAll("tr"));
+    let ultimaColuna = null;
+    let ordemAscendente = true;
 
-    // Alterna a ordem se clicar na mesma coluna
-    if (ultimaColuna === colunaIndex) {
-      ordemAscendente = !ordemAscendente;
-    } else {
-      ordemAscendente = true;
-    }
+    function ordenarEmpresas(colunaIndex) {
+      const linhas = Array.from(tbodyEmpresas.querySelectorAll("tr"));
 
-    ultimaColuna = colunaIndex;
-
-    linhas.sort((a, b) => {
-      const valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
-      const valorB = b.cells[colunaIndex].innerText.trim().toLowerCase();
-
-      const numA = parseFloat(valorA);
-      const numB = parseFloat(valorB);
-
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return ordemAscendente ? numA - numB : numB - numA;
+      // Alterna a ordem se clicar na mesma coluna
+      if (ultimaColuna === colunaIndex) {
+        ordemAscendente = !ordemAscendente;
+      } else {
+        ordemAscendente = true;
       }
 
-      return ordemAscendente
-        ? valorA.localeCompare(valorB)
-        : valorB.localeCompare(valorA);
-    });
+      ultimaColuna = colunaIndex;
 
-    linhas.forEach(linha => tbodyEmpresas.appendChild(linha));
-  }
+      linhas.sort((a, b) => {
+        const valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
+        const valorB = b.cells[colunaIndex].innerText.trim().toLowerCase();
 
-  window.ordenarEmpresas = ordenarEmpresas;
-</script>
+        const numA = parseFloat(valorA);
+        const numB = parseFloat(valorB);
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return ordemAscendente ? numA - numB : numB - numA;
+        }
+
+        return ordemAscendente ?
+          valorA.localeCompare(valorB) :
+          valorB.localeCompare(valorA);
+      });
+
+      linhas.forEach(linha => tbodyEmpresas.appendChild(linha));
+    }
+
+    window.ordenarEmpresas = ordenarEmpresas;
+  </script>
 </body>

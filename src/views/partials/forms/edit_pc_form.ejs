@@ -11,13 +11,13 @@
 
 <div class="d-flex align-items-center justify-content-start mb-4">
   <% if (_inModal) { %>
-    <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
-      <i class="fas fa-arrow-left"></i>
-    </button>
+  <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+    <i class="fas fa-arrow-left"></i>
+  </button>
   <% } else { %>
-    <a href="javascript:history.back()" class="btn btn-back">
-      <i class="fas fa-arrow-left"></i>
-    </a>
+  <a href="javascript:history.back()" class="btn btn-back">
+    <i class="fas fa-arrow-left"></i>
+  </a>
   <% } %>
 
   <h2 class="card-title mb-0 mx-auto">Editar Computador</h2>
@@ -25,29 +25,17 @@
 
 <form id="<%= formId %>" action="<%= _actionUrl %>" method="post">
   <% if (typeof id !== 'undefined') { %>
-    <input type="hidden" name="id" value="<%= id %>">
+  <input type="hidden" name="id" value="<%= id %>">
   <% } %>
 
   <div class="form-group">
     <label for="<%= patrimonioId %>">Numero de patrimonio do Computador</label>
-    <input
-      type="text"
-      class="form-control"
-      id="<%= patrimonioId %>"
-      name="patrimonio"
-      value="<%= (typeof patrimonio !== 'undefined' && patrimonio !== null) ? patrimonio : '' %>"
-    >
+    <input type="text" class="form-control" id="<%= patrimonioId %>" name="patrimonio" value="<%= (typeof patrimonio !== 'undefined' && patrimonio !== null) ? patrimonio : '' %>">
   </div>
 
   <div class="form-group">
     <label for="<%= setorId %>">setor</label>
-    <input
-      type="text"
-      class="form-control"
-      id="<%= setorId %>"
-      name="setor"
-      value="<%= (typeof setor !== 'undefined' && setor !== null) ? setor : '' %>"
-    >
+    <input type="text" class="form-control" id="<%= setorId %>" name="setor" value="<%= (typeof setor !== 'undefined' && setor !== null) ? setor : '' %>">
   </div>
 
   <div class="form-group">
@@ -62,15 +50,15 @@
   </div>
 </form>
 <% if (_inModal) { %>
-  <hr>
+<hr>
 
-  <div class="d-flex gap-2 justify-content-center flex-wrap">
-    <button type="button" class="btn btn-secondary" id="btnAddManutencaoFromEdit">
-      Adicionar Manutenção
-    </button>
+<div class="d-flex gap-2 justify-content-center flex-wrap">
+  <button type="button" class="btn btn-secondary" id="btnAddManutencaoFromEdit">
+    Adicionar Manutenção
+  </button>
 
-    <button type="button" class="btn btn-warning" id="btnTransferirFromEdit">
-      Transferir Unidade
-    </button>
-  </div>
+  <button type="button" class="btn btn-warning" id="btnTransferirFromEdit">
+    Transferir Unidade
+  </button>
+</div>
 <% } %>
