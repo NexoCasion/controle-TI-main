@@ -18,6 +18,10 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: false,
   },
+    specs_override: {
+    type: Sequelize.TEXT,
+    allowNull: true,
+  },
   // Adicionando a chave estrangeira para a tabela Empresa
   empresaId: {
     type: Sequelize.INTEGER,
@@ -53,6 +57,7 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: true,
   },
+  
 });
 
 Computador.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa' });

@@ -10,6 +10,9 @@ require('./models/Computador');
 require('./models/Manutencao');
 require('./models/ManutencaoItem');
 require('./models/Transferencia');
+require('./models/Material');
+require('./models/ManutencaoMaterial');
+require('./models/MaterialMovimento');
 
 const app = express();
 

@@ -15,6 +15,8 @@ const ManutencaoController = require('./controllers/manutencao');
 const manutencaoController = new ManutencaoController();
 const TransferenciaController = require('./controllers/transferencia');
 const transferenciaController = new TransferenciaController();
+const MaterialController = require('./controllers/material');
+const materialController = new MaterialController();
 
 router.get('/test', (req, res) => {
   const manutencoesAbertas = manutencaoController.findOpened();
@@ -210,19 +212,49 @@ router.get('/ver-manutencao', async (req, res) => {
 });
 
 router.post('/add-item-manutencao', async (req, res) => {
-  const { manutencaoId, descricao } = req.body;
+  try {
+    const {
+      manutencaoId,
+      descricao,
 
-  const itemManutencao = await manutencaoController.addItemManutencao(manutencaoId, descricao);
+      // novos campos do procedimento
+      tipo,          // 'TROCA_PECA' | 'LIMPEZA' | 'MANUT_SIMPLES'
+      materialId,    // somente se TROCA_PECA
+      quantidade,    // somente se TROCA_PECA
+      specs_depois,  // string editada (somente se TROCA_PECA)
+    } = req.body;
 
-  return res.redirect(`/ver-manutencao?id=${manutencaoId}`);
+    await manutencaoController.addItemManutencao({
+      manutencaoId: Number(manutencaoId),
+      descricao,
+      tipo: tipo || null,
+      materialId: materialId ? Number(materialId) : null,
+      quantidade: quantidade ? Number(quantidade) : 1,
+      specs_depois: specs_depois || null,
+    });
+
+    // ✅ Se você usa formulário normal (sem fetch), redireciona:
+    // Ajuste o redirect para sua rota/tela de manutenção se precisar.
+    // Exemplo comum:
+    // return res.redirect(`/manutencao/${manutencaoId}`);
+    //
+    // Por enquanto, vou devolver JSON (funciona pra fetch).
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao adicionar procedimento:', err);
+    return res.status(400).json({ error: err.message });
+  }
 });
 
 router.get('/get-itens-manutencao', async (req, res) => {
-  const { id } = req.query;
-
-  const manutencaoItensList = await manutencaoController.getItemManutencao(id);
-
-  return manutencaoItensList;
+  try {
+    const { id } = req.query;
+    const manutencaoItensList = await manutencaoController.getItemManutencao(Number(id));
+    return res.json(manutencaoItensList);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ error: err.message });
+  }
 });
 
 router.get('/encerrar-manutencao', async (req, res) => {
@@ -341,5 +373,70 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
     return res.status(500).send('Erro ao importar CSV: ' + error.message);
   }
 });
+/// MATERIAIS ///
 
+// Listar materiais (com filtros opcionais):
+// /materiais?tipo=Fonte&somenteDisponivel=1&q=razer
+router.get('/materiais', async (req, res) => {
+  try {
+    const { tipo, somenteDisponivel, q } = req.query;
+
+    const list = await materialController.getAll({
+      tipo,
+      somenteDisponivel: String(somenteDisponivel) === '1' || String(somenteDisponivel).toLowerCase() === 'true',
+      q,
+    });
+
+    return res.json(list);
+  } catch (err) {
+    console.error('Erro ao listar materiais:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Tipos distintos (pra select)
+router.get('/materiais-tipos', async (req, res) => {
+  try {
+    const tipos = await materialController.getTipos();
+    return res.json(tipos);
+  } catch (err) {
+    console.error('Erro ao buscar tipos:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Criar material
+router.post('/materiais', async (req, res) => {
+  try {
+    const created = await materialController.create(req.body);
+    return res.status(201).json({ ok: true, id: created.id });
+  } catch (err) {
+    console.error('Erro ao criar material:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// Editar material
+router.put('/materiais/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await materialController.update(Number(id), req.body);
+    return res.json({ ok: true, id: updated.id });
+  } catch (err) {
+    console.error('Erro ao atualizar material:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// Movimentos (log)
+router.get('/materiais/:id/movimentos', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const movs = await materialController.getMovimentos(Number(id));
+    return res.json(movs);
+  } catch (err) {
+    console.error('Erro ao buscar movimentos:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
 module.exports = router;
