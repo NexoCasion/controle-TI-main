@@ -1,0 +1,327 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Materiais</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddMaterial">
+      Adicionar material
+    </button>
+  </div>
+
+  <div class="card p-3 mb-3">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input class="form-control" id="q" placeholder="Buscar (material, tipo, marca, NF...)">
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" id="filtroTipo">
+          <option value="">Todos os tipos</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" id="somenteDisponivel">
+          <label class="form-check-label" for="somenteDisponivel">Somente disponíveis</label>
+        </div>
+      </div>
+
+      <div class="col-md-2 text-end">
+        <button class="btn btn-outline-secondary w-100" id="btnFiltrar">Filtrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-striped align-middle mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Material</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Especificação</th>
+            <th>Disponível</th>
+            <th>Em uso</th>
+            <th>NF</th>
+            <th style="width: 140px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyMateriais">
+          <tr><td colspan="9" class="text-muted p-3">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Adicionar Material -->
+<div class="modal fade" id="modalAddMaterial" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formAddMaterial">
+      <div class="modal-header">
+        <h5 class="modal-title">Adicionar material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Material</label>
+          <input class="form-control" name="material" required>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Tipo</label>
+          <input class="form-control" name="tipo" required placeholder="Ex: Fonte, Memória, Armazenamento...">
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Marca</label>
+          <input class="form-control" name="marca">
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Especificação</label>
+          <input class="form-control" name="especificacao" placeholder="Ex: 300W, DDR4 8GB, SSD 240GB...">
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Qtd disponível</label>
+            <input class="form-control" type="number" name="quantidade_disponivel" min="0" value="0" required>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Qtd em uso</label>
+            <input class="form-control" type="number" name="quantidade_em_uso" min="0" value="0" required>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label">NF</label>
+          <input class="form-control" name="nf">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" type="submit" id="btnSalvarMaterial">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Editar Material -->
+<div class="modal fade" id="modalEditMaterial" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formEditMaterial">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" name="id" id="editId">
+
+        <div class="mb-2">
+          <label class="form-label">Material</label>
+          <input class="form-control" name="material" id="editMaterial" required>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Tipo</label>
+          <input class="form-control" name="tipo" id="editTipo" required>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Marca</label>
+          <input class="form-control" name="marca" id="editMarca">
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Especificação</label>
+          <input class="form-control" name="especificacao" id="editEspecificacao">
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Qtd disponível</label>
+            <input class="form-control" type="number" name="quantidade_disponivel" id="editQtdDisp" min="0" required>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Qtd em uso</label>
+            <input class="form-control" type="number" name="quantidade_em_uso" id="editQtdUso" min="0" required>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label">NF</label>
+          <input class="form-control" name="nf" id="editNF">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" type="submit" id="btnAtualizarMaterial">Atualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  async function fetchJson(url, opts) {
+    const res = await fetch(url, opts);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Erro na requisição');
+    return data;
+  }
+
+  const tbody = document.getElementById('tbodyMateriais');
+  const filtroTipo = document.getElementById('filtroTipo');
+  const q = document.getElementById('q');
+  const somenteDisponivel = document.getElementById('somenteDisponivel');
+  const btnFiltrar = document.getElementById('btnFiltrar');
+
+  async function carregarTipos() {
+    const tipos = await fetchJson('/materiais-tipos');
+    filtroTipo.innerHTML = '<option value="">Todos os tipos</option>';
+    tipos.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      filtroTipo.appendChild(opt);
+    });
+  }
+
+  async function carregarMateriais() {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Carregando...</td></tr>';
+
+    const params = new URLSearchParams();
+    if (filtroTipo.value) params.set('tipo', filtroTipo.value);
+    if (somenteDisponivel.checked) params.set('somenteDisponivel', '1');
+    if (q.value && q.value.trim()) params.set('q', q.value.trim());
+
+    const list = await fetchJson('/materiais?' + params.toString());
+
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Nenhum material encontrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    list.forEach((m) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${m.id}</td>
+        <td>${m.material || '-'}</td>
+        <td>${m.tipo || '-'}</td>
+        <td>${m.marca || '-'}</td>
+        <td>${m.especificacao || '-'}</td>
+        <td><strong>${m.quantidade_disponivel ?? 0}</strong></td>
+        <td>${m.quantidade_em_uso ?? 0}</td>
+        <td>${m.nf || '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" data-action="edit">Editar</button>
+        </td>
+      `;
+      tr.dataset.json = JSON.stringify(m);
+      tbody.appendChild(tr);
+    });
+  }
+
+  // criar
+  document.getElementById('formAddMaterial').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSalvarMaterial');
+    btn.disabled = true;
+
+    try {
+      const fd = new FormData(e.target);
+      const payload = Object.fromEntries(fd.entries());
+
+      payload.quantidade_disponivel = Number(payload.quantidade_disponivel || 0);
+      payload.quantidade_em_uso = Number(payload.quantidade_em_uso || 0);
+
+      await fetchJson('/materiais', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      bootstrap.Modal.getInstance(document.getElementById('modalAddMaterial')).hide();
+      e.target.reset();
+      await carregarTipos();
+      await carregarMateriais();
+    } catch (err) {
+      alert(err.message || 'Erro ao criar material.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // abrir modal editar
+  tbody.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action="edit"]');
+    if (!btn) return;
+
+    const tr = btn.closest('tr');
+    const m = JSON.parse(tr.dataset.json);
+
+    document.getElementById('editId').value = m.id;
+    document.getElementById('editMaterial').value = m.material || '';
+    document.getElementById('editTipo').value = m.tipo || '';
+    document.getElementById('editMarca').value = m.marca || '';
+    document.getElementById('editEspecificacao').value = m.especificacao || '';
+    document.getElementById('editQtdDisp').value = m.quantidade_disponivel ?? 0;
+    document.getElementById('editQtdUso').value = m.quantidade_em_uso ?? 0;
+    document.getElementById('editNF').value = m.nf || '';
+
+    new bootstrap.Modal(document.getElementById('modalEditMaterial')).show();
+  });
+
+  // atualizar
+  document.getElementById('formEditMaterial').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnAtualizarMaterial');
+    btn.disabled = true;
+
+    try {
+      const id = document.getElementById('editId').value;
+      const payload = {
+        material: document.getElementById('editMaterial').value,
+        tipo: document.getElementById('editTipo').value,
+        marca: document.getElementById('editMarca').value,
+        especificacao: document.getElementById('editEspecificacao').value,
+        quantidade_disponivel: Number(document.getElementById('editQtdDisp').value || 0),
+        quantidade_em_uso: Number(document.getElementById('editQtdUso').value || 0),
+        nf: document.getElementById('editNF').value,
+      };
+
+      await fetchJson('/materiais/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      bootstrap.Modal.getInstance(document.getElementById('modalEditMaterial')).hide();
+      await carregarTipos();
+      await carregarMateriais();
+    } catch (err) {
+      alert(err.message || 'Erro ao atualizar material.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  btnFiltrar.addEventListener('click', async () => {
+    await carregarMateriais();
+  });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await carregarTipos();
+    await carregarMateriais();
+  });
+</script>
+
+<%- include('../partials/footer') %>

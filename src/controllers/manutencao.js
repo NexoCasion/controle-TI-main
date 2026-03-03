@@ -83,7 +83,7 @@ class ManutencaoController {
     }
   }
 
-    async findById(id) {
+  async findById(id) {
     try {
       const manutencao = await Manutencao.findByPk(id, {
         include: [
@@ -139,112 +139,112 @@ class ManutencaoController {
     }
   }
 
-async addItemManutencao(payload) {
-  const {
-    manutencaoId,
-    descricao,
-    tipo = null,
-    materialId = null,
-    quantidade = 1,
-    specs_depois = null,
-  } = payload;
-
-  if (!manutencaoId) throw new Error('manutencaoId é obrigatório.');
-  if (!descricao || !descricao.trim()) throw new Error('descricao é obrigatória.');
-
-  // 1) Buscar manutenção -> computadorId
-  const manutencao = await Manutencao.findByPk(manutencaoId);
-  if (!manutencao) throw new Error('Manutenção não encontrada.');
-
-  const computadorId = manutencao.computadorId;
-  if (!computadorId) throw new Error('Manutenção sem computador vinculado.');
-
-  // 2) Buscar computador e specs atuais
-  const computador = await Computador.findByPk(computadorId);
-  if (!computador) throw new Error('Computador não encontrado.');
-
-  const specs_antes = computador.specs_override || computador.specs || null;
-
-  // 3) Se NÃO for troca de peça, salva procedimento simples
-  if (tipo !== 'TROCA_PECA') {
-    await ManutencaoItem.create({
+  async addItemManutencao(payload) {
+    const {
       manutencaoId,
-      descricao: descricao.trim(),
-      tipo: tipo || null,
-      specs_antes: null,
-      specs_depois: null,
-      material_snapshot: null,
+      descricao,
+      tipo = null,
+      materialId = null,
+      quantidade = 1,
+      specs_depois = null,
+    } = payload;
+
+    if (!manutencaoId) throw new Error('manutencaoId é obrigatório.');
+    if (!descricao || !descricao.trim()) throw new Error('descricao é obrigatória.');
+
+    // 1) Buscar manutenção -> computadorId
+    const manutencao = await Manutencao.findByPk(manutencaoId);
+    if (!manutencao) throw new Error('Manutenção não encontrada.');
+
+    const computadorId = manutencao.computadorId;
+    if (!computadorId) throw new Error('Manutenção sem computador vinculado.');
+
+    // 2) Buscar computador e specs atuais
+    const computador = await Computador.findByPk(computadorId);
+    if (!computador) throw new Error('Computador não encontrado.');
+
+    const specs_antes = computador.specs_override || computador.specs || null;
+
+    // 3) Se NÃO for troca de peça, salva procedimento simples
+    if (tipo !== 'TROCA_PECA') {
+      await ManutencaoItem.create({
+        manutencaoId,
+        descricao: descricao.trim(),
+        tipo: tipo || null,
+        specs_antes: null,
+        specs_depois: null,
+        material_snapshot: null,
+      });
+
+      return true;
+    }
+
+    // ========== TROCA DE PEÇA (transação completa) ==========
+    if (!materialId) throw new Error('materialId é obrigatório para TROCA_PECA.');
+    const qtd = Number(quantidade) || 1;
+    if (qtd <= 0) throw new Error('Quantidade inválida.');
+
+    return await database.transaction(async (t) => {
+      // 4) Buscar material e validar estoque (dentro da transação)
+      const material = await Material.findByPk(materialId, { transaction: t });
+      if (!material) throw new Error('Material não encontrado.');
+
+      if (material.quantidade_disponivel < qtd) {
+        throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
+      }
+
+      // 5) Definir specs_depois
+      const specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
+
+      // 6) Snapshot congelado (histórico)
+      const snapshot = [
+        material.tipo,
+        material.material,
+        material.marca ? `Marca: ${material.marca}` : null,
+        material.especificacao ? `Spec: ${material.especificacao}` : null,
+        material.nf ? `NF: ${material.nf}` : null,
+        `Qtd: ${qtd}`,
+      ].filter(Boolean).join(' | ');
+
+      // 7) Criar manutencaoItem
+      const item = await ManutencaoItem.create({
+        manutencaoId,
+        descricao: descricao.trim(),
+        tipo: 'TROCA_PECA',
+        specs_antes,
+        specs_depois: specsDepoisFinal,
+        material_snapshot: snapshot,
+      }, { transaction: t });
+
+      // 8) Vínculo procedimento ↔ material
+      await ManutencaoMaterial.create({
+        manutencaoItem_id: item.id,
+        material_id: material.id,
+        quantidade: qtd,
+      }, { transaction: t });
+
+      // 9) Atualizar estoque
+      material.quantidade_disponivel = material.quantidade_disponivel - qtd;
+      material.quantidade_em_uso = material.quantidade_em_uso + qtd;
+      await material.save({ transaction: t });
+
+      // 10) Log de movimento
+      await MaterialMovimento.create({
+        material_id: material.id,
+        tipo_movimento: 'SAIDA_MANUTENCAO',
+        quantidade: qtd,
+        referencia_manutencaoItem_id: item.id,
+      }, { transaction: t });
+
+      // 11) Atualizar specs_override do computador
+      if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {
+        computador.specs_override = specsDepoisFinal;
+        await computador.save({ transaction: t });
+      }
+
+      return true;
     });
-
-    return true;
   }
-
-  // ========== TROCA DE PEÇA (transação completa) ==========
-  if (!materialId) throw new Error('materialId é obrigatório para TROCA_PECA.');
-  const qtd = Number(quantidade) || 1;
-  if (qtd <= 0) throw new Error('Quantidade inválida.');
-
-  return await database.transaction(async (t) => {
-    // 4) Buscar material e validar estoque (dentro da transação)
-    const material = await Material.findByPk(materialId, { transaction: t });
-    if (!material) throw new Error('Material não encontrado.');
-
-    if (material.quantidade_disponivel < qtd) {
-      throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
-    }
-
-    // 5) Definir specs_depois
-    const specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
-
-    // 6) Snapshot congelado (histórico)
-    const snapshot = [
-      material.tipo,
-      material.material,
-      material.marca ? `Marca: ${material.marca}` : null,
-      material.especificacao ? `Spec: ${material.especificacao}` : null,
-      material.nf ? `NF: ${material.nf}` : null,
-      `Qtd: ${qtd}`,
-    ].filter(Boolean).join(' | ');
-
-    // 7) Criar manutencaoItem
-    const item = await ManutencaoItem.create({
-      manutencaoId,
-      descricao: descricao.trim(),
-      tipo: 'TROCA_PECA',
-      specs_antes,
-      specs_depois: specsDepoisFinal,
-      material_snapshot: snapshot,
-    }, { transaction: t });
-
-    // 8) Vínculo procedimento ↔ material
-    await ManutencaoMaterial.create({
-      manutencaoItem_id: item.id,
-      material_id: material.id,
-      quantidade: qtd,
-    }, { transaction: t });
-
-    // 9) Atualizar estoque
-    material.quantidade_disponivel = material.quantidade_disponivel - qtd;
-    material.quantidade_em_uso = material.quantidade_em_uso + qtd;
-    await material.save({ transaction: t });
-
-    // 10) Log de movimento
-    await MaterialMovimento.create({
-      material_id: material.id,
-      tipo_movimento: 'SAIDA_MANUTENCAO',
-      quantidade: qtd,
-      referencia_manutencaoItem_id: item.id,
-    }, { transaction: t });
-
-    // 11) Atualizar specs_override do computador
-    if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {
-      computador.specs_override = specsDepoisFinal;
-      await computador.save({ transaction: t });
-    }
-
-    return true;
-  });
-}
 
   async getItemManutencao(id) {
     try {
@@ -253,10 +253,14 @@ async addItemManutencao(payload) {
         include: 'manutencao',
       });
 
-      const manutencaoJSON = manutencaoItemList.map((manutencao) => ({
-        id: manutencao.dataValues.id,
-        descricao: manutencao.dataValues.descricao,
-        dataEntrada: manutencao.dataValues.createdAt,
+      const manutencaoJSON = manutencaoItemList.map((item) => ({
+        id: item.dataValues.id,
+        descricao: item.dataValues.descricao,
+        tipo: item.dataValues.tipo,
+        material_snapshot: item.dataValues.material_snapshot,
+        specs_antes: item.dataValues.specs_antes,
+        specs_depois: item.dataValues.specs_depois,
+        dataEntrada: item.dataValues.createdAt,
       }));
 
       return manutencaoJSON;

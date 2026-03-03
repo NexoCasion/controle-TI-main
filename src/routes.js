@@ -374,7 +374,14 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
   }
 });
 /// MATERIAIS ///
-
+router.get('/materiais-page', async (req, res) => {
+  try {
+    return res.render('pages/materiais');
+  } catch (err) {
+    console.error('Erro ao abrir página de materiais:', err);
+    return res.status(500).send('Erro ao abrir página de materiais');
+  }
+});
 // Listar materiais (com filtros opcionais):
 // /materiais?tipo=Fonte&somenteDisponivel=1&q=razer
 router.get('/materiais', async (req, res) => {

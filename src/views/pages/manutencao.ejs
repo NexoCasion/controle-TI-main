@@ -154,8 +154,11 @@
         <thead>
           <tr>
             <th>#</th>
+            <th>Tipo</th>
             <th>Descrição</th>
+            <th>Material</th>
             <th>Data</th>
+            <th>Ações</th>
           </tr>
         </thead>
 
@@ -163,11 +166,27 @@
           <% itensSafe.forEach((item, idx) => { %>
           <tr>
             <td><%= idx + 1 %></td>
-            <td><%= item.descricao || '-' %></td>
+
             <td>
-              <span class="js-dt" data-iso="<%= (item.data || item.dataEntrada || item.createdAt || '') %>">
-                <%= item.data || item.dataEntrada || item.createdAt || '-' %>
+              <span class="badge bg-secondary"><%= item.tipo || '-' %></span>
+            </td>
+
+            <td><%= item.descricao || '-' %></td>
+
+            <td style="max-width: 340px;">
+              <small class="text-muted"><%= item.material_snapshot || '-' %></small>
+            </td>
+
+            <td>
+              <span class="js-dt" data-iso="<%= (item.dataEntrada || item.createdAt || '') %>">
+                <%= item.dataEntrada || item.createdAt || '-' %>
               </span>
+            </td>
+
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalhesProcedimento" data-tipo="<%= (item.tipo || '') %>" data-desc="<%= (item.descricao || '').replace(/\"/g, '&quot;') %>" data-snap="<%= (item.material_snapshot || '').replace(/\"/g, '&quot;') %>" data-antes="<%= (item.specs_antes || '').replace(/\"/g, '&quot;') %>" data-depois="<%= (item.specs_depois || '').replace(/\"/g, '&quot;') %>">
+                Detalhes
+              </button>
             </td>
           </tr>
           <% }) %>
@@ -245,7 +264,7 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Tipo de peça</label>
-                    <select class="form-select" id="tipoPeca" required>
+                    <select class="form-select" id="tipoPeca" name="tipoPeca">
                       <option value="" selected disabled>Selecione...</option>
                     </select>
                     <small class="text-muted">Carregado de Materiais</small>
@@ -314,149 +333,234 @@
       </form>
     </div>
   </div>
+  <!-- Modal: Detalhes do Procedimento -->
+  <div class="modal fade" id="modalDetalhesProcedimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalhes do procedimento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2"><strong>Tipo:</strong> <span id="detTipo"></span></div>
+          <div class="mb-2"><strong>Descrição:</strong> <span id="detDesc"></span></div>
+          <div class="mb-3"><strong>Material:</strong> <span id="detSnap"></span></div>
+
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Specs antes</label>
+              <textarea class="form-control" id="detAntes" rows="3" readonly></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Specs depois</label>
+              <textarea class="form-control" id="detDepois" rows="3" readonly></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-  // helpers
-  async function fetchJson(url, opts) {
-    const res = await fetch(url, opts);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'Erro na requisição');
-    return data;
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    const form = document.getElementById('formAddProcedimento');
-    const tipoProcedimento = document.getElementById('tipoProcedimento');
-    const blocoTrocaPeca = document.getElementById('blocoTrocaPeca');
-    const tipoPeca = document.getElementById('tipoPeca');
-    const materialId = document.getElementById('materialId');
-    const quantidade = document.getElementById('quantidade');
-    const specsDepois = document.getElementById('specsDepois');
-    const specsBase = document.getElementById('specsBase');
-    const infoDisponivel = document.getElementById('infoDisponivel');
-    const btnSalvar = document.getElementById('btnSalvarProcedimento');
-
-    // preenche textarea specs com specs atuais
-    if (specsDepois && specsBase) {
-      specsDepois.value = specsBase.value || '';
+    // helpers
+    async function fetchJson(url, opts) {
+      const res = await fetch(url, opts);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Erro na requisição');
+      return data;
     }
 
-    // 1) carregar tipos de peça ao abrir a página (ou ao selecionar troca)
-    async function carregarTipos() {
-      const tipos = await fetchJson('/materiais-tipos');
-      tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
-      tipos.forEach((t) => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        tipoPeca.appendChild(opt);
-      });
-    }
+    document.addEventListener("DOMContentLoaded", async () => {
+      const form = document.getElementById('formAddProcedimento');
+      const tipoProcedimento = document.getElementById('tipoProcedimento');
+      const blocoTrocaPeca = document.getElementById('blocoTrocaPeca');
+      const tipoPeca = document.getElementById('tipoPeca');
+      const materialId = document.getElementById('materialId');
+      const quantidade = document.getElementById('quantidade');
+      const specsDepois = document.getElementById('specsDepois');
+      const specsBase = document.getElementById('specsBase');
+      const infoDisponivel = document.getElementById('infoDisponivel');
+      const btnSalvar = document.getElementById('btnSalvarProcedimento');
+      let isSubmittingProcedimento = false;
+      // ✅ FIX 1: habilita/desabilita o bloco de troca de peça
+      function setTrocaPecaEnabled(enabled) {
+        blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
 
-    // 2) carregar materiais disponíveis conforme tipo escolhido
-    async function carregarMateriaisPorTipo(tipo) {
-      materialId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
-      infoDisponivel.textContent = '';
+        // habilita/desabilita campos
+        tipoPeca.disabled = !enabled;
+        materialId.disabled = !enabled;
+        quantidade.disabled = !enabled;
+        specsDepois.disabled = !enabled;
 
-      const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}&somenteDisponivel=1`);
-      materialId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
-
-      if (!list.length) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = 'Nenhum material disponível';
-        opt.disabled = true;
-        materialId.appendChild(opt);
-        return;
+        // required só quando troca peça
+        tipoPeca.required = enabled;
+        materialId.required = enabled;
+        quantidade.required = enabled;
       }
 
-      list.forEach((m) => {
-        const opt = document.createElement('option');
-        opt.value = m.id;
-        opt.textContent = `${m.material} (${m.marca || '-'}) — Disp: ${m.quantidade_disponivel}`;
-        opt.dataset.disponivel = m.quantidade_disponivel;
-        materialId.appendChild(opt);
-      });
-    }
-
-    // Toggle bloco troca peça
-    tipoProcedimento.addEventListener('change', async () => {
-      const v = tipoProcedimento.value;
-
-      if (v === 'TROCA_PECA') {
-        blocoTrocaPeca.style.display = 'block';
-        await carregarTipos();
-        // reset
-        tipoPeca.value = '';
-        materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
-        quantidade.value = 1;
-        infoDisponivel.textContent = '';
-        // specs base
+      // começa desativado
+      setTrocaPecaEnabled(false);
+      // preenche textarea specs com specs atuais
+      if (specsDepois && specsBase) {
         specsDepois.value = specsBase.value || '';
-      } else {
-        blocoTrocaPeca.style.display = 'none';
       }
-    });
 
-    tipoPeca.addEventListener('change', async () => {
-      const tipo = tipoPeca.value;
-      if (!tipo) return;
-      await carregarMateriaisPorTipo(tipo);
-    });
-
-    materialId.addEventListener('change', () => {
-      const opt = materialId.options[materialId.selectedIndex];
-      const disp = Number(opt?.dataset?.disponivel || 0);
-      infoDisponivel.textContent = disp ? `Disponível: ${disp}` : '';
-      // limita max da quantidade
-      if (disp > 0) {
-        quantidade.max = disp;
-        if (Number(quantidade.value) > disp) quantidade.value = disp;
+      // 1) carregar tipos de peça ao abrir a página (ou ao selecionar troca)
+      async function carregarTipos() {
+        const tipos = await fetchJson('/materiais-tipos');
+        tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+        tipos.forEach((t) => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          tipoPeca.appendChild(opt);
+        });
       }
-    });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+      // 2) carregar materiais disponíveis conforme tipo escolhido
+      async function carregarMateriaisPorTipo(tipo) {
+        materialId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+        infoDisponivel.textContent = '';
 
-      btnSalvar.disabled = true;
+        const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}&somenteDisponivel=1`);
+        materialId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
-      try {
-        const fd = new FormData(form);
-        const payload = Object.fromEntries(fd.entries());
-
-        // se troca peça, valida campos extras
-        if (payload.tipo === 'TROCA_PECA') {
-          if (!payload.materialId) throw new Error('Selecione um material.');
-          const qtd = Number(payload.quantidade || 1);
-          if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
-          payload.quantidade = qtd;
-
-          // specs_depois obrigatório na prática (vai o que estiver no textarea)
-          payload.specs_depois = payload.specs_depois || '';
-        } else {
-          // limpa campos que não devem ir
-          delete payload.materialId;
-          delete payload.quantidade;
-          delete payload.specs_depois;
+        if (!list.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Nenhum material disponível';
+          opt.disabled = true;
+          materialId.appendChild(opt);
+          return;
         }
 
-        await fetchJson('/add-item-manutencao', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+        list.forEach((m) => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp: ${m.quantidade_disponivel}`;
+          opt.dataset.disponivel = m.quantidade_disponivel;
+          materialId.appendChild(opt);
         });
-
-        // recarrega a página pra atualizar histórico e specs exibida (simples por enquanto)
-        window.location.reload();
-      } catch (err) {
-        alert(err.message || 'Erro ao salvar procedimento.');
-      } finally {
-        btnSalvar.disabled = false;
       }
+
+      // Toggle bloco troca peça
+      tipoProcedimento.addEventListener('change', async () => {
+        const v = tipoProcedimento.value;
+
+        if (v === 'TROCA_PECA') {
+          setTrocaPecaEnabled(true);
+
+          await carregarTipos();
+
+          // reset
+          tipoPeca.value = '';
+          materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
+          quantidade.value = 1;
+          infoDisponivel.textContent = '';
+
+          // specs base
+          specsDepois.value = specsBase.value || '';
+        } else {
+          // ✅ FIX 1: desativa e limpa tudo do bloco
+          setTrocaPecaEnabled(false);
+
+          tipoPeca.value = '';
+          materialId.value = '';
+          quantidade.value = 1;
+          specsDepois.value = '';
+          infoDisponivel.textContent = '';
+        }
+      });
+
+      tipoPeca.addEventListener('change', async () => {
+        const tipo = tipoPeca.value;
+        if (!tipo) return;
+        await carregarMateriaisPorTipo(tipo);
+      });
+
+      materialId.addEventListener('change', () => {
+        const opt = materialId.options[materialId.selectedIndex];
+        const disp = Number(opt?.dataset?.disponivel || 0);
+        infoDisponivel.textContent = disp ? `Disponível: ${disp}` : '';
+        // limita max da quantidade
+        if (disp > 0) {
+          quantidade.max = disp;
+          if (Number(quantidade.value) > disp) quantidade.value = disp;
+        }
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // 🔒 FIX 4 — bloqueio real contra duplo submit
+        if (isSubmittingProcedimento) return;
+        isSubmittingProcedimento = true;
+
+        btnSalvar.disabled = true;
+
+        try {
+          const fd = new FormData(form);
+          const payload = Object.fromEntries(fd.entries());
+
+          // se troca peça, valida campos extras
+          if (payload.tipo === 'TROCA_PECA') {
+            if (!payload.materialId) throw new Error('Selecione um material.');
+            const qtd = Number(payload.quantidade || 1);
+            if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
+            payload.quantidade = qtd;
+
+            // specs_depois obrigatório na prática (vai o que estiver no textarea)
+            payload.specs_depois = payload.specs_depois || '';
+          } else {
+            // limpa campos que não devem ir
+            delete payload.materialId;
+            delete payload.quantidade;
+            delete payload.specs_depois;
+          }
+
+          await fetchJson('/add-item-manutencao', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+          });
+
+          // recarrega a página pra atualizar histórico e specs exibida (simples por enquanto)
+          window.location.reload();
+        } catch (err) {
+          alert(err.message || 'Erro ao salvar procedimento.');
+        } finally {
+          btnSalvar.disabled = false;
+          isSubmittingProcedimento = false;
+        }
+
+      });
+
     });
-  });
-</script>
+  </script>
+  <script>
+    const modalDet = document.getElementById('modalDetalhesProcedimento');
+
+    if (modalDet) {
+      modalDet.addEventListener('show.bs.modal', function(event) {
+        const btn = event.relatedTarget;
+        if (!btn) return;
+
+        document.getElementById('detTipo').textContent = btn.getAttribute('data-tipo') || '-';
+        document.getElementById('detDesc').textContent = btn.getAttribute('data-desc') || '-';
+        document.getElementById('detSnap').textContent = btn.getAttribute('data-snap') || '-';
+        document.getElementById('detAntes').value = btn.getAttribute('data-antes') || '';
+        document.getElementById('detDepois').value = btn.getAttribute('data-depois') || '';
+      });
+    }
+  </script>
 </body>
 
 </html>
