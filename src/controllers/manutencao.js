@@ -251,6 +251,7 @@ class ManutencaoController {
       const manutencaoItemList = await ManutencaoItem.findAll({
         where: { manutencaoId: id },
         include: 'manutencao',
+        order: [['createdAt', 'DESC']], // ✅ mais novos primeiro
       });
 
       const manutencaoJSON = manutencaoItemList.map((item) => ({
