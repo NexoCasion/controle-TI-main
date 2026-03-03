@@ -10,13 +10,11 @@ const ManutencaoMaterial = database.define('manutencao_materiais', {
     primaryKey: true,
   },
 
-  // id do procedimento (manutencaoItems)
   manutencaoItem_id: {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
 
-  // id do material (materiais)
   material_id: {
     type: Sequelize.INTEGER,
     allowNull: false,

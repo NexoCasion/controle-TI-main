@@ -382,6 +382,18 @@ router.get('/materiais-page', async (req, res) => {
     return res.status(500).send('Erro ao abrir página de materiais');
   }
 });
+
+router.get('/materiais/:id/uso-por-maquina', async (req, res) => {
+  try {
+    const MaterialController = require('./controllers/material');
+    const ctrl = new MaterialController();
+    const data = await ctrl.usoPorMaquina(req.params.id);
+    return res.json(data);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message || 'Erro ao buscar uso por máquina' });
+  }
+});
 // Listar materiais (com filtros opcionais):
 // /materiais?tipo=Fonte&somenteDisponivel=1&q=razer
 router.get('/materiais', async (req, res) => {

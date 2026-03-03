@@ -89,13 +89,16 @@ class MaterialController {
     const mat = await Material.findByPk(id);
     if (!mat) throw new Error('Material não encontrado.');
 
-    const fields = ['material', 'tipo', 'marca', 'especificacao', 'quantidade_disponivel', 'quantidade_em_uso', 'nf'];
+    const fields = ['material', 'tipo', 'marca', 'especificacao', 'quantidade_disponivel', 'nf'];
 
     for (const f of fields) {
       if (payload[f] !== undefined) {
         mat[f] = typeof payload[f] === 'string' ? payload[f].trim() : payload[f];
       }
     }
+
+    // 🔒 3A (A3): quantidade_em_uso não é editável manualmente
+    // (ela só muda via procedimentos/recuperação)
 
     // validações de quantidade
     if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0) {
@@ -121,7 +124,74 @@ class MaterialController {
       .map((r) => r.get('tipo'))
       .filter((t) => t && String(t).trim().length > 0);
   }
+  async usoPorMaquina(materialId) {
+    const ManutencaoMaterial = require('../models/ManutencaoMaterial');
+    const ManutencaoItem = require('../models/ManutencaoItem');
+    const Manutencao = require('../models/Manutencao');
+    const Computador = require('../models/Computador');
 
+    const rows = await ManutencaoMaterial.findAll({
+      where: { material_id: materialId },
+      attributes: ['quantidade'],
+      include: [{
+        model: ManutencaoItem,
+        as: 'manutencaoItem',
+        attributes: ['id', 'tipo', 'manutencaoId'],
+        include: [{
+          model: Manutencao,
+          as: 'manutencao',
+          attributes: ['id', 'computadorId'],
+          include: [{
+            model: Computador,
+            as: 'computador',
+            where: { ativo: true },          // ✅ só ativos
+            required: true,                  // ✅ força o filtro realmente
+            attributes: ['id', 'patrimonio', 'specs', 'specs_override'],
+          }],
+        }],
+      }],
+    });
+
+    // agrega por computador
+    const map = new Map();
+
+    for (const r of rows) {
+      const item = r.manutencaoItem;
+      if (!item) continue;
+
+      // conta só troca de peça (pra não poluir com limpeza etc.)
+      if (item.tipo !== 'TROCA_PECA') continue;
+
+      const manut = item.manutencao;
+      const pc = manut?.computador;
+      if (!pc) continue;
+
+      const qtd = Number(r.quantidade || 0);
+      if (!qtd) continue;
+
+      const key = pc.id;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          computadorId: pc.id,
+          patrimonio: pc.patrimonio || null,
+          specs: pc.specs_override || pc.specs || null,
+          unidade: 0,
+        });
+      }
+
+      map.get(key).unidade += qtd;
+    }
+
+    // ordena por “mais unidades” desc
+    const porMaquina = Array.from(map.values()).sort((a, b) => (b.unidade || 0) - (a.unidade || 0));
+
+    return {
+      materialId: Number(materialId),
+      totalEmUso: porMaquina.reduce((acc, x) => acc + (x.unidade || 0), 0),
+      porMaquina,
+    };
+  }
   // Log de movimentos do material
   async getMovimentos(materialId) {
     const mat = await Material.findByPk(materialId);

@@ -106,7 +106,8 @@
                 <button class="btn btn-outline-primary" type="button" id="btnSalvarNovoTipo">OK</button>
                 <button class="btn btn-outline-secondary" type="button" id="btnCancelarNovoTipo">Cancelar</button>
               </div>
-              <small class="text-muted">Ao salvar um material com esse tipo, ele passa a aparecer em todo o sistema.</small>
+              <small class="text-muted">Ao salvar um material com esse tipo, ele passa a aparecer em todo o
+                sistema.</small>
             </div>
           </div>
 
@@ -141,7 +142,47 @@
       </form>
     </div>
   </div>
+  <!-- Modal: Detalhes do Material (consulta) -->
+  <div class="modal fade" id="modalDetalhesMaterial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalhes do material</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
 
+        <div class="modal-body">
+          <div class="mb-3">
+            <div><strong>Material:</strong> <span id="detMatNome">-</span></div>
+            <div class="text-muted"><span id="detMatLinha">-</span></div>
+            <div class="mt-2"><strong>Total em uso:</strong> <span id="detMatTotalUso">0</span></div>
+          </div>
+
+          <h6 class="mb-2">Em uso nas máquinas</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Patrimônio</th>
+                  <th>Specs</th>
+                  <th style="width: 120px;">Unidade</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUsoMaquinas">
+                <tr>
+                  <td colspan="3" class="text-muted p-2">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- Modal: Editar Material -->
   <div class="modal fade" id="modalEditMaterial" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -278,7 +319,8 @@
         <td>${m.quantidade_em_uso ?? 0}</td>
         <td>${m.nf || '-'}</td>
         <td>
-          <button class="btn btn-sm btn-outline-primary" data-action="edit">Editar</button>
+        <button class="btn btn-sm btn-outline-secondary me-1" data-action="detalhes">Detalhes</button>
+        <button class="btn btn-sm btn-outline-primary" data-action="edit">Editar</button>
         </td>
       `;
         tr.dataset.json = JSON.stringify(m);
@@ -319,23 +361,66 @@
     });
 
     // abrir modal editar
-    tbody?.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-action="edit"]');
+    tbody?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action]');
       if (!btn) return;
 
       const tr = btn.closest('tr');
       const m = JSON.parse(tr.dataset.json);
+      const action = btn.getAttribute('data-action');
 
-      document.getElementById('editId').value = m.id;
-      document.getElementById('editMaterial').value = m.material || '';
-      document.getElementById('editTipo').value = m.tipo || '';
-      document.getElementById('editMarca').value = m.marca || '';
-      document.getElementById('editEspecificacao').value = m.especificacao || '';
-      document.getElementById('editQtdDisp').value = m.quantidade_disponivel ?? 0;
-      document.getElementById('editQtdUso').value = m.quantidade_em_uso ?? 0;
-      document.getElementById('editNF').value = m.nf || '';
+      if (action === 'edit') {
+        document.getElementById('editId').value = m.id;
+        document.getElementById('editMaterial').value = m.material || '';
+        document.getElementById('editTipo').value = m.tipo || '';
+        document.getElementById('editMarca').value = m.marca || '';
+        document.getElementById('editEspecificacao').value = m.especificacao || '';
+        document.getElementById('editQtdDisp').value = m.quantidade_disponivel ?? 0;
+        document.getElementById('editQtdUso').value = m.quantidade_em_uso ?? 0;
+        document.getElementById('editNF').value = m.nf || '';
+        new bootstrap.Modal(document.getElementById('modalEditMaterial')).show();
+        return;
+      }
 
-      new bootstrap.Modal(document.getElementById('modalEditMaterial')).show();
+      if (action === 'detalhes') {
+        // cabeçalho do modal
+        document.getElementById('detMatNome').textContent = m.material || '-';
+        document.getElementById('detMatLinha').textContent = [m.tipo, m.marca, m.especificacao, m.nf ? `NF: ${m.nf}` : null].filter(Boolean).join(' | ') || '-';
+
+        const tbodyUso = document.getElementById('tbodyUsoMaquinas');
+        tbodyUso.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Carregando...</td></tr>`;
+        document.getElementById('detMatTotalUso').textContent = String(m.quantidade_em_uso ?? 0);
+
+        // abre modal imediatamente e carrega dados
+        new bootstrap.Modal(document.getElementById('modalDetalhesMaterial')).show();
+
+        try {
+          const data = await fetchJson(`/materiais/${m.id}/uso-por-maquina`);
+          document.getElementById('detMatTotalUso').textContent = String(data.totalEmUso ?? 0);
+
+          if (!data.porMaquina || !data.porMaquina.length) {
+            tbodyUso.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Nenhuma máquina encontrada.</td></tr>`;
+            return;
+          }
+
+          tbodyUso.innerHTML = '';
+          data.porMaquina.forEach((row) => {
+            const patrimonio = row.patrimonio || `ID ${row.computadorId}`;
+            const specs = row.specs || '-';
+            const unidade = row.unidade ?? 0;
+
+            const tr2 = document.createElement('tr');
+            tr2.innerHTML = `
+          <td>${patrimonio}</td>
+          <td style="white-space: pre-wrap;">${specs}</td>
+          <td><strong>${unidade}</strong></td>
+        `;
+            tbodyUso.appendChild(tr2);
+          });
+        } catch (err) {
+          tbodyUso.innerHTML = `<tr><td colspan="3" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
+        }
+      }
     });
 
     // atualizar

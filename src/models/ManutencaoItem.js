@@ -34,5 +34,17 @@ const ManutencaoItem = database.define('manutencaoItems', {
     allowNull: true,
   },
 });
+const ManutencaoMaterial = require('./ManutencaoMaterial');
 
+// ✅ Relacionamento ManutencaoItem <-> ManutencaoMaterial
+ManutencaoItem.hasMany(ManutencaoMaterial, {
+  foreignKey: 'manutencaoItem_id',
+  as: 'materiais',
+});
+
+// ✅ Este belongsTo precisa existir para o include funcionar
+ManutencaoMaterial.belongsTo(ManutencaoItem, {
+  foreignKey: 'manutencaoItem_id',
+  as: 'manutencaoItem',
+});
 module.exports = ManutencaoItem;
