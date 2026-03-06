@@ -31,6 +31,15 @@ const MaterialMovimento = database.define('materiais_movimentos', {
     type: Sequelize.INTEGER,
     allowNull: true,
   },
+  referencia_computador_id: {
+    type: Sequelize.INTEGER,
+    allowNull: true,
+  },
+
+  observacao: {
+    type: Sequelize.TEXT,
+    allowNull: true,
+  },
 
   // opcional: você pode adicionar depois:
   // observacao: { type: Sequelize.TEXT, allowNull: true },

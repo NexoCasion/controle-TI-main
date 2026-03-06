@@ -394,6 +394,21 @@ router.get('/materiais/:id/uso-por-maquina', async (req, res) => {
     return res.status(500).json({ error: err.message || 'Erro ao buscar uso por máquina' });
   }
 });
+router.post('/materiais/recuperar', async (req, res) => {
+  try {
+
+    const ok = await materialController.recuperar(req.body);
+
+    return res.json({ ok: !!ok });
+
+  } catch (err) {
+
+    console.error('Erro ao recuperar material:', err);
+
+    return res.status(400).json({ error: err.message });
+
+  }
+});
 // Listar materiais (com filtros opcionais):
 // /materiais?tipo=Fonte&somenteDisponivel=1&q=razer
 router.get('/materiais', async (req, res) => {
@@ -446,7 +461,15 @@ router.put('/materiais/:id', async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 });
-
+router.post('/materiais/baixar', async (req, res) => {
+  try {
+    const ok = await materialController.baixar(req.body);
+    return res.json({ ok: !!ok });
+  } catch (err) {
+    console.error('Erro ao baixar material:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
 // Movimentos (log)
 router.get('/materiais/:id/movimentos', async (req, res) => {
   try {
@@ -458,4 +481,5 @@ router.get('/materiais/:id/movimentos', async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 });
+
 module.exports = router;

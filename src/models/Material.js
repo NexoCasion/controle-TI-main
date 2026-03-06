@@ -42,6 +42,12 @@ const Material = database.define('materiais', {
     defaultValue: 0,
   },
 
+  quantidade_baixada: {
+  type: Sequelize.INTEGER,
+  allowNull: false,
+  defaultValue: 0,
+},
+
   nf: {
     type: Sequelize.STRING,
     allowNull: true,

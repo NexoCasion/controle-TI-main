@@ -1,6 +1,7 @@
 // src/controllers/material.js
 const Material = require('../models/Material');
 const MaterialMovimento = require('../models/MaterialMovimento');
+const database = require('../db/init.js');
 
 class MaterialController {
   // LISTAR (com filtros opcionais)
@@ -40,6 +41,7 @@ class MaterialController {
       especificacao: m.especificacao,
       quantidade_disponivel: m.quantidade_disponivel,
       quantidade_em_uso: m.quantidade_em_uso,
+      quantidade_baixada: m.quantidade_baixada,
       nf: m.nf,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
@@ -101,7 +103,7 @@ class MaterialController {
     // (ela só muda via procedimentos/recuperação)
 
     // validações de quantidade
-    if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0) {
+    if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0 || (mat.quantidade_baixada ?? 0) < 0) {
       throw new Error('Quantidades não podem ser negativas.');
     }
 
@@ -210,6 +212,109 @@ class MaterialController {
       referencia_manutencaoItem_id: m.referencia_manutencaoItem_id,
       createdAt: m.createdAt,
     }));
+  }
+  async baixar(payload) {
+    const {
+      materialId,
+      quantidade = 1,
+      origem, // 'DISPONIVEL' | 'EM_USO'
+      motivo,
+      computadorId = null,
+      manutencaoItemId = null,
+    } = payload;
+
+    if (!materialId) throw new Error('materialId é obrigatório.');
+    const qtd = Number(quantidade) || 0;
+    if (qtd <= 0) throw new Error('Quantidade inválida.');
+
+    if (origem !== 'DISPONIVEL' && origem !== 'EM_USO') {
+      throw new Error("origem deve ser 'DISPONIVEL' ou 'EM_USO'.");
+    }
+
+    if (!motivo || !String(motivo).trim()) {
+      throw new Error('Motivo da baixa é obrigatório.');
+    }
+
+    // Regra: se está baixando do EM_USO, precisa saber qual máquina
+    if (origem === 'EM_USO' && !computadorId) {
+      throw new Error('computadorId é obrigatório quando origem = EM_USO.');
+    }
+
+    return await database.transaction(async (t) => {
+      const mat = await Material.findByPk(materialId, { transaction: t });
+      if (!mat) throw new Error('Material não encontrado.');
+
+      if (origem === 'DISPONIVEL') {
+        if (mat.quantidade_disponivel < qtd) {
+          throw new Error(`Saldo insuficiente em DISPONÍVEL. Disponível: ${mat.quantidade_disponivel}`);
+        }
+        mat.quantidade_disponivel -= qtd;
+      } else {
+        if (mat.quantidade_em_uso < qtd) {
+          throw new Error(`Saldo insuficiente em EM USO. Em uso: ${mat.quantidade_em_uso}`);
+        }
+        mat.quantidade_em_uso -= qtd;
+      }
+
+      mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
+
+      if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0 || mat.quantidade_baixada < 0) {
+        throw new Error('Quantidades não podem ficar negativas.');
+      }
+
+      await mat.save({ transaction: t });
+
+      await MaterialMovimento.create({
+        material_id: mat.id,
+        tipo_movimento: 'BAIXA',
+        quantidade: qtd,
+        referencia_manutencaoItem_id: manutencaoItemId || null,
+        referencia_computador_id: computadorId || null,
+        observacao: String(motivo).trim(),
+      }, { transaction: t });
+
+      return true;
+    });
+  }
+  async recuperar(payload) {
+    const {
+      materialId,
+      quantidade = 1,
+      computadorId = null,
+      manutencaoItemId = null
+    } = payload;
+
+    if (!materialId) throw new Error('materialId é obrigatório.');
+
+    const qtd = Number(quantidade) || 0;
+    if (qtd <= 0) throw new Error('Quantidade inválida.');
+
+    return await database.transaction(async (t) => {
+
+      const mat = await Material.findByPk(materialId, { transaction: t });
+      if (!mat) throw new Error('Material não encontrado.');
+
+      if (mat.quantidade_em_uso < qtd) {
+        throw new Error(`Saldo insuficiente em EM USO. Em uso: ${mat.quantidade_em_uso}`);
+      }
+
+      mat.quantidade_em_uso -= qtd;
+      mat.quantidade_disponivel += qtd;
+
+      await mat.save({ transaction: t });
+
+      await MaterialMovimento.create({
+        material_id: mat.id,
+        tipo_movimento: 'ENTRADA_RECUPERACAO',
+        quantidade: qtd,
+        referencia_manutencaoItem_id: manutencaoItemId || null,
+        referencia_computador_id: computadorId || null,
+        observacao: 'Peça recuperada de manutenção'
+      }, { transaction: t });
+
+      return true;
+
+    });
   }
 }
 

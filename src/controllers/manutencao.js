@@ -147,6 +147,11 @@ class ManutencaoController {
       materialId = null,
       quantidade = 1,
       specs_depois = null,
+
+      materialRemovidoId = null,
+      qtdRemovida = 1,
+      destinoRemovida = null,
+      motivoRemovida = null,
     } = payload;
 
     if (!manutencaoId) throw new Error('manutencaoId é obrigatório.');
@@ -183,6 +188,18 @@ class ManutencaoController {
     if (!materialId) throw new Error('materialId é obrigatório para TROCA_PECA.');
     const qtd = Number(quantidade) || 1;
     if (qtd <= 0) throw new Error('Quantidade inválida.');
+    // ✅ peça removida é obrigatória na TROCA_PECA
+    if (!materialRemovidoId) throw new Error('materialRemovidoId é obrigatório para TROCA_PECA.');
+    const qtdRem = Number(qtdRemovida) || 1;
+    if (qtdRem <= 0) throw new Error('qtdRemovida inválida.');
+
+    if (destinoRemovida !== 'RECUPERAR' && destinoRemovida !== 'DEFEITO') {
+      throw new Error("destinoRemovida deve ser 'RECUPERAR' ou 'DEFEITO'.");
+    }
+
+    if (destinoRemovida === 'DEFEITO' && (!motivoRemovida || !String(motivoRemovida).trim())) {
+      throw new Error('motivoRemovida é obrigatório quando destinoRemovida=DEFEITO.');
+    }
 
     return await database.transaction(async (t) => {
       // 4) Buscar material e validar estoque (dentro da transação)
@@ -234,7 +251,45 @@ class ManutencaoController {
         tipo_movimento: 'SAIDA_MANUTENCAO',
         quantidade: qtd,
         referencia_manutencaoItem_id: item.id,
+        referencia_computador_id: computadorId,
       }, { transaction: t });
+      // ====== PROCESSAR PEÇA REMOVIDA ======
+      const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
+      if (!matRem) throw new Error('Material removido não encontrado.');
+
+      // sempre tira do EM USO (como você definiu)
+      if (matRem.quantidade_em_uso < qtdRem) {
+        throw new Error(`Saldo insuficiente em EM USO para remover. Em uso: ${matRem.quantidade_em_uso}`);
+      }
+
+      if (destinoRemovida === 'RECUPERAR') {
+        matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
+        await matRem.save({ transaction: t });
+
+        await MaterialMovimento.create({
+          material_id: matRem.id,
+          tipo_movimento: 'ENTRADA_RECUPERACAO',
+          quantidade: qtdRem,
+          referencia_manutencaoItem_id: item.id,
+          referencia_computador_id: computadorId,
+          observacao: 'Peça removida recuperada na troca',
+        }, { transaction: t });
+
+      } else if (destinoRemovida === 'DEFEITO') {
+        matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
+        await matRem.save({ transaction: t });
+
+        await MaterialMovimento.create({
+          material_id: matRem.id,
+          tipo_movimento: 'BAIXA',
+          quantidade: qtdRem,
+          referencia_manutencaoItem_id: item.id,
+          referencia_computador_id: computadorId,
+          observacao: String(motivoRemovida).trim(),
+        }, { transaction: t });
+      }
 
       // 11) Atualizar specs_override do computador
       if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {

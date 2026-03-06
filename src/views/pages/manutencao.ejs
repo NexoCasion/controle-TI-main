@@ -289,6 +289,52 @@
                     <small class="text-muted">
                       Começa com as specs atuais (override se existir). Você edita a string livre.
                     </small>
+                    <hr class="my-3">
+
+                    <h6 class="mb-2">Peça removida (obrigatório)</h6>
+
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <label class="form-label">Tipo removido</label>
+                        <select class="form-select" id="tipoRemovido">
+                          <option value="" selected disabled>Selecione...</option>
+                        </select>
+                        <small class="text-muted">Carregado de Materiais</small>
+                      </div>
+
+                      <div class="col-md-5">
+                        <label class="form-label">Material removido</label>
+                        <select class="form-select" id="materialRemovidoId" required>
+                          <option value="" selected disabled>Selecione o tipo removido primeiro...</option>
+                        </select>
+                        <small class="text-muted" id="infoRemovido"></small>
+                      </div>
+
+                      <div class="col-md-3">
+                        <label class="form-label">Qtd removida</label>
+                        <input class="form-control" type="number" id="qtdRemovida" min="1" value="1" required>
+                      </div>
+
+                      <div class="col-md-5">
+                        <label class="form-label">Destino</label>
+                        <select class="form-select" id="destinoRemovida" required>
+                          <option value="RECUPERAR">Recuperar</option>
+                          <option value="DEFEITO">Defeito (baixar)</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-7">
+                        <label class="form-label">Motivo (obrigatório se Defeito)</label>
+                        <input class="form-control" id="motivoRemovida" placeholder="Ex: queimada, instável, sem vídeo...">
+                      </div>
+
+                      <div class="col-12">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCadastrarRemovida">
+                          + Cadastrar item removido
+                        </button>
+                        <small class="text-muted ms-2">Use quando o modelo removido não existir no sistema.</small>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -366,6 +412,54 @@
     </div>
   </div>
 
+  <div class="modal fade" id="modalCadastrarRemovida" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formCadastrarRemovida">
+        <div class="modal-header">
+          <h5 class="modal-title">Cadastrar item removido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">Tipo</label>
+            <input class="form-control" id="cadRemTipo" required readonly>
+            <small class="text-muted">Vem do “Tipo removido”.</small>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Material</label>
+            <input class="form-control" id="cadRemMaterial" required placeholder="Ex: Fonte ATX">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Marca</label>
+            <input class="form-control" id="cadRemMarca" placeholder="Ex: Razer">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Especificação</label>
+            <input class="form-control" id="cadRemEspecificacao" placeholder="Ex: 300W">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">NF (opcional)</label>
+            <input class="form-control" id="cadRemNF">
+          </div>
+
+          <div class="alert alert-info mt-3 mb-0">
+            Esse cadastro cria o material com <b>Qtd disponível = 0</b> e <b>Qtd em uso = 0</b>.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // helpers
@@ -388,6 +482,16 @@
       const infoDisponivel = document.getElementById('infoDisponivel');
       const btnSalvar = document.getElementById('btnSalvarProcedimento');
       let isSubmittingProcedimento = false;
+      const tipoRemovido = document.getElementById('tipoRemovido');
+      const materialRemovidoId = document.getElementById('materialRemovidoId');
+      const qtdRemovida = document.getElementById('qtdRemovida');
+      const destinoRemovida = document.getElementById('destinoRemovida');
+      const motivoRemovida = document.getElementById('motivoRemovida');
+      const infoRemovido = document.getElementById('infoRemovido');
+
+      const btnCadastrarRemovida = document.getElementById('btnCadastrarRemovida');
+      const modalCadastrarRemovidaEl = document.getElementById('modalCadastrarRemovida');
+      const formCadastrarRemovida = document.getElementById('formCadastrarRemovida');
       // ✅ FIX 1: habilita/desabilita o bloco de troca de peça
       function setTrocaPecaEnabled(enabled) {
         blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
@@ -414,12 +518,22 @@
       // 1) carregar tipos de peça ao abrir a página (ou ao selecionar troca)
       async function carregarTipos() {
         const tipos = await fetchJson('/materiais-tipos');
+
+        // tipoPeca (novo)
         tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+        // tipoRemovido (removido)
+        tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+
         tipos.forEach((t) => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          opt.textContent = t;
-          tipoPeca.appendChild(opt);
+          const opt1 = document.createElement('option');
+          opt1.value = t;
+          opt1.textContent = t;
+          tipoPeca.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = t;
+          opt2.textContent = t;
+          tipoRemovido.appendChild(opt2);
         });
       }
 
@@ -448,7 +562,33 @@
           materialId.appendChild(opt);
         });
       }
+      async function carregarMateriaisRemovidosPorTipo(tipo) {
+        materialRemovidoId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+        infoRemovido.textContent = '';
 
+        // atenção: SEM somenteDisponivel=1 (removida pode ter disp 0)
+        const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}`);
+
+        materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+
+        if (!list.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Nenhum material cadastrado nesse tipo';
+          opt.disabled = true;
+          materialRemovidoId.appendChild(opt);
+          return;
+        }
+
+        list.forEach((m) => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp:${m.quantidade_disponivel ?? 0} | Uso:${m.quantidade_em_uso ?? 0}`;
+          opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
+          opt.dataset.uso = m.quantidade_em_uso ?? 0;
+          materialRemovidoId.appendChild(opt);
+        });
+      }
       // Toggle bloco troca peça
       tipoProcedimento.addEventListener('change', async () => {
         const v = tipoProcedimento.value;
@@ -463,6 +603,12 @@
           materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
           quantidade.value = 1;
           infoDisponivel.textContent = '';
+          tipoRemovido.value = '';
+          materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
+          qtdRemovida.value = 1;
+          destinoRemovida.value = 'RECUPERAR';
+          motivoRemovida.value = '';
+          infoRemovido.textContent = '';
 
           // specs base
           specsDepois.value = specsBase.value || '';
@@ -475,13 +621,32 @@
           quantidade.value = 1;
           specsDepois.value = '';
           infoDisponivel.textContent = '';
+          tipoRemovido.value = '';
+          materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
+          qtdRemovida.value = 1;
+          destinoRemovida.value = 'RECUPERAR';
+          motivoRemovida.value = '';
+          infoRemovido.textContent = '';
         }
+      });
+      tipoRemovido.addEventListener('change', async () => {
+        const tipo = tipoRemovido.value;
+        if (!tipo) return;
+        await carregarMateriaisRemovidosPorTipo(tipo);
       });
 
       tipoPeca.addEventListener('change', async () => {
         const tipo = tipoPeca.value;
         if (!tipo) return;
+
+        // 1) carrega materiais NOVOS (somente disponíveis)
         await carregarMateriaisPorTipo(tipo);
+
+        // 2) sincroniza o tipo removido automaticamente
+        tipoRemovido.value = tipo;
+
+        // 3) carrega lista REMOVIDA (todos daquele tipo: disp + uso)
+        await carregarMateriaisRemovidosPorTipo(tipo);
       });
 
       materialId.addEventListener('change', () => {
@@ -494,7 +659,61 @@
           if (Number(quantidade.value) > disp) quantidade.value = disp;
         }
       });
+      materialRemovidoId.addEventListener('change', () => {
+        const opt = materialRemovidoId.options[materialRemovidoId.selectedIndex];
+        const disp = Number(opt?.dataset?.disponivel || 0);
+        const uso = Number(opt?.dataset?.uso || 0);
+        infoRemovido.textContent = `Disp: ${disp} | Em uso: ${uso}`;
+      });
+      btnCadastrarRemovida.addEventListener('click', () => {
+        const tipo = tipoRemovido.value;
+        if (!tipo) return alert('Selecione primeiro o Tipo removido.');
 
+        document.getElementById('cadRemTipo').value = tipo;
+        document.getElementById('cadRemMaterial').value = '';
+        document.getElementById('cadRemMarca').value = '';
+        document.getElementById('cadRemEspecificacao').value = '';
+        document.getElementById('cadRemNF').value = '';
+
+        new bootstrap.Modal(modalCadastrarRemovidaEl).show();
+      });
+
+      formCadastrarRemovida.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+          tipo: document.getElementById('cadRemTipo').value,
+          material: document.getElementById('cadRemMaterial').value,
+          marca: document.getElementById('cadRemMarca').value,
+          especificacao: document.getElementById('cadRemEspecificacao').value,
+          nf: document.getElementById('cadRemNF').value,
+          quantidade_disponivel: 0,
+          quantidade_em_uso: 0,
+        };
+
+        if (!payload.tipo || !payload.material) return alert('Tipo e Material são obrigatórios.');
+
+        try {
+          await fetchJson('/materiais', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+          });
+
+          bootstrap.Modal.getInstance(modalCadastrarRemovidaEl).hide();
+
+          // recarrega a lista do tipo removido e tenta selecionar o item cadastrado
+          await carregarMateriaisRemovidosPorTipo(payload.tipo);
+          const opts = [...materialRemovidoId.options];
+          const found = opts.find(o => (o.textContent || '').includes(payload.material));
+          if (found) materialRemovidoId.value = found.value;
+
+        } catch (err) {
+          alert(err.message || 'Erro ao cadastrar removida.');
+        }
+      });
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -507,7 +726,8 @@
         try {
           const fd = new FormData(form);
           const payload = Object.fromEntries(fd.entries());
-
+          let remQtd = 0;
+          let dest = '';
           // se troca peça, valida campos extras
           if (payload.tipo === 'TROCA_PECA') {
             if (!payload.materialId) throw new Error('Selecione um material.');
@@ -517,13 +737,31 @@
 
             // specs_depois obrigatório na prática (vai o que estiver no textarea)
             payload.specs_depois = payload.specs_depois || '';
+            if (!tipoRemovido.value) throw new Error('Selecione o tipo removido.');
+            if (!materialRemovidoId.value) throw new Error('Selecione o material removido.');
+
+            remQtd = Number(qtdRemovida.value || 1);
+            if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
+
+            dest = destinoRemovida.value;
+            if (dest === 'DEFEITO' && (!motivoRemovida.value || !motivoRemovida.value.trim())) {
+              throw new Error('Motivo é obrigatório quando destino = Defeito.');
+            }
           } else {
             // limpa campos que não devem ir
             delete payload.materialId;
             delete payload.quantidade;
             delete payload.specs_depois;
-          }
 
+          }
+          // valida peça removida
+
+
+          // injeta no payload
+          payload.materialRemovidoId = Number(materialRemovidoId.value);
+          payload.qtdRemovida = remQtd;
+          payload.destinoRemovida = dest;
+          payload.motivoRemovida = dest === 'DEFEITO' ? motivoRemovida.value.trim() : '';
           await fetchJson('/add-item-manutencao', {
             method: 'POST',
             headers: {
