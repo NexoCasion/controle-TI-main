@@ -222,15 +222,28 @@ router.post('/add-item-manutencao', async (req, res) => {
       materialId,    // somente se TROCA_PECA
       quantidade,    // somente se TROCA_PECA
       specs_depois,  // string editada (somente se TROCA_PECA)
+      //peça removida
+      materialRemovidoId, // somente se TROCA_PECA e tiver peça removida
+      qtdRemovida,       // somente se TROCA_PECA e tiver peça removida
+      destinoRemovida,   // 'DESCARTE' ou 'ESTOQUE' (somente se TROCA_PECA e tiver peça removida)
+      motivoRemovida,    // string editada (somente se TROCA_PECA e tiver peça removida)
     } = req.body;
 
     await manutencaoController.addItemManutencao({
       manutencaoId: Number(manutencaoId),
       descricao,
       tipo: tipo || null,
+
+      // peça nova
       materialId: materialId ? Number(materialId) : null,
       quantidade: quantidade ? Number(quantidade) : 1,
       specs_depois: specs_depois || null,
+
+      // peça removida
+      materialRemovidoId: materialRemovidoId ? Number(materialRemovidoId) : null,
+      qtdRemovida: qtdRemovida ? Number(qtdRemovida) : 1,
+      destinoRemovida: destinoRemovida || null,
+      motivoRemovida: motivoRemovida || null,
     });
 
     // ✅ Se você usa formulário normal (sem fetch), redireciona:

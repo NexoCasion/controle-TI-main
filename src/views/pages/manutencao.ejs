@@ -730,38 +730,37 @@
           let dest = '';
           // se troca peça, valida campos extras
           if (payload.tipo === 'TROCA_PECA') {
+            // peça nova
             if (!payload.materialId) throw new Error('Selecione um material.');
             const qtd = Number(payload.quantidade || 1);
             if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
             payload.quantidade = qtd;
 
-            // specs_depois obrigatório na prática (vai o que estiver no textarea)
+            // specs
             payload.specs_depois = payload.specs_depois || '';
+
+            // peça removida
             if (!tipoRemovido.value) throw new Error('Selecione o tipo removido.');
             if (!materialRemovidoId.value) throw new Error('Selecione o material removido.');
 
-            remQtd = Number(qtdRemovida.value || 1);
+            const remQtd = Number(qtdRemovida.value || 1);
             if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
 
-            dest = destinoRemovida.value;
+            const dest = destinoRemovida.value;
             if (dest === 'DEFEITO' && (!motivoRemovida.value || !motivoRemovida.value.trim())) {
               throw new Error('Motivo é obrigatório quando destino = Defeito.');
             }
+
+            // injeta no payload SOMENTE na troca
+            payload.materialRemovidoId = Number(materialRemovidoId.value);
+            payload.qtdRemovida = remQtd;
+            payload.destinoRemovida = dest;
+            payload.motivoRemovida = dest === 'DEFEITO' ? motivoRemovida.value.trim() : '';
           } else {
-            // limpa campos que não devem ir
             delete payload.materialId;
             delete payload.quantidade;
             delete payload.specs_depois;
-
           }
-          // valida peça removida
-
-
-          // injeta no payload
-          payload.materialRemovidoId = Number(materialRemovidoId.value);
-          payload.qtdRemovida = remQtd;
-          payload.destinoRemovida = dest;
-          payload.motivoRemovida = dest === 'DEFEITO' ? motivoRemovida.value.trim() : '';
           await fetchJson('/add-item-manutencao', {
             method: 'POST',
             headers: {

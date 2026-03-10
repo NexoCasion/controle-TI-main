@@ -258,12 +258,26 @@ class ManutencaoController {
       if (!matRem) throw new Error('Material removido não encontrado.');
 
       // sempre tira do EM USO (como você definiu)
-      if (matRem.quantidade_em_uso < qtdRem) {
+      // regra nova:
+      // se a peça removida já existia com saldo em uso, tira do em uso.
+      // se foi recém-cadastrada (em_uso = 0 e disponivel = 0), permite entrada direta no sistema.
+      // se não tem saldo e não é recém-cadastrada, continua barrando.
+
+      const removidaRecemCadastrada =
+        Number(matRem.quantidade_em_uso || 0) === 0 &&
+        Number(matRem.quantidade_disponivel || 0) === 0;
+
+      const temSaldoEmUsoSuficiente = Number(matRem.quantidade_em_uso || 0) >= qtdRem;
+
+      if (!temSaldoEmUsoSuficiente && !removidaRecemCadastrada) {
         throw new Error(`Saldo insuficiente em EM USO para remover. Em uso: ${matRem.quantidade_em_uso}`);
       }
 
       if (destinoRemovida === 'RECUPERAR') {
-        matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        if (temSaldoEmUsoSuficiente) {
+          matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        }
+
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -277,7 +291,10 @@ class ManutencaoController {
         }, { transaction: t });
 
       } else if (destinoRemovida === 'DEFEITO') {
-        matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        if (temSaldoEmUsoSuficiente) {
+          matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
+        }
+
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 
