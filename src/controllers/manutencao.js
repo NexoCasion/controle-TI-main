@@ -214,14 +214,34 @@ class ManutencaoController {
       const specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
 
       // 6) Snapshot congelado (histórico)
+      const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
+      if (!matRem) throw new Error('Material removido não encontrado.');
+
       const snapshot = [
-        material.tipo,
-        material.material,
-        material.marca ? `Marca: ${material.marca}` : null,
-        material.especificacao ? `Spec: ${material.especificacao}` : null,
-        material.nf ? `NF: ${material.nf}` : null,
-        `Qtd: ${qtd}`,
-      ].filter(Boolean).join(' | ');
+        `Instalado: ${[
+          material.tipo,
+          material.material,
+          material.marca ? `Marca: ${material.marca}` : null,
+          material.especificacao ? `Spec: ${material.especificacao}` : null,
+          material.nf ? `NF: ${material.nf}` : null,
+          `Qtd: ${qtd}`,
+        ].filter(Boolean).join(' | ')}`,
+
+        `Removido: ${[
+          matRem.tipo,
+          matRem.material,
+          matRem.marca ? `Marca: ${matRem.marca}` : null,
+          matRem.especificacao ? `Spec: ${matRem.especificacao}` : null,
+          matRem.nf ? `NF: ${matRem.nf}` : null,
+          `Qtd: ${qtdRem}`,
+        ].filter(Boolean).join(' | ')}`,
+
+        `Destino removida: ${destinoRemovida}`,
+
+        destinoRemovida === 'DEFEITO' && motivoRemovida
+          ? `Motivo: ${String(motivoRemovida).trim()}`
+          : null,
+      ].filter(Boolean).join(' || ');
 
       // 7) Criar manutencaoItem
       const item = await ManutencaoItem.create({
@@ -254,7 +274,7 @@ class ManutencaoController {
         referencia_computador_id: computadorId,
       }, { transaction: t });
       // ====== PROCESSAR PEÇA REMOVIDA ======
-      const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
+      
       if (!matRem) throw new Error('Material removido não encontrado.');
 
       // sempre tira do EM USO (como você definiu)

@@ -391,8 +391,11 @@
         <div class="modal-body">
           <div class="mb-2"><strong>Tipo:</strong> <span id="detTipo"></span></div>
           <div class="mb-2"><strong>Descrição:</strong> <span id="detDesc"></span></div>
-          <div class="mb-3"><strong>Material:</strong> <span id="detSnap"></span></div>
 
+          <div class="mb-3">
+            <label class="form-label"><strong>Resumo da troca</strong></label>
+            <textarea class="form-control" id="detSnap" rows="5" readonly></textarea>
+          </div>
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Specs antes</label>
@@ -792,7 +795,8 @@
 
         document.getElementById('detTipo').textContent = btn.getAttribute('data-tipo') || '-';
         document.getElementById('detDesc').textContent = btn.getAttribute('data-desc') || '-';
-        document.getElementById('detSnap').textContent = btn.getAttribute('data-snap') || '-';
+        document.getElementById('detSnap').value =
+          (btn.getAttribute('data-snap') || '-').replaceAll(' || ', '\n\n');
         document.getElementById('detAntes').value = btn.getAttribute('data-antes') || '';
         document.getElementById('detDepois').value = btn.getAttribute('data-depois') || '';
       });

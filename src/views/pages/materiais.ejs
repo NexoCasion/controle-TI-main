@@ -175,6 +175,26 @@
               </tbody>
             </table>
           </div>
+          <hr class="my-4">
+
+          <h6 class="mb-2">Itens baixados</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Patrimônio</th>
+                  <th>Motivo</th>
+                  <th style="width: 100px;">Qtd</th>
+                  <th style="width: 180px;">Data</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyBaixados">
+                <tr>
+                  <td colspan="4" class="text-muted p-2">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -388,8 +408,10 @@
         document.getElementById('detMatLinha').textContent = [m.tipo, m.marca, m.especificacao, m.nf ? `NF: ${m.nf}` : null].filter(Boolean).join(' | ') || '-';
 
         const tbodyUso = document.getElementById('tbodyUsoMaquinas');
+        const tbodyBaixados = document.getElementById('tbodyBaixados');
         tbodyUso.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Carregando...</td></tr>`;
         document.getElementById('detMatTotalUso').textContent = String(m.quantidade_em_uso ?? 0);
+        tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-muted p-2">Carregando...</td></tr>`;
 
         // abre modal imediatamente e carrega dados
         new bootstrap.Modal(document.getElementById('modalDetalhesMaterial')).show();
@@ -419,6 +441,34 @@
           });
         } catch (err) {
           tbodyUso.innerHTML = `<tr><td colspan="3" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
+        }
+        try {
+          const baixados = await fetchJson(`/materiais/${m.id}/baixados`);
+
+          if (!baixados.length) {
+            tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-muted p-2">Nenhum item baixado.</td></tr>`;
+          } else {
+            tbodyBaixados.innerHTML = '';
+
+            baixados.forEach((row) => {
+              const tr3 = document.createElement('tr');
+
+              const data = row.createdAt ?
+                new Date(row.createdAt).toLocaleString('pt-BR') :
+                '-';
+
+              tr3.innerHTML = `
+        <td>${row.patrimonio || '-'}</td>
+        <td style="white-space: pre-wrap;">${row.motivo || '-'}</td>
+        <td><strong>${row.quantidade ?? 0}</strong></td>
+        <td>${data}</td>
+      `;
+
+              tbodyBaixados.appendChild(tr3);
+            });
+          }
+        } catch (err) {
+          tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
         }
       }
     });

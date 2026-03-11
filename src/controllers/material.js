@@ -213,6 +213,44 @@ class MaterialController {
       createdAt: m.createdAt,
     }));
   }
+
+  async getBaixados(materialId) {
+    const Material = require('../models/Material');
+    const MaterialMovimento = require('../models/MaterialMovimento');
+    const Computador = require('../models/Computador');
+
+    const mat = await Material.findByPk(materialId);
+    if (!mat) throw new Error('Material não encontrado.');
+
+    const movs = await MaterialMovimento.findAll({
+      where: {
+        material_id: materialId,
+        tipo_movimento: 'BAIXA',
+      },
+      order: [['createdAt', 'DESC']],
+    });
+
+    const baixados = [];
+
+    for (const m of movs) {
+      let pc = null;
+
+      if (m.referencia_computador_id) {
+        pc = await Computador.findByPk(m.referencia_computador_id);
+      }
+
+      baixados.push({
+        id: m.id,
+        quantidade: m.quantidade,
+        motivo: m.observacao || '-',
+        patrimonio: pc?.patrimonio || '-',
+        specs: pc?.specs_override || pc?.specs || '-',
+        createdAt: m.createdAt,
+      });
+    }
+
+    return baixados;
+  }
   async baixar(payload) {
     const {
       materialId,
