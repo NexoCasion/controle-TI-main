@@ -201,14 +201,28 @@ router.post('/register-manutencao', async (req, res) => {
 });
 
 router.get('/ver-manutencao', async (req, res) => {
-  const { id } = req.query;
+  try {
+    const { id } = req.query;
 
-  const manutencao = await manutencaoController.findById(id);
-  const manutencoes = await manutencaoController.getItemManutencao(id);
+    if (!id) {
+      return res.status(400).send('ID da manutenção não informado.');
+    }
 
-  console.log(manutencao, manutencoes);
+    const manutencao = await manutencaoController.findById(id);
+    if (!manutencao) {
+      return res.status(404).send('Manutenção não encontrada.');
+    }
 
-  res.render('pages/manutencao', { manutencao: manutencao, manutencoes: manutencoes });
+    const manutencoes = await manutencaoController.getItemManutencao(id);
+
+    return res.render('pages/manutencao', {
+      manutencao,
+      manutencoes,
+    });
+  } catch (err) {
+    console.error('Erro ao abrir manutenção:', err);
+    return res.status(500).send('Erro ao abrir manutenção: ' + err.message);
+  }
 });
 
 router.post('/add-item-manutencao', async (req, res) => {
@@ -308,7 +322,22 @@ router.post('/condenar-maquina', async (req, res) => {
     return res.status(500).send('Erro ao condenar máquina: ' + err.message);
   }
 });
+router.post('/condenar-maquina-com-recuperacao', async (req, res) => {
+  try {
+    const { manutencaoId, motivoCondenacao, componentes } = req.body;
 
+    await manutencaoController.condenarComRecuperacao({
+      manutencaoId: Number(manutencaoId),
+      motivoCondenacao,
+      componentes,
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao condenar com recuperação:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
 //TRANSFERENCIAS
 router.get('/transferir', async (req, res) => { });
 

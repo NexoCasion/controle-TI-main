@@ -17,49 +17,46 @@
   </header>
 
   <% if (alert) { %>
-  <script>
-    alert('<%= alert %>');
-  </script>
+    <script>
+      alert('<%= alert %>');
+    </script>
   <% } %>
 
   <div class="container maintenance-page">
     <a href="javascript:history.back()" class="btn btn-back">
       <i class="fas fa-arrow-left"></i>
     </a>
+
     <h1 class="mt-4 mb-4 text-center">Informações da Manutenção</h1>
 
-
-
-
-
-    <!-- Card principal -->
-
     <div class="card p-3 mb-4" style="border:0;">
-      <div class="row g-3 justify-content-center  text-start">
+      <div class="row g-3 justify-content-center text-start">
         <div class="maint-titlebar mb-3">
           <h2 class="pc-title mb-0">
             Manutenção #<%= manutencao.id %>
             <% if (manutencao?.computador?.status) { %>
-            <span class="badge bg-danger ms-2">PC CONDENADO</span>
+              <span class="badge bg-danger ms-2">PC CONDENADO</span>
             <% } %>
           </h2>
 
           <% if (manutencao.dataSaida) { %>
-          <span class="maint-finalizada">
-            <i class="fas fa-check-circle"></i> Finalizada
-          </span>
+            <span class="maint-finalizada">
+              <i class="fas fa-check-circle"></i> Finalizada
+            </span>
           <% } %>
         </div>
+
         <div class="col-md-4">
           <div class="meta-label text-center">Computador</div>
           <div class="meta-value text-center">
             <% if (manutencao?.computador) { %>
-            <%= manutencao.computador.patrimonio %>
+              <%= manutencao.computador.patrimonio %>
             <% } else { %>
-            Não possui número de Patrimônio
+              Não possui número de Patrimônio
             <% } %>
           </div>
         </div>
+
         <div class="col-md-4">
           <div class="meta-label text-center">Entrada</div>
           <div class="meta-value text-center">
@@ -73,11 +70,11 @@
           <div class="meta-label text-center">Saída</div>
           <div class="meta-value text-center">
             <% if (manutencao.dataSaida) { %>
-            <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
-              <%= manutencao.dataSaida %>
-            </span>
+              <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
+                <%= manutencao.dataSaida %>
+              </span>
             <% } else { %>
-            Em andamento
+              Em andamento
             <% } %>
           </div>
         </div>
@@ -95,12 +92,14 @@
             <%= manutencao?.computador?.empresa?.nome ? manutencao.computador.empresa.nome : '-' %>
           </div>
         </div>
+
         <div class="col-md-4">
           <div class="meta-label text-center">Descrição</div>
           <div class="meta-value text-center">
             <%= manutencao.descricao ? manutencao.descricao : '-' %>
           </div>
         </div>
+
         <div class="col-12">
           <div class="meta-label text-center">Specs</div>
           <div class="text-muted text-center">
@@ -110,119 +109,99 @@
       </div>
     </div>
 
-    <!-- Botões Voltar / Ver PC (centralizados) -->
     <div class="maintenance-nav">
       <a class="btn btn-outline-secondary btn-sm" href="/manutencoes">
         <i class="fas fa-arrow-left"></i> Voltar para Manutenções
       </a>
 
       <% if (manutencao?.computador?.id) { %>
-      <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
-        <i class="fas fa-desktop"></i> Ver PC
-      </a>
+        <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
+          <i class="fas fa-desktop"></i> Ver PC
+        </a>
       <% } %>
     </div>
-    <!-- Histórico -->
+
     <h1 class="mt-4 mb-3">Histórico de Procedimentos</h1>
-    <!-- Botões de ações (centralizados, acima do histórico) -->
+
     <% if (!manutencao.dataSaida) { %>
-    <div class="maintenance-actions mb-3 align-items-center justify-content-center">
+      <div class="maintenance-actions mb-3 align-items-center justify-content-center">
+        <a
+          class="btn btn-secondary btn-sm"
+          href="/encerrar-manutencao?id=<%= manutencao.id %>"
+          onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');"
+        >
+          <i class="fas fa-check"></i> Fechar manutenção
+        </a>
 
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddProcedimento">
+          <i class="fas fa-plus"></i> Adicionar procedimento
+        </button>
 
-      <a class="btn btn-secondary btn-sm" href="/encerrar-manutencao?id=<%= manutencao.id %>" onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');">
-        <i class="fas fa-check"></i> Fechar manutenção
-      </a>
-
-
-      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddProcedimento">
-        <i class="fas fa-plus"></i> Adicionar procedimento
-      </button>
-      <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCondenarMaquina">
-        <i class="fas fa-ban"></i> Condenar máquina
-      </button>
-    </div>
-    <% } else { %>
-
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCondenarMaquina">
+          <i class="fas fa-ban"></i> Condenar máquina
+        </button>
+      </div>
     <% } %>
-
-
 
     <% const itensSafe = (typeof manutencoes !== 'undefined' && manutencoes) ? manutencoes : []; %>
     <% if (itensSafe.length) { %>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Material</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
 
-            <th>Tipo</th>
-            <th>Descrição</th>
-            <th>Material</th>
-            <th>Data</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
+          <tbody>
+            <% itensSafe.forEach((item) => { %>
+              <tr>
+                <td>
+                  <span class="badge bg-secondary"><%= item.tipo || '-' %></span>
+                </td>
 
-        <tbody>
-          <% itensSafe.forEach((item, idx) => { %>
-          <tr>
+                <td><%= item.descricao || '-' %></td>
 
+                <td style="max-width: 340px;">
+                  <small class="text-muted"><%= item.material_snapshot || '-' %></small>
+                </td>
 
-            <td>
-              <span class="badge bg-secondary"><%= item.tipo || '-' %></span>
-            </td>
+                <td>
+                  <span class="js-dt" data-iso="<%= (item.dataEntrada || item.createdAt || '') %>">
+                    <%= item.dataEntrada || item.createdAt || '-' %>
+                  </span>
+                </td>
 
-            <td><%= item.descricao || '-' %></td>
-
-            <td style="max-width: 340px;">
-              <small class="text-muted"><%= item.material_snapshot || '-' %></small>
-            </td>
-
-            <td>
-              <span class="js-dt" data-iso="<%= (item.dataEntrada || item.createdAt || '') %>">
-                <%= item.dataEntrada || item.createdAt || '-' %>
-              </span>
-            </td>
-
-            <td>
-              <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalhesProcedimento" data-tipo="<%= (item.tipo || '') %>" data-desc="<%= (item.descricao || '').replace(/\"/g, '&quot;') %>" data-snap="<%= (item.material_snapshot || '').replace(/\"/g, '&quot;') %>" data-antes="<%= (item.specs_antes || '').replace(/\"/g, '&quot;') %>" data-depois="<%= (item.specs_depois || '').replace(/\"/g, '&quot;') %>">
-                Detalhes
-              </button>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalDetalhesProcedimento"
+                    data-tipo="<%= (item.tipo || '') %>"
+                    data-desc="<%= (item.descricao || '').replace(/\"/g, '&quot;') %>"
+                    data-snap="<%= (item.material_snapshot || '').replace(/\"/g, '&quot;') %>"
+                    data-antes="<%= (item.specs_antes || '').replace(/\"/g, '&quot;') %>"
+                    data-depois="<%= (item.specs_depois || '').replace(/\"/g, '&quot;') %>"
+                  >
+                    Detalhes
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     <% } else { %>
-    <div class="text-muted" style="padding:10px 0;">
-      Nenhum item adicional para esta manutenção.
-    </div>
+      <div class="text-muted" style="padding:10px 0;">
+        Nenhum item adicional para esta manutenção.
+      </div>
     <% } %>
   </div>
-
-  <!-- Script de formatação de datas -->
-  <script>
-    function formatDateTimeBR(value) {
-      if (!value) return "";
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return value;
-      return d.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll(".js-dt").forEach((el) => {
-        const iso = (el.getAttribute("data-iso") || "").trim();
-        if (!iso) return;
-        el.textContent = formatDateTimeBR(iso);
-      });
-    });
-  </script>
 
   <!-- Modal: Adicionar Procedimento -->
   <div class="modal fade" id="modalAddProcedimento" tabindex="-1" aria-hidden="true">
@@ -252,13 +231,18 @@
 
             <div class="col-12">
               <label class="form-label">Descrição</label>
-              <textarea class="form-control" name="descricao" rows="3" required placeholder="Ex: Troca de fonte, limpeza, reinstalação do Windows..."></textarea>
+              <textarea
+                class="form-control"
+                name="descricao"
+                rows="3"
+                required
+                placeholder="Ex: Troca de fonte, limpeza, reinstalação do Windows..."
+              ></textarea>
               <small class="text-muted d-block mt-2">
                 Isso vai aparecer no “Histórico de Procedimentos”.
               </small>
             </div>
 
-            <!-- BLOCO: TROCA DE PEÇA -->
             <div class="col-12" id="blocoTrocaPeca" style="display:none;">
               <div class="card p-3" style="border:1px solid #eee;">
                 <div class="row g-3">
@@ -289,6 +273,7 @@
                     <small class="text-muted">
                       Começa com as specs atuais (override se existir). Você edita a string livre.
                     </small>
+
                     <hr class="my-3">
 
                     <h6 class="mb-2">Peça removida (obrigatório)</h6>
@@ -304,7 +289,7 @@
 
                       <div class="col-md-5">
                         <label class="form-label">Material removido</label>
-                        <select class="form-select" id="materialRemovidoId" required>
+                        <select class="form-select" id="materialRemovidoId">
                           <option value="" selected disabled>Selecione o tipo removido primeiro...</option>
                         </select>
                         <small class="text-muted" id="infoRemovido"></small>
@@ -312,12 +297,12 @@
 
                       <div class="col-md-3">
                         <label class="form-label">Qtd removida</label>
-                        <input class="form-control" type="number" id="qtdRemovida" min="1" value="1" required>
+                        <input class="form-control" type="number" id="qtdRemovida" min="1" value="1">
                       </div>
 
                       <div class="col-md-5">
                         <label class="form-label">Destino</label>
-                        <select class="form-select" id="destinoRemovida" required>
+                        <select class="form-select" id="destinoRemovida">
                           <option value="RECUPERAR">Recuperar</option>
                           <option value="DEFEITO">Defeito (baixar)</option>
                         </select>
@@ -339,8 +324,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Para LIMPEZA/MANUT_SIMPLES, não precisa de material nem specs_depois -->
           </div>
         </div>
 
@@ -355,7 +338,7 @@
   <!-- Modal: Condenar Máquina -->
   <div class="modal fade" id="modalCondenarMaquina" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-      <form class="modal-content" method="POST" action="/condenar-maquina">
+      <form class="modal-content" id="formCondenarMaquina">
         <div class="modal-header">
           <h5 class="modal-title">Condenar máquina</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -369,16 +352,102 @@
           </div>
 
           <label class="form-label">Motivo</label>
-          <textarea class="form-control" name="motivo" rows="3" required placeholder="Ex: Placa-mãe queimada, custo inviável, sem peças..."></textarea>
+          <textarea
+            class="form-control"
+            name="motivo"
+            rows="3"
+            required
+            placeholder="Ex: Placa-mãe queimada, custo inviável, sem peças..."
+          ></textarea>
         </div>
 
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Condenar</button>
+          <button type="submit" class="btn btn-danger">Próximo</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- Modal: Recuperação de Componentes -->
+  <div class="modal fade" id="modalRecuperacaoComponentes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <form class="modal-content" id="formRecuperacaoComponentes">
+        <div class="modal-header">
+          <h5 class="modal-title">Recuperação de Componentes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="recManutencaoId" value="<%= manutencao.id %>">
+          <input type="hidden" id="recMotivoCondenacao" value="">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <div class="meta-label text-center">Patrimônio</div>
+              <div class="meta-value text-center">
+                <%= manutencao?.computador?.patrimonio || '-' %>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="meta-label text-center">Local</div>
+              <div class="meta-value text-center">
+                <%= manutencao?.computador?.setor || '-' %>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="meta-label text-center">Empresa</div>
+              <div class="meta-value text-center">
+                <%= manutencao?.computador?.empresa?.nome || '-' %>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Componentes recuperados / condenados</h6>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnAdicionarLinhaRecuperacao">
+              <i class="fas fa-plus"></i> Adicionar componente
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Material</th>
+                  <th>Qtd</th>
+                  <th>Destino</th>
+                  <th>Motivo</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyRecuperacao">
+                <tr id="linhaVaziaRecuperacao">
+                  <td colspan="6" class="text-muted text-center">
+                    Nenhum componente adicionado ainda.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-info mt-3 mb-0">
+            <b>Recuperar</b> devolve a peça para o estoque disponível. <br>
+            <b>Defeito</b> envia a peça para a quantidade baixada.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar condenação e recuperação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Detalhes do Procedimento -->
   <div class="modal fade" id="modalDetalhesProcedimento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -396,6 +465,7 @@
             <label class="form-label"><strong>Resumo da troca</strong></label>
             <textarea class="form-control" id="detSnap" rows="5" readonly></textarea>
           </div>
+
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Specs antes</label>
@@ -415,6 +485,7 @@
     </div>
   </div>
 
+  <!-- Modal: Cadastrar item removido -->
   <div class="modal fade" id="modalCadastrarRemovida" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <form class="modal-content" id="formCadastrarRemovida">
@@ -465,7 +536,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // helpers
     async function fetchJson(url, opts) {
       const res = await fetch(url, opts);
       const data = await res.json().catch(() => ({}));
@@ -473,10 +543,30 @@
       return data;
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    function formatDateTimeBR(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value;
+      return d.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.querySelectorAll('.js-dt').forEach((el) => {
+        const iso = (el.getAttribute('data-iso') || '').trim();
+        if (!iso) return;
+        el.textContent = formatDateTimeBR(iso);
+      });
+
       const form = document.getElementById('formAddProcedimento');
       const tipoProcedimento = document.getElementById('tipoProcedimento');
       const blocoTrocaPeca = document.getElementById('blocoTrocaPeca');
+
       const tipoPeca = document.getElementById('tipoPeca');
       const materialId = document.getElementById('materialId');
       const quantidade = document.getElementById('quantidade');
@@ -484,7 +574,7 @@
       const specsBase = document.getElementById('specsBase');
       const infoDisponivel = document.getElementById('infoDisponivel');
       const btnSalvar = document.getElementById('btnSalvarProcedimento');
-      let isSubmittingProcedimento = false;
+
       const tipoRemovido = document.getElementById('tipoRemovido');
       const materialRemovidoId = document.getElementById('materialRemovidoId');
       const qtdRemovida = document.getElementById('qtdRemovida');
@@ -495,36 +585,53 @@
       const btnCadastrarRemovida = document.getElementById('btnCadastrarRemovida');
       const modalCadastrarRemovidaEl = document.getElementById('modalCadastrarRemovida');
       const formCadastrarRemovida = document.getElementById('formCadastrarRemovida');
-      // ✅ FIX 1: habilita/desabilita o bloco de troca de peça
+
+      const formCondenarMaquina = document.getElementById('formCondenarMaquina');
+      const modalCondenarMaquinaEl = document.getElementById('modalCondenarMaquina');
+      const modalRecuperacaoComponentesEl = document.getElementById('modalRecuperacaoComponentes');
+      const recMotivoCondenacao = document.getElementById('recMotivoCondenacao');
+
+      const btnAdicionarLinhaRecuperacao = document.getElementById('btnAdicionarLinhaRecuperacao');
+      const tbodyRecuperacao = document.getElementById('tbodyRecuperacao');
+      const formRecuperacaoComponentes = document.getElementById('formRecuperacaoComponentes');
+
+      let isSubmittingProcedimento = false;
+
       function setTrocaPecaEnabled(enabled) {
         blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
 
-        // habilita/desabilita campos
         tipoPeca.disabled = !enabled;
         materialId.disabled = !enabled;
         quantidade.disabled = !enabled;
         specsDepois.disabled = !enabled;
 
-        // required só quando troca peça
+        tipoRemovido.disabled = !enabled;
+        materialRemovidoId.disabled = !enabled;
+        qtdRemovida.disabled = !enabled;
+        destinoRemovida.disabled = !enabled;
+        motivoRemovida.disabled = !enabled;
+        btnCadastrarRemovida.disabled = !enabled;
+
         tipoPeca.required = enabled;
         materialId.required = enabled;
         quantidade.required = enabled;
+
+        tipoRemovido.required = enabled;
+        materialRemovidoId.required = enabled;
+        qtdRemovida.required = enabled;
+        destinoRemovida.required = enabled;
       }
 
-      // começa desativado
       setTrocaPecaEnabled(false);
-      // preenche textarea specs com specs atuais
+
       if (specsDepois && specsBase) {
         specsDepois.value = specsBase.value || '';
       }
 
-      // 1) carregar tipos de peça ao abrir a página (ou ao selecionar troca)
       async function carregarTipos() {
         const tipos = await fetchJson('/materiais-tipos');
 
-        // tipoPeca (novo)
         tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
-        // tipoRemovido (removido)
         tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
         tipos.forEach((t) => {
@@ -540,7 +647,6 @@
         });
       }
 
-      // 2) carregar materiais disponíveis conforme tipo escolhido
       async function carregarMateriaisPorTipo(tipo) {
         materialId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
         infoDisponivel.textContent = '';
@@ -565,13 +671,12 @@
           materialId.appendChild(opt);
         });
       }
+
       async function carregarMateriaisRemovidosPorTipo(tipo) {
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
         infoRemovido.textContent = '';
 
-        // atenção: SEM somenteDisponivel=1 (removida pode ter disp 0)
         const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}`);
-
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
         if (!list.length) {
@@ -592,20 +697,19 @@
           materialRemovidoId.appendChild(opt);
         });
       }
-      // Toggle bloco troca peça
+
       tipoProcedimento.addEventListener('change', async () => {
         const v = tipoProcedimento.value;
 
         if (v === 'TROCA_PECA') {
           setTrocaPecaEnabled(true);
-
           await carregarTipos();
 
-          // reset
           tipoPeca.value = '';
           materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
           quantidade.value = 1;
           infoDisponivel.textContent = '';
+
           tipoRemovido.value = '';
           materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
           qtdRemovida.value = 1;
@@ -613,10 +717,8 @@
           motivoRemovida.value = '';
           infoRemovido.textContent = '';
 
-          // specs base
           specsDepois.value = specsBase.value || '';
         } else {
-          // ✅ FIX 1: desativa e limpa tudo do bloco
           setTrocaPecaEnabled(false);
 
           tipoPeca.value = '';
@@ -624,6 +726,7 @@
           quantidade.value = 1;
           specsDepois.value = '';
           infoDisponivel.textContent = '';
+
           tipoRemovido.value = '';
           materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
           qtdRemovida.value = 1;
@@ -632,6 +735,7 @@
           infoRemovido.textContent = '';
         }
       });
+
       tipoRemovido.addEventListener('change', async () => {
         const tipo = tipoRemovido.value;
         if (!tipo) return;
@@ -642,13 +746,9 @@
         const tipo = tipoPeca.value;
         if (!tipo) return;
 
-        // 1) carrega materiais NOVOS (somente disponíveis)
         await carregarMateriaisPorTipo(tipo);
 
-        // 2) sincroniza o tipo removido automaticamente
         tipoRemovido.value = tipo;
-
-        // 3) carrega lista REMOVIDA (todos daquele tipo: disp + uso)
         await carregarMateriaisRemovidosPorTipo(tipo);
       });
 
@@ -656,21 +756,26 @@
         const opt = materialId.options[materialId.selectedIndex];
         const disp = Number(opt?.dataset?.disponivel || 0);
         infoDisponivel.textContent = disp ? `Disponível: ${disp}` : '';
-        // limita max da quantidade
+
         if (disp > 0) {
           quantidade.max = disp;
           if (Number(quantidade.value) > disp) quantidade.value = disp;
         }
       });
+
       materialRemovidoId.addEventListener('change', () => {
         const opt = materialRemovidoId.options[materialRemovidoId.selectedIndex];
         const disp = Number(opt?.dataset?.disponivel || 0);
         const uso = Number(opt?.dataset?.uso || 0);
         infoRemovido.textContent = `Disp: ${disp} | Em uso: ${uso}`;
       });
+
       btnCadastrarRemovida.addEventListener('click', () => {
         const tipo = tipoRemovido.value;
-        if (!tipo) return alert('Selecione primeiro o Tipo removido.');
+        if (!tipo) {
+          alert('Selecione primeiro o Tipo removido.');
+          return;
+        }
 
         document.getElementById('cadRemTipo').value = tipo;
         document.getElementById('cadRemMaterial').value = '';
@@ -694,55 +799,48 @@
           quantidade_em_uso: 0,
         };
 
-        if (!payload.tipo || !payload.material) return alert('Tipo e Material são obrigatórios.');
+        if (!payload.tipo || !payload.material) {
+          alert('Tipo e Material são obrigatórios.');
+          return;
+        }
 
         try {
           await fetchJson('/materiais', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
 
           bootstrap.Modal.getInstance(modalCadastrarRemovidaEl).hide();
 
-          // recarrega a lista do tipo removido e tenta selecionar o item cadastrado
           await carregarMateriaisRemovidosPorTipo(payload.tipo);
           const opts = [...materialRemovidoId.options];
           const found = opts.find(o => (o.textContent || '').includes(payload.material));
           if (found) materialRemovidoId.value = found.value;
-
         } catch (err) {
           alert(err.message || 'Erro ao cadastrar removida.');
         }
       });
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // 🔒 FIX 4 — bloqueio real contra duplo submit
         if (isSubmittingProcedimento) return;
         isSubmittingProcedimento = true;
-
         btnSalvar.disabled = true;
 
         try {
           const fd = new FormData(form);
           const payload = Object.fromEntries(fd.entries());
-          let remQtd = 0;
-          let dest = '';
-          // se troca peça, valida campos extras
+
           if (payload.tipo === 'TROCA_PECA') {
-            // peça nova
             if (!payload.materialId) throw new Error('Selecione um material.');
+
             const qtd = Number(payload.quantidade || 1);
             if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
             payload.quantidade = qtd;
-
-            // specs
             payload.specs_depois = payload.specs_depois || '';
 
-            // peça removida
             if (!tipoRemovido.value) throw new Error('Selecione o tipo removido.');
             if (!materialRemovidoId.value) throw new Error('Selecione o material removido.');
 
@@ -754,7 +852,6 @@
               throw new Error('Motivo é obrigatório quando destino = Defeito.');
             }
 
-            // injeta no payload SOMENTE na troca
             payload.materialRemovidoId = Number(materialRemovidoId.value);
             payload.qtdRemovida = remQtd;
             payload.destinoRemovida = dest;
@@ -764,15 +861,13 @@
             delete payload.quantidade;
             delete payload.specs_depois;
           }
+
           await fetchJson('/add-item-manutencao', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
 
-          // recarrega a página pra atualizar histórico e specs exibida (simples por enquanto)
           window.location.reload();
         } catch (err) {
           alert(err.message || 'Erro ao salvar procedimento.');
@@ -780,16 +875,225 @@
           btnSalvar.disabled = false;
           isSubmittingProcedimento = false;
         }
-
       });
 
+      formCondenarMaquina.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const motivoField = formCondenarMaquina.querySelector('textarea[name="motivo"]');
+        const motivo = (motivoField?.value || '').trim();
+
+        if (!motivo) {
+          alert('Informe o motivo da condenação.');
+          return;
+        }
+
+        recMotivoCondenacao.value = motivo;
+
+        const modalCondenar = bootstrap.Modal.getInstance(modalCondenarMaquinaEl);
+        if (modalCondenar) modalCondenar.hide();
+
+        const modalRec = new bootstrap.Modal(modalRecuperacaoComponentesEl);
+        modalRec.show();
+      });
+
+      async function carregarTiposRecuperacao(selectTipo) {
+        const tipos = await fetchJson('/materiais-tipos');
+
+        selectTipo.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+
+        tipos.forEach((t) => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          selectTipo.appendChild(opt);
+        });
+      }
+
+      async function carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial) {
+        selectMaterial.innerHTML = '<option value="" selected disabled>Carregando...</option>';
+
+        const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}`);
+        selectMaterial.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+
+        if (!list.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Nenhum material cadastrado nesse tipo';
+          opt.disabled = true;
+          selectMaterial.appendChild(opt);
+          return;
+        }
+
+        list.forEach((m) => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp:${m.quantidade_disponivel ?? 0} | Uso:${m.quantidade_em_uso ?? 0}`;
+          opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
+          opt.dataset.uso = m.quantidade_em_uso ?? 0;
+          selectMaterial.appendChild(opt);
+        });
+      }
+
+      async function adicionarLinhaRecuperacao() {
+        const linhaVazia = document.getElementById('linhaVaziaRecuperacao');
+        if (linhaVazia) linhaVazia.remove();
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <select class="form-select rec-tipo">
+              <option value="" selected disabled>Selecione...</option>
+            </select>
+          </td>
+          <td>
+            <select class="form-select rec-material">
+              <option value="" selected disabled>Selecione o tipo primeiro...</option>
+            </select>
+          </td>
+          <td style="width:110px;">
+            <input type="number" class="form-control rec-qtd" min="1" value="1">
+          </td>
+          <td style="width:180px;">
+            <select class="form-select rec-destino">
+              <option value="RECUPERAR">Recuperar</option>
+              <option value="DEFEITO">Defeito</option>
+            </select>
+          </td>
+          <td>
+            <input type="text" class="form-control rec-motivo" placeholder="Obrigatório se defeito">
+          </td>
+          <td style="width:90px;" class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger rec-remover">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        `;
+
+        tbodyRecuperacao.appendChild(tr);
+
+        const selectTipo = tr.querySelector('.rec-tipo');
+        const selectMaterial = tr.querySelector('.rec-material');
+        const selectDestino = tr.querySelector('.rec-destino');
+        const inputMotivo = tr.querySelector('.rec-motivo');
+        const btnRemover = tr.querySelector('.rec-remover');
+
+        await carregarTiposRecuperacao(selectTipo);
+
+        selectTipo.addEventListener('change', async () => {
+          const tipo = selectTipo.value;
+          if (!tipo) return;
+          await carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial);
+        });
+
+        selectDestino.addEventListener('change', () => {
+          if (selectDestino.value === 'DEFEITO') {
+            inputMotivo.placeholder = 'Motivo obrigatório';
+          } else {
+            inputMotivo.placeholder = 'Opcional';
+            inputMotivo.value = '';
+          }
+        });
+
+        btnRemover.addEventListener('click', () => {
+          tr.remove();
+
+          if (!tbodyRecuperacao.querySelector('tr')) {
+            const trVazia = document.createElement('tr');
+            trVazia.id = 'linhaVaziaRecuperacao';
+            trVazia.innerHTML = `
+              <td colspan="6" class="text-muted text-center">
+                Nenhum componente adicionado ainda.
+              </td>
+            `;
+            tbodyRecuperacao.appendChild(trVazia);
+          }
+        });
+      }
+
+      btnAdicionarLinhaRecuperacao.addEventListener('click', async () => {
+        await adicionarLinhaRecuperacao();
+      });
+
+      formRecuperacaoComponentes.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const linhas = [...tbodyRecuperacao.querySelectorAll('tr')].filter(tr => !tr.id);
+
+        if (!linhas.length) {
+          alert('Adicione pelo menos um componente para continuar.');
+          return;
+        }
+
+        const componentes = [];
+
+        for (const tr of linhas) {
+          const tipo = tr.querySelector('.rec-tipo')?.value || '';
+          const matId = tr.querySelector('.rec-material')?.value || '';
+          const qtd = Number(tr.querySelector('.rec-qtd')?.value || 0);
+          const destino = tr.querySelector('.rec-destino')?.value || '';
+          const motivo = (tr.querySelector('.rec-motivo')?.value || '').trim();
+
+          if (!tipo) {
+            alert('Selecione o tipo do componente.');
+            return;
+          }
+
+          if (!matId) {
+            alert('Selecione o material do componente.');
+            return;
+          }
+
+          if (!qtd || qtd <= 0) {
+            alert('Informe uma quantidade válida.');
+            return;
+          }
+
+          if (!destino) {
+            alert('Selecione o destino do componente.');
+            return;
+          }
+
+          if (destino === 'DEFEITO' && !motivo) {
+            alert('Informe o motivo para os itens marcados como defeito.');
+            return;
+          }
+
+          componentes.push({
+            tipo,
+            materialId: Number(matId),
+            quantidade: qtd,
+            destino,
+            motivo,
+          });
+        }
+
+        const payload = {
+          manutencaoId: Number(document.getElementById('recManutencaoId').value),
+          motivoCondenacao: (document.getElementById('recMotivoCondenacao').value || '').trim(),
+          componentes,
+        };
+
+        try {
+          await fetchJson('/condenar-maquina-com-recuperacao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          window.location.href = `/ver-manutencao?id=${payload.manutencaoId}`;
+        } catch (err) {
+          alert(err.message || 'Erro ao salvar condenação com recuperação.');
+        }
+      });
     });
   </script>
+
   <script>
     const modalDet = document.getElementById('modalDetalhesProcedimento');
 
     if (modalDet) {
-      modalDet.addEventListener('show.bs.modal', function(event) {
+      modalDet.addEventListener('show.bs.modal', function (event) {
         const btn = event.relatedTarget;
         if (!btn) return;
 

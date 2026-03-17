@@ -274,7 +274,7 @@ class ManutencaoController {
         referencia_computador_id: computadorId,
       }, { transaction: t });
       // ====== PROCESSAR PEÇA REMOVIDA ======
-      
+
       if (!matRem) throw new Error('Material removido não encontrado.');
 
       // sempre tira do EM USO (como você definiu)
@@ -407,6 +407,158 @@ class ManutencaoController {
       return;
     } catch (err) {
       throw new Error('Erro ao condenar máquina: ' + err.message);
+    }
+  }
+  async condenarComRecuperacao(payload) {
+    try {
+      const {
+        manutencaoId,
+        motivoCondenacao,
+        componentes = [],
+      } = payload;
+
+      if (!manutencaoId) throw new Error('manutencaoId não informado.');
+      if (!motivoCondenacao || !String(motivoCondenacao).trim()) {
+        throw new Error('Motivo da condenação é obrigatório.');
+      }
+
+      if (!Array.isArray(componentes) || !componentes.length) {
+        throw new Error('Adicione pelo menos um componente.');
+      }
+
+      return await database.transaction(async (t) => {
+        const manutencao = await Manutencao.findByPk(manutencaoId, { transaction: t });
+        if (!manutencao) throw new Error('Manutenção não encontrada.');
+
+        const pc = await Computador.findByPk(manutencao.computadorId, { transaction: t });
+        if (!pc) throw new Error('Computador não encontrado.');
+
+        if (pc.status !== null) {
+          throw new Error('Este computador já está CONDENADO.');
+        }
+
+        const itensResumo = [];
+
+        for (const comp of componentes) {
+          const materialId = Number(comp.materialId);
+          const qtd = Number(comp.quantidade || 0);
+          const destino = String(comp.destino || '').trim();
+          const motivo = String(comp.motivo || '').trim();
+
+          if (!materialId) throw new Error('materialId inválido na recuperação.');
+          if (!qtd || qtd <= 0) throw new Error('Quantidade inválida na recuperação.');
+          if (destino !== 'RECUPERAR' && destino !== 'DEFEITO') {
+            throw new Error('Destino inválido na recuperação.');
+          }
+          if (destino === 'DEFEITO' && !motivo) {
+            throw new Error('Motivo é obrigatório para componentes com defeito.');
+          }
+
+          const mat = await Material.findByPk(materialId, { transaction: t });
+          if (!mat) throw new Error('Material não encontrado na recuperação.');
+
+          const temSaldoEmUsoSuficiente = Number(mat.quantidade_em_uso || 0) >= qtd;
+
+          if (destino === 'RECUPERAR') {
+            if (temSaldoEmUsoSuficiente) {
+              mat.quantidade_em_uso = mat.quantidade_em_uso - qtd;
+            }
+
+            mat.quantidade_disponivel = (mat.quantidade_disponivel || 0) + qtd;
+
+            if ((mat.quantidade_em_uso || 0) < 0) {
+              throw new Error(`Estoque inválido: EM USO negativo para ${mat.material}.`);
+            }
+            if ((mat.quantidade_disponivel || 0) < 0) {
+              throw new Error(`Estoque inválido: DISPONÍVEL negativo para ${mat.material}.`);
+            }
+            if ((mat.quantidade_baixada || 0) < 0) {
+              throw new Error(`Estoque inválido: BAIXADA negativo para ${mat.material}.`);
+            }
+
+            await mat.save({ transaction: t });
+
+            await MaterialMovimento.create({
+              material_id: mat.id,
+              tipo_movimento: 'ENTRADA_RECUPERACAO',
+              quantidade: qtd,
+              referencia_manutencaoItem_id: null,
+              referencia_computador_id: pc.id,
+              observacao: 'Recuperado na condenação da máquina',
+            }, { transaction: t });
+
+            itensResumo.push(
+              `Recuperado: ${[
+                mat.tipo,
+                mat.material,
+                mat.marca ? `Marca: ${mat.marca}` : null,
+                mat.especificacao ? `Spec: ${mat.especificacao}` : null,
+                `Qtd: ${qtd}`,
+              ].filter(Boolean).join(' | ')}`
+            );
+          }
+
+          if (destino === 'DEFEITO') {
+            if (temSaldoEmUsoSuficiente) {
+              mat.quantidade_em_uso = mat.quantidade_em_uso - qtd;
+            }
+
+            mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
+            if ((mat.quantidade_em_uso || 0) < 0) {
+              throw new Error(`Estoque inválido: EM USO negativo para ${mat.material}.`);
+            }
+            if ((mat.quantidade_disponivel || 0) < 0) {
+              throw new Error(`Estoque inválido: DISPONÍVEL negativo para ${mat.material}.`);
+            }
+            if ((mat.quantidade_baixada || 0) < 0) {
+              throw new Error(`Estoque inválido: BAIXADA negativo para ${mat.material}.`);
+            }
+            await mat.save({ transaction: t });
+
+            await MaterialMovimento.create({
+              material_id: mat.id,
+              tipo_movimento: 'BAIXA',
+              quantidade: qtd,
+              referencia_manutencaoItem_id: null,
+              referencia_computador_id: pc.id,
+              observacao: motivo,
+            }, { transaction: t });
+
+            itensResumo.push(
+              `Defeito: ${[
+                mat.tipo,
+                mat.material,
+                mat.marca ? `Marca: ${mat.marca}` : null,
+                mat.especificacao ? `Spec: ${mat.especificacao}` : null,
+                `Qtd: ${qtd}`,
+                `Motivo: ${motivo}`,
+              ].filter(Boolean).join(' | ')}`
+            );
+          }
+        }
+
+        pc.status = manutencaoId;
+        pc.ativo = false;
+        pc.dataDescarte = new Date();
+        pc.motivoDescarte = String(motivoCondenacao).trim();
+        await pc.save({ transaction: t });
+
+        manutencao.dataSaida = new Date();
+        await manutencao.save({ transaction: t });
+
+        await ManutencaoItem.create({
+          manutencaoId: manutencaoId,
+          tipo: 'CONDENACAO',
+          descricao: `⚠️ MÁQUINA CONDENADA — Motivo: ${String(motivoCondenacao).trim()}`,
+          material_snapshot: itensResumo.join(' || '),
+          specs_antes: pc.specs_override || pc.specs || null,
+          specs_depois: pc.specs_override || pc.specs || null,
+        }, { transaction: t });
+
+        return true;
+      });
+    } catch (err) {
+      throw new Error('Erro ao condenar com recuperação: ' + err.message);
     }
   }
 }
