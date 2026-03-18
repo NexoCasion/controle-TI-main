@@ -218,6 +218,7 @@ class MaterialController {
     const Material = require('../models/Material');
     const MaterialMovimento = require('../models/MaterialMovimento');
     const Computador = require('../models/Computador');
+    const ManutencaoItem = require('../models/ManutencaoItem');
 
     const mat = await Material.findByPk(materialId);
     if (!mat) throw new Error('Material não encontrado.');
@@ -234,9 +235,13 @@ class MaterialController {
 
     for (const m of movs) {
       let pc = null;
+      let manutItem = null;
 
       if (m.referencia_computador_id) {
         pc = await Computador.findByPk(m.referencia_computador_id);
+      }
+      if (m.referencia_manutencaoItem_id) {
+        manutItem = await ManutencaoItem.findByPk(m.referencia_manutencaoItem_id);
       }
 
       recuperados.push({
@@ -246,6 +251,8 @@ class MaterialController {
         specs: pc?.specs_override || pc?.specs || '-',
         createdAt: m.createdAt,
         observacao: m.observacao || '-',
+        manutencaoItemId: m.referencia_manutencaoItem_id || null,
+        manutencaoId: manutItem?.manutencaoId || null,
       });
     }
 
@@ -318,6 +325,7 @@ class MaterialController {
     const Material = require('../models/Material');
     const MaterialMovimento = require('../models/MaterialMovimento');
     const Computador = require('../models/Computador');
+    const ManutencaoItem = require('../models/ManutencaoItem');
 
     const mat = await Material.findByPk(materialId);
     if (!mat) throw new Error('Material não encontrado.');
@@ -334,11 +342,14 @@ class MaterialController {
 
     for (const m of movs) {
       let pc = null;
+      let manutItem = null;
 
       if (m.referencia_computador_id) {
         pc = await Computador.findByPk(m.referencia_computador_id);
       }
-
+      if (m.referencia_manutencaoItem_id) {
+        manutItem = await ManutencaoItem.findByPk(m.referencia_manutencaoItem_id);
+      }
       baixados.push({
         id: m.id,
         quantidade: m.quantidade,
@@ -346,6 +357,8 @@ class MaterialController {
         patrimonio: pc?.patrimonio || '-',
         specs: pc?.specs_override || pc?.specs || '-',
         createdAt: m.createdAt,
+        manutencaoItemId: m.referencia_manutencaoItem_id || null,
+        manutencaoId: manutItem?.manutencaoId || null,
       });
     }
 

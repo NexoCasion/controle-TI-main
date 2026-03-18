@@ -199,11 +199,12 @@
                   <th style="width: 160px;">Origem</th>
                   <th style="width: 100px;">Qtd</th>
                   <th style="width: 180px;">Data</th>
+                  <th style="width: 140px;">Manutenção</th>
                 </tr>
               </thead>
               <tbody id="tbodyRecuperados">
                 <tr>
-                  <td colspan="3" class="text-muted p-2">Carregando...</td>
+                  <td colspan="4" class="text-muted p-2">Carregando...</td>
                 </tr>
               </tbody>
             </table>
@@ -218,11 +219,12 @@
                   <th>Motivo</th>
                   <th style="width: 100px;">Qtd</th>
                   <th style="width: 180px;">Data</th>
+                  <th style="width: 140px;">Manutenção</th>
                 </tr>
               </thead>
               <tbody id="tbodyBaixados">
                 <tr>
-                  <td colspan="4" class="text-muted p-2">Carregando...</td>
+                  <td colspan="5" class="text-muted p-2">Carregando...</td>
                 </tr>
               </tbody>
             </table>
@@ -471,11 +473,11 @@
 
               const tr2 = document.createElement('tr');
               tr2.innerHTML = `
-        <td>${patrimonio}</td>
-        <td style="white-space: pre-wrap;">${specs}</td>
-        <td><strong>${unidade}</strong></td>
-      `;
-              tbodyUso.appendChild(tr2);
+                <td>${patrimonio}</td>
+                <td style="white-space: pre-wrap;">${specs}</td>
+                <td><strong>${unidade}</strong></td>
+              `;
+               tbodyUso.appendChild(tr2);
             });
           }
         } catch (err) {
@@ -489,7 +491,7 @@
           document.getElementById('detMatTotalRecuperado').textContent = String(totalRecuperado);
 
           if (!recuperados.length) {
-            tbodyRecuperados.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Nenhum item recuperado.</td></tr>`;
+            tbodyRecuperados.innerHTML = `<tr><td colspan="5" class="text-muted p-2">Nenhum item recuperado.</td></tr>`;
           } else {
             tbodyRecuperados.innerHTML = '';
 
@@ -500,24 +502,29 @@
                 new Date(row.createdAt).toLocaleString('pt-BR') :
                 '-';
 
+              const linkManut = row.manutencaoId ?
+                `<a href="/ver-manutencao?id=${row.manutencaoId}" class="btn btn-sm btn-outline-primary">Abrir</a>` :
+                '-';
+
               tr.innerHTML = `
-        <td>${row.origem || '-'}</td>
-        <td><strong>${row.quantidade ?? 0}</strong></td>
-        <td>${data}</td>
-      `;
+                <td>${row.origem || '-'}</td>
+                <td><strong>${row.quantidade ?? 0}</strong></td>
+                <td>${data}</td>
+                <td>${linkManut}</td>
+              `;
 
               tbodyRecuperados.appendChild(tr);
             });
           }
         } catch (err) {
-          tbodyRecuperados.innerHTML = `<tr><td colspan="3" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
+          tbodyRecuperados.innerHTML = `<tr><td colspan="5" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
         }
 
         try {
           const baixados = await fetchJson(`/materiais/${m.id}/baixados`);
 
           if (!baixados.length) {
-            tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-muted p-2">Nenhum item baixado.</td></tr>`;
+            tbodyBaixados.innerHTML = `<tr><td colspan="5" class="text-muted p-2">Nenhum item baixado.</td></tr>`;
           } else {
             tbodyBaixados.innerHTML = '';
 
@@ -527,19 +534,23 @@
               const data = row.createdAt ?
                 new Date(row.createdAt).toLocaleString('pt-BR') :
                 '-';
-
+              const linkManut = row.manutencaoId ?
+                `<a href="/ver-manutencao?id=${row.manutencaoId}" class="btn btn-sm btn-outline-primary">Abrir</a>` :
+                '-';
               tr3.innerHTML = `
-        <td>${row.patrimonio || '-'}</td>
-        <td style="white-space: pre-wrap;">${row.motivo || '-'}</td>
-        <td><strong>${row.quantidade ?? 0}</strong></td>
-        <td>${data}</td>
-      `;
+                <td>${row.patrimonio || '-'}</td>
+                <td style="white-space: pre-wrap;">${row.motivo || '-'}</td>
+                <td><strong>${row.quantidade ?? 0}</strong></td>
+                <td>${data}</td>
+                <td>${linkManut}</td>
+             
+              `;
 
               tbodyBaixados.appendChild(tr3);
             });
           }
         } catch (err) {
-          tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
+          tbodyBaixados.innerHTML = `<tr><td colspan="5" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
         }
       }
     });

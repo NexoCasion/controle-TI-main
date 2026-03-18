@@ -9,7 +9,6 @@ const ManutencaoMaterial = require('../models/ManutencaoMaterial');
 const MaterialMovimento = require('../models/MaterialMovimento');
 const Empresa = require('../models/Empresa');
 
-
 class ManutencaoController {
   async create(descricao, computadorId) {
     if (!computadorId) {
@@ -90,9 +89,7 @@ class ManutencaoController {
           {
             model: Computador,
             as: 'computador',
-            include: [
-              { model: Empresa, as: 'empresa', attributes: ['nome'] },
-            ],
+            include: [{ model: Empresa, as: 'empresa', attributes: ['nome'] }],
           },
         ],
       });
@@ -102,7 +99,6 @@ class ManutencaoController {
       throw new Error('Erro ao buscar manutenções por ID: ' + error.message);
     }
   }
-
 
   async findByEmpresa(empresaId) {
     try {
@@ -225,7 +221,9 @@ class ManutencaoController {
           material.especificacao ? `Spec: ${material.especificacao}` : null,
           material.nf ? `NF: ${material.nf}` : null,
           `Qtd: ${qtd}`,
-        ].filter(Boolean).join(' | ')}`,
+        ]
+          .filter(Boolean)
+          .join(' | ')}`,
 
         `Removido: ${[
           matRem.tipo,
@@ -234,31 +232,41 @@ class ManutencaoController {
           matRem.especificacao ? `Spec: ${matRem.especificacao}` : null,
           matRem.nf ? `NF: ${matRem.nf}` : null,
           `Qtd: ${qtdRem}`,
-        ].filter(Boolean).join(' | ')}`,
+        ]
+          .filter(Boolean)
+          .join(' | ')}`,
 
         `Destino removida: ${destinoRemovida}`,
 
         destinoRemovida === 'DEFEITO' && motivoRemovida
           ? `Motivo: ${String(motivoRemovida).trim()}`
           : null,
-      ].filter(Boolean).join(' || ');
+      ]
+        .filter(Boolean)
+        .join(' || ');
 
       // 7) Criar manutencaoItem
-      const item = await ManutencaoItem.create({
-        manutencaoId,
-        descricao: descricao.trim(),
-        tipo: 'TROCA_PECA',
-        specs_antes,
-        specs_depois: specsDepoisFinal,
-        material_snapshot: snapshot,
-      }, { transaction: t });
+      const item = await ManutencaoItem.create(
+        {
+          manutencaoId,
+          descricao: descricao.trim(),
+          tipo: 'TROCA_PECA',
+          specs_antes,
+          specs_depois: specsDepoisFinal,
+          material_snapshot: snapshot,
+        },
+        { transaction: t }
+      );
 
       // 8) Vínculo procedimento ↔ material
-      await ManutencaoMaterial.create({
-        manutencaoItem_id: item.id,
-        material_id: material.id,
-        quantidade: qtd,
-      }, { transaction: t });
+      await ManutencaoMaterial.create(
+        {
+          manutencaoItem_id: item.id,
+          material_id: material.id,
+          quantidade: qtd,
+        },
+        { transaction: t }
+      );
 
       // 9) Atualizar estoque
       material.quantidade_disponivel = material.quantidade_disponivel - qtd;
@@ -266,13 +274,16 @@ class ManutencaoController {
       await material.save({ transaction: t });
 
       // 10) Log de movimento
-      await MaterialMovimento.create({
-        material_id: material.id,
-        tipo_movimento: 'SAIDA_MANUTENCAO',
-        quantidade: qtd,
-        referencia_manutencaoItem_id: item.id,
-        referencia_computador_id: computadorId,
-      }, { transaction: t });
+      await MaterialMovimento.create(
+        {
+          material_id: material.id,
+          tipo_movimento: 'SAIDA_MANUTENCAO',
+          quantidade: qtd,
+          referencia_manutencaoItem_id: item.id,
+          referencia_computador_id: computadorId,
+        },
+        { transaction: t }
+      );
       // ====== PROCESSAR PEÇA REMOVIDA ======
 
       if (!matRem) throw new Error('Material removido não encontrado.');
@@ -283,15 +294,7 @@ class ManutencaoController {
       // se foi recém-cadastrada (em_uso = 0 e disponivel = 0), permite entrada direta no sistema.
       // se não tem saldo e não é recém-cadastrada, continua barrando.
 
-      const removidaRecemCadastrada =
-        Number(matRem.quantidade_em_uso || 0) === 0 &&
-        Number(matRem.quantidade_disponivel || 0) === 0;
-
       const temSaldoEmUsoSuficiente = Number(matRem.quantidade_em_uso || 0) >= qtdRem;
-
-      if (!temSaldoEmUsoSuficiente && !removidaRecemCadastrada) {
-        throw new Error(`Saldo insuficiente em EM USO para remover. Em uso: ${matRem.quantidade_em_uso}`);
-      }
 
       if (destinoRemovida === 'RECUPERAR') {
         if (temSaldoEmUsoSuficiente) {
@@ -301,15 +304,17 @@ class ManutencaoController {
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
-        await MaterialMovimento.create({
-          material_id: matRem.id,
-          tipo_movimento: 'ENTRADA_RECUPERACAO',
-          quantidade: qtdRem,
-          referencia_manutencaoItem_id: item.id,
-          referencia_computador_id: computadorId,
-          observacao: 'Peça removida recuperada na troca',
-        }, { transaction: t });
-
+        await MaterialMovimento.create(
+          {
+            material_id: matRem.id,
+            tipo_movimento: 'ENTRADA_RECUPERACAO',
+            quantidade: qtdRem,
+            referencia_manutencaoItem_id: item.id,
+            referencia_computador_id: computadorId,
+            observacao: 'Peça removida recuperada na troca',
+          },
+          { transaction: t }
+        );
       } else if (destinoRemovida === 'DEFEITO') {
         if (temSaldoEmUsoSuficiente) {
           matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
@@ -318,14 +323,17 @@ class ManutencaoController {
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 
-        await MaterialMovimento.create({
-          material_id: matRem.id,
-          tipo_movimento: 'BAIXA',
-          quantidade: qtdRem,
-          referencia_manutencaoItem_id: item.id,
-          referencia_computador_id: computadorId,
-          observacao: String(motivoRemovida).trim(),
-        }, { transaction: t });
+        await MaterialMovimento.create(
+          {
+            material_id: matRem.id,
+            tipo_movimento: 'BAIXA',
+            quantidade: qtdRem,
+            referencia_manutencaoItem_id: item.id,
+            referencia_computador_id: computadorId,
+            observacao: String(motivoRemovida).trim(),
+          },
+          { transaction: t }
+        );
       }
 
       // 11) Atualizar specs_override do computador
@@ -411,11 +419,7 @@ class ManutencaoController {
   }
   async condenarComRecuperacao(payload) {
     try {
-      const {
-        manutencaoId,
-        motivoCondenacao,
-        componentes = [],
-      } = payload;
+      const { manutencaoId, motivoCondenacao, componentes = [] } = payload;
 
       if (!manutencaoId) throw new Error('manutencaoId não informado.');
       if (!motivoCondenacao || !String(motivoCondenacao).trim()) {
@@ -438,6 +442,18 @@ class ManutencaoController {
         }
 
         const itensResumo = [];
+
+        const itemCondenacao = await ManutencaoItem.create(
+          {
+            manutencaoId: manutencaoId,
+            tipo: 'CONDENACAO',
+            descricao: `⚠️ MÁQUINA CONDENADA — Motivo: ${String(motivoCondenacao).trim()}`,
+            material_snapshot: '',
+            specs_antes: pc.specs_override || pc.specs || null,
+            specs_depois: pc.specs_override || pc.specs || null,
+          },
+          { transaction: t }
+        );
 
         for (const comp of componentes) {
           const materialId = Number(comp.materialId);
@@ -478,14 +494,17 @@ class ManutencaoController {
 
             await mat.save({ transaction: t });
 
-            await MaterialMovimento.create({
-              material_id: mat.id,
-              tipo_movimento: 'ENTRADA_RECUPERACAO',
-              quantidade: qtd,
-              referencia_manutencaoItem_id: null,
-              referencia_computador_id: pc.id,
-              observacao: 'Recuperado na condenação da máquina',
-            }, { transaction: t });
+            await MaterialMovimento.create(
+              {
+                material_id: mat.id,
+                tipo_movimento: 'ENTRADA_RECUPERACAO',
+                quantidade: qtd,
+                referencia_manutencaoItem_id: itemCondenacao.id,
+                referencia_computador_id: pc.id,
+                observacao: 'Recuperado na condenação da máquina',
+              },
+              { transaction: t }
+            );
 
             itensResumo.push(
               `Recuperado: ${[
@@ -494,7 +513,9 @@ class ManutencaoController {
                 mat.marca ? `Marca: ${mat.marca}` : null,
                 mat.especificacao ? `Spec: ${mat.especificacao}` : null,
                 `Qtd: ${qtd}`,
-              ].filter(Boolean).join(' | ')}`
+              ]
+                .filter(Boolean)
+                .join(' | ')}`
             );
           }
 
@@ -515,14 +536,17 @@ class ManutencaoController {
             }
             await mat.save({ transaction: t });
 
-            await MaterialMovimento.create({
-              material_id: mat.id,
-              tipo_movimento: 'BAIXA',
-              quantidade: qtd,
-              referencia_manutencaoItem_id: null,
-              referencia_computador_id: pc.id,
-              observacao: motivo,
-            }, { transaction: t });
+            await MaterialMovimento.create(
+              {
+                material_id: mat.id,
+                tipo_movimento: 'BAIXA',
+                quantidade: qtd,
+                referencia_manutencaoItem_id: itemCondenacao.id,
+                referencia_computador_id: pc.id,
+                observacao: motivo,
+              },
+              { transaction: t }
+            );
 
             itensResumo.push(
               `Defeito: ${[
@@ -532,11 +556,14 @@ class ManutencaoController {
                 mat.especificacao ? `Spec: ${mat.especificacao}` : null,
                 `Qtd: ${qtd}`,
                 `Motivo: ${motivo}`,
-              ].filter(Boolean).join(' | ')}`
+              ]
+                .filter(Boolean)
+                .join(' | ')}`
             );
           }
         }
-
+        itemCondenacao.material_snapshot = itensResumo.join(' || ');
+        await itemCondenacao.save({ transaction: t });
         pc.status = manutencaoId;
         pc.ativo = false;
         pc.dataDescarte = new Date();
@@ -546,14 +573,17 @@ class ManutencaoController {
         manutencao.dataSaida = new Date();
         await manutencao.save({ transaction: t });
 
-        await ManutencaoItem.create({
-          manutencaoId: manutencaoId,
-          tipo: 'CONDENACAO',
-          descricao: `⚠️ MÁQUINA CONDENADA — Motivo: ${String(motivoCondenacao).trim()}`,
-          material_snapshot: itensResumo.join(' || '),
-          specs_antes: pc.specs_override || pc.specs || null,
-          specs_depois: pc.specs_override || pc.specs || null,
-        }, { transaction: t });
+        await ManutencaoItem.create(
+          {
+            manutencaoId: manutencaoId,
+            tipo: 'CONDENACAO',
+            descricao: `⚠️ MÁQUINA CONDENADA — Motivo: ${String(motivoCondenacao).trim()}`,
+            material_snapshot: itensResumo.join(' || '),
+            specs_antes: pc.specs_override || pc.specs || null,
+            specs_depois: pc.specs_override || pc.specs || null,
+          },
+          { transaction: t }
+        );
 
         return true;
       });
