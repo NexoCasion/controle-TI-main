@@ -155,7 +155,20 @@
           <div class="mb-3">
             <div><strong>Material:</strong> <span id="detMatNome">-</span></div>
             <div class="text-muted"><span id="detMatLinha">-</span></div>
-            <div class="mt-2"><strong>Total em uso:</strong> <span id="detMatTotalUso">0</span></div>
+            <div class="row g-3 mt-2">
+              <div class="col-md-3">
+                <div><strong>Em uso:</strong> <span id="detMatTotalUso">0</span></div>
+              </div>
+              <div class="col-md-3">
+                <div><strong>Disponível:</strong> <span id="detMatTotalDisponivel">0</span></div>
+              </div>
+              <div class="col-md-3">
+                <div><strong>Baixado:</strong> <span id="detMatTotalBaixado">0</span></div>
+              </div>
+              <div class="col-md-3">
+                <div><strong>Recuperado:</strong> <span id="detMatTotalRecuperado">0</span></div>
+              </div>
+            </div>
           </div>
 
           <h6 class="mb-2">Em uso nas máquinas</h6>
@@ -173,10 +186,29 @@
                   <td colspan="3" class="text-muted p-2">Carregando...</td>
                 </tr>
               </tbody>
+
             </table>
           </div>
           <hr class="my-4">
 
+          <h6 class="mb-2">Itens recuperados</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 160px;">Origem</th>
+                  <th style="width: 100px;">Qtd</th>
+                  <th style="width: 180px;">Data</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyRecuperados">
+                <tr>
+                  <td colspan="3" class="text-muted p-2">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <hr class="my-4">
           <h6 class="mb-2">Itens baixados</h6>
           <div class="table-responsive">
             <table class="table table-sm table-striped align-middle">
@@ -405,12 +437,19 @@
       if (action === 'detalhes') {
         // cabeçalho do modal
         document.getElementById('detMatNome').textContent = m.material || '-';
-        document.getElementById('detMatLinha').textContent = [m.tipo, m.marca, m.especificacao, m.nf ? `NF: ${m.nf}` : null].filter(Boolean).join(' | ') || '-';
+        document.getElementById('detMatLinha').textContent = [m.tipo, m.marca, m.especificacao, m.nf ? `NF: ${m.nf}` : null]
+          .filter(Boolean)
+          .join(' | ') || '-';
 
         const tbodyUso = document.getElementById('tbodyUsoMaquinas');
-        const tbodyBaixados = document.getElementById('tbodyBaixados');
-        tbodyUso.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Carregando...</td></tr>`;
+        const tbodyRecuperados = document.getElementById('tbodyRecuperados');
+
         document.getElementById('detMatTotalUso').textContent = String(m.quantidade_em_uso ?? 0);
+        document.getElementById('detMatTotalDisponivel').textContent = String(m.quantidade_disponivel ?? 0);
+        document.getElementById('detMatTotalBaixado').textContent = String(m.quantidade_baixada ?? 0);
+        document.getElementById('detMatTotalRecuperado').textContent = '0';
+
+        tbodyRecuperados.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Carregando...</td></tr>`;
         tbodyBaixados.innerHTML = `<tr><td colspan="4" class="text-muted p-2">Carregando...</td></tr>`;
 
         // abre modal imediatamente e carrega dados
@@ -422,26 +461,58 @@
 
           if (!data.porMaquina || !data.porMaquina.length) {
             tbodyUso.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Nenhuma máquina encontrada.</td></tr>`;
-            return;
+          } else {
+            tbodyUso.innerHTML = '';
+
+            data.porMaquina.forEach((row) => {
+              const patrimonio = row.patrimonio || `ID ${row.computadorId}`;
+              const specs = row.specs || '-';
+              const unidade = row.unidade ?? 0;
+
+              const tr2 = document.createElement('tr');
+              tr2.innerHTML = `
+        <td>${patrimonio}</td>
+        <td style="white-space: pre-wrap;">${specs}</td>
+        <td><strong>${unidade}</strong></td>
+      `;
+              tbodyUso.appendChild(tr2);
+            });
           }
-
-          tbodyUso.innerHTML = '';
-          data.porMaquina.forEach((row) => {
-            const patrimonio = row.patrimonio || `ID ${row.computadorId}`;
-            const specs = row.specs || '-';
-            const unidade = row.unidade ?? 0;
-
-            const tr2 = document.createElement('tr');
-            tr2.innerHTML = `
-          <td>${patrimonio}</td>
-          <td style="white-space: pre-wrap;">${specs}</td>
-          <td><strong>${unidade}</strong></td>
-        `;
-            tbodyUso.appendChild(tr2);
-          });
         } catch (err) {
           tbodyUso.innerHTML = `<tr><td colspan="3" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
         }
+
+        try {
+          const recuperados = await fetchJson(`/materiais/${m.id}/recuperados`);
+
+          const totalRecuperado = recuperados.reduce((acc, row) => acc + Number(row.quantidade || 0), 0);
+          document.getElementById('detMatTotalRecuperado').textContent = String(totalRecuperado);
+
+          if (!recuperados.length) {
+            tbodyRecuperados.innerHTML = `<tr><td colspan="3" class="text-muted p-2">Nenhum item recuperado.</td></tr>`;
+          } else {
+            tbodyRecuperados.innerHTML = '';
+
+            recuperados.forEach((row) => {
+              const tr = document.createElement('tr');
+
+              const data = row.createdAt ?
+                new Date(row.createdAt).toLocaleString('pt-BR') :
+                '-';
+
+              tr.innerHTML = `
+        <td>${row.origem || '-'}</td>
+        <td><strong>${row.quantidade ?? 0}</strong></td>
+        <td>${data}</td>
+      `;
+
+              tbodyRecuperados.appendChild(tr);
+            });
+          }
+        } catch (err) {
+          tbodyRecuperados.innerHTML = `<tr><td colspan="3" class="text-danger p-2">Erro: ${err.message}</td></tr>`;
+        }
+
         try {
           const baixados = await fetchJson(`/materiais/${m.id}/baixados`);
 

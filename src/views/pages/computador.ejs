@@ -53,8 +53,8 @@
           <i class="fas fa-pencil-alt "></i> Editar PC
         </button>
         <button type="button" style="font-size: 0.75rem" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterManutencao">
-        Registrar Manutenção
-      </button>
+          Registrar Manutenção
+        </button>
 
 
 
@@ -68,6 +68,7 @@
   <!-- MODAIS (antes dos scripts é o mais seguro) -->
   <%- include("../partials/modals/modal_edit_pc") %>
   <%- include("../partials/modals/modal_transfer_pc", { empresas: (typeof empresas !== 'undefined' ? empresas : []) }) %>
+  <%- include("../partials/modals/modal_register_manutencao", { empresas: (typeof empresas !== 'undefined' ? empresas : []) }) %>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -95,6 +96,26 @@
         empresaId: computador.empresaId || ""
       }) %>;
 
+      function switchModal(fromId, toId, beforeOpen = null) {
+        const fromEl = document.getElementById(fromId);
+        const toEl = document.getElementById(toId);
+        if (!fromEl || !toEl) return;
+
+        const fromInst = bootstrap.Modal.getInstance(fromEl) || new bootstrap.Modal(fromEl);
+        const toInst = bootstrap.Modal.getOrCreateInstance(toEl);
+
+        fromEl.addEventListener(
+          "hidden.bs.modal",
+          () => {
+            if (typeof beforeOpen === "function") beforeOpen();
+            toInst.show();
+          }, {
+            once: true
+          }
+        );
+
+        fromInst.hide();
+      }
       // ====== MODAL EDITAR (preenche campos + action correta) ======
       const btnEdit = document.getElementById("btnEditPcFromView");
       if (btnEdit) {
@@ -104,13 +125,16 @@
           const inSetor = document.getElementById("editSetor");
           const inSpecs = document.getElementById("editSpecs");
 
-          // action correta pro backend
           if (form) form.action = `/editar-pc?id=${pcCtx.id}`;
 
-          // preenche inputs do modal
           if (inPatrimonio) inPatrimonio.value = pcCtx.patrimonio;
           if (inSetor) inSetor.value = pcCtx.setor;
           if (inSpecs) inSpecs.value = pcCtx.specs;
+
+          window.__editPcCtx = {
+            computadorId: pcCtx.id,
+            empresaId: pcCtx.empresaId || "",
+          };
         });
       }
 
@@ -121,15 +145,50 @@
           const inputPc = document.getElementById("transferComputadorId");
           const inputOrigem = document.getElementById("transferEmpOrigemId");
           const selectDestino = document.getElementById("transferEmpDestinoId");
+          const btnAddMan = document.getElementById("btnAddManutencaoFromEdit");
+          const btnTransf = document.getElementById("btnTransferirFromEdit");
+          if (btnAddMan) {
+            btnAddMan.addEventListener("click", () => {
+              if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
+                console.warn("Contexto do PC não encontrado. Clique em EDITAR primeiro.");
+                return;
+              }
 
+              window.__prefManutencao = {
+                empresaId: window.__editPcCtx.empresaId,
+                computadorId: window.__editPcCtx.computadorId,
+              };
+
+              switchModal("modalEditPc", "modalRegisterManutencao");
+            });
+          }
+          if (btnTransf) {
+            btnTransf.addEventListener("click", () => {
+              if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
+                console.warn("Contexto do PC não encontrado. Clique em EDITAR primeiro.");
+                return;
+              }
+
+              switchModal("modalEditPc", "modalTransferPc", () => {
+                const inputPc = document.getElementById("transferComputadorId");
+                const inputOrigem = document.getElementById("transferEmpOrigemId");
+                const selectDestino = document.getElementById("transferEmpDestinoId");
+
+                if (inputPc) inputPc.value = window.__editPcCtx.computadorId;
+                if (inputOrigem) inputOrigem.value = window.__editPcCtx.empresaId ?? "";
+                if (selectDestino) selectDestino.value = "";
+              });
+            });
+          }
           if (inputPc) inputPc.value = pcCtx.id;
           if (inputOrigem) inputOrigem.value = pcCtx.empresaId || "";
           if (selectDestino) selectDestino.value = "";
+
         });
       }
 
-     
-      
+
+
       // ====== Tabela (Histórico) ======
       let sortCol = null;
       let sortAsc = true;

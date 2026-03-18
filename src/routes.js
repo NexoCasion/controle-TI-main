@@ -533,4 +533,14 @@ router.get('/materiais/:id/baixados', async (req, res) => {
     return res.status(400).json({ error: err.message });
   }
 });
+router.get('/materiais/:id/recuperados', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const recuperados = await materialController.getRecuperados(Number(id));
+    return res.json(recuperados);
+  } catch (err) {
+    console.error('Erro ao buscar itens recuperados:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
 module.exports = router;
