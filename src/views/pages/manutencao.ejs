@@ -17,9 +17,9 @@
   </header>
 
   <% if (alert) { %>
-    <script>
-      alert('<%= alert %>');
-    </script>
+  <script>
+    alert('<%= alert %>');
+  </script>
   <% } %>
 
   <div class="container maintenance-page">
@@ -35,14 +35,14 @@
           <h2 class="pc-title mb-0">
             Manutenção #<%= manutencao.id %>
             <% if (manutencao?.computador?.status) { %>
-              <span class="badge bg-danger ms-2">PC CONDENADO</span>
+            <span class="badge bg-danger ms-2">PC CONDENADO</span>
             <% } %>
           </h2>
 
           <% if (manutencao.dataSaida) { %>
-            <span class="maint-finalizada">
-              <i class="fas fa-check-circle"></i> Finalizada
-            </span>
+          <span class="maint-finalizada">
+            <i class="fas fa-check-circle"></i> Finalizada
+          </span>
           <% } %>
         </div>
 
@@ -50,9 +50,9 @@
           <div class="meta-label text-center">Computador</div>
           <div class="meta-value text-center">
             <% if (manutencao?.computador) { %>
-              <%= manutencao.computador.patrimonio %>
+            <%= manutencao.computador.patrimonio %>
             <% } else { %>
-              Não possui número de Patrimônio
+            Não possui número de Patrimônio
             <% } %>
           </div>
         </div>
@@ -70,11 +70,11 @@
           <div class="meta-label text-center">Saída</div>
           <div class="meta-value text-center">
             <% if (manutencao.dataSaida) { %>
-              <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
-                <%= manutencao.dataSaida %>
-              </span>
+            <span class="js-dt" data-iso="<%= manutencao.dataSaida || '' %>">
+              <%= manutencao.dataSaida %>
+            </span>
             <% } else { %>
-              Em andamento
+            Em andamento
             <% } %>
           </div>
         </div>
@@ -115,91 +115,77 @@
       </a>
 
       <% if (manutencao?.computador?.id) { %>
-        <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
-          <i class="fas fa-desktop"></i> Ver PC
-        </a>
+      <a class="btn btn-primary btn-sm" href="/ver-pc?id=<%= manutencao.computador.id %>">
+        <i class="fas fa-desktop"></i> Ver PC
+      </a>
       <% } %>
     </div>
 
     <h1 class="mt-4 mb-3">Histórico de Procedimentos</h1>
 
     <% if (!manutencao.dataSaida) { %>
-      <div class="maintenance-actions mb-3 align-items-center justify-content-center">
-        <a
-          class="btn btn-secondary btn-sm"
-          href="/encerrar-manutencao?id=<%= manutencao.id %>"
-          onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');"
-        >
-          <i class="fas fa-check"></i> Fechar manutenção
-        </a>
+    <div class="maintenance-actions mb-3 align-items-center justify-content-center">
+      <a class="btn btn-secondary btn-sm" href="/encerrar-manutencao?id=<%= manutencao.id %>" onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');">
+        <i class="fas fa-check"></i> Fechar manutenção
+      </a>
 
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddProcedimento">
-          <i class="fas fa-plus"></i> Adicionar procedimento
-        </button>
+      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddProcedimento">
+        <i class="fas fa-plus"></i> Adicionar procedimento
+      </button>
 
-        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCondenarMaquina">
-          <i class="fas fa-ban"></i> Condenar máquina
-        </button>
-      </div>
+      <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCondenarMaquina">
+        <i class="fas fa-ban"></i> Condenar máquina
+      </button>
+    </div>
     <% } %>
 
     <% const itensSafe = (typeof manutencoes !== 'undefined' && manutencoes) ? manutencoes : []; %>
     <% if (itensSafe.length) { %>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Tipo</th>
-              <th>Descrição</th>
-              <th>Material</th>
-              <th>Data</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th>Material</th>
+            <th>Data</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            <% itensSafe.forEach((item) => { %>
-              <tr>
-                <td>
-                  <span class="badge bg-secondary"><%= item.tipo || '-' %></span>
-                </td>
+        <tbody>
+          <% itensSafe.forEach((item) => { %>
+          <tr>
+            <td>
+              <span class="badge bg-secondary"><%= item.tipo || '-' %></span>
+            </td>
 
-                <td><%= item.descricao || '-' %></td>
+            <td><%= item.descricao || '-' %></td>
 
-                <td style="max-width: 340px;">
-                  <small class="text-muted"><%= item.material_snapshot || '-' %></small>
-                </td>
+            <td style="max-width: 340px;">
+              <small class="text-muted"><%= item.material_snapshot || '-' %></small>
+            </td>
 
-                <td>
-                  <span class="js-dt" data-iso="<%= (item.dataEntrada || item.createdAt || '') %>">
-                    <%= item.dataEntrada || item.createdAt || '-' %>
-                  </span>
-                </td>
+            <td>
+              <span class="js-dt" data-iso="<%= (item.dataEntrada || item.createdAt || '') %>">
+                <%= item.dataEntrada || item.createdAt || '-' %>
+              </span>
+            </td>
 
-                <td>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalDetalhesProcedimento"
-                    data-tipo="<%= (item.tipo || '') %>"
-                    data-desc="<%= (item.descricao || '').replace(/\"/g, '&quot;') %>"
-                    data-snap="<%= (item.material_snapshot || '').replace(/\"/g, '&quot;') %>"
-                    data-antes="<%= (item.specs_antes || '').replace(/\"/g, '&quot;') %>"
-                    data-depois="<%= (item.specs_depois || '').replace(/\"/g, '&quot;') %>"
-                  >
-                    Detalhes
-                  </button>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalDetalhesProcedimento" data-tipo="<%= (item.tipo || '') %>" data-desc="<%= (item.descricao || '').replace(/\"/g, '&quot;') %>" data-snap="<%= (item.material_snapshot || '').replace(/\"/g, '&quot;') %>" data-antes="<%= (item.specs_antes || '').replace(/\"/g, '&quot;') %>" data-depois="<%= (item.specs_depois || '').replace(/\"/g, '&quot;') %>">
+                Detalhes
+              </button>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
     <% } else { %>
-      <div class="text-muted" style="padding:10px 0;">
-        Nenhum item adicional para esta manutenção.
-      </div>
+    <div class="text-muted" style="padding:10px 0;">
+      Nenhum item adicional para esta manutenção.
+    </div>
     <% } %>
   </div>
 
@@ -231,13 +217,7 @@
 
             <div class="col-12">
               <label class="form-label">Descrição</label>
-              <textarea
-                class="form-control"
-                name="descricao"
-                rows="3"
-                required
-                placeholder="Ex: Troca de fonte, limpeza, reinstalação do Windows..."
-              ></textarea>
+              <textarea class="form-control" name="descricao" rows="3" required placeholder="Ex: Troca de fonte, limpeza, reinstalação do Windows..."></textarea>
               <small class="text-muted d-block mt-2">
                 Isso vai aparecer no “Histórico de Procedimentos”.
               </small>
@@ -352,13 +332,7 @@
           </div>
 
           <label class="form-label">Motivo</label>
-          <textarea
-            class="form-control"
-            name="motivo"
-            rows="3"
-            required
-            placeholder="Ex: Placa-mãe queimada, custo inviável, sem peças..."
-          ></textarea>
+          <textarea class="form-control" name="motivo" rows="3" required placeholder="Ex: Placa-mãe queimada, custo inviável, sem peças..."></textarea>
         </div>
 
         <div class="modal-footer">
@@ -533,6 +507,53 @@
       </form>
     </div>
   </div>
+  <div class="modal fade" id="modalCadastrarRecuperado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="formCadastrarRecuperado">
+        <div class="modal-header">
+          <h5 class="modal-title">Cadastrar material recuperado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">Tipo</label>
+            <input class="form-control" id="cadRecTipo" required readonly>
+            <small class="text-muted">Vem do tipo da linha da recuperação.</small>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Material</label>
+            <input class="form-control" id="cadRecMaterial" required placeholder="Ex: Fonte ATX">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Marca</label>
+            <input class="form-control" id="cadRecMarca" placeholder="Ex: Corsair">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Especificação</label>
+            <input class="form-control" id="cadRecEspecificacao" placeholder="Ex: 500W">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">NF (opcional)</label>
+            <input class="form-control" id="cadRecNF">
+          </div>
+
+          <div class="alert alert-info mt-3 mb-0">
+            Esse cadastro cria o material com <b>Qtd disponível = 0</b> e <b>Qtd em uso = 0</b>.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -596,6 +617,10 @@
       const formRecuperacaoComponentes = document.getElementById('formRecuperacaoComponentes');
 
       let isSubmittingProcedimento = false;
+
+      const modalCadastrarRecuperadoEl = document.getElementById('modalCadastrarRecuperado');
+      const formCadastrarRecuperado = document.getElementById('formCadastrarRecuperado');
+      let linhaRecuperacaoAtual = null;
 
       function setTrocaPecaEnabled(enabled) {
         blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
@@ -807,7 +832,9 @@
         try {
           await fetchJson('/materiais', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload),
           });
 
@@ -821,7 +848,58 @@
           alert(err.message || 'Erro ao cadastrar removida.');
         }
       });
+      formCadastrarRecuperado.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
+        if (!linhaRecuperacaoAtual) {
+          alert('Linha da recuperação não identificada.');
+          return;
+        }
+
+        const payload = {
+          tipo: document.getElementById('cadRecTipo').value,
+          material: document.getElementById('cadRecMaterial').value,
+          marca: document.getElementById('cadRecMarca').value,
+          especificacao: document.getElementById('cadRecEspecificacao').value,
+          nf: document.getElementById('cadRecNF').value,
+          quantidade_disponivel: 0,
+          quantidade_em_uso: 0,
+        };
+
+        if (!payload.tipo || !payload.material) {
+          alert('Tipo e Material são obrigatórios.');
+          return;
+        }
+
+        try {
+          await fetchJson('/materiais', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+          });
+
+          bootstrap.Modal.getInstance(modalCadastrarRecuperadoEl).hide();
+
+          const selectTipo = linhaRecuperacaoAtual.querySelector('.rec-tipo');
+          const selectMaterial = linhaRecuperacaoAtual.querySelector('.rec-material');
+
+          if (selectTipo) {
+            selectTipo.value = payload.tipo;
+          }
+
+          await carregarMateriaisRecuperacaoPorTipo(payload.tipo, selectMaterial);
+
+          const opts = [...selectMaterial.options];
+          const found = opts.find(o => (o.textContent || '').includes(payload.material));
+          if (found) selectMaterial.value = found.value;
+
+          linhaRecuperacaoAtual = null;
+        } catch (err) {
+          alert(err.message || 'Erro ao cadastrar material recuperado.');
+        }
+      });
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -864,7 +942,9 @@
 
           await fetchJson('/add-item-manutencao', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload),
           });
 
@@ -963,11 +1043,16 @@
           <td>
             <input type="text" class="form-control rec-motivo" placeholder="Obrigatório se defeito">
           </td>
-          <td style="width:90px;" class="text-center">
+          <td style="width:180px;" class="text-center">
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="button" class="btn btn-sm btn-outline-secondary rec-cadastrar">
+              + Registrar
+            </button>
             <button type="button" class="btn btn-sm btn-outline-danger rec-remover">
               <i class="fas fa-trash"></i>
             </button>
-          </td>
+          </div>
+        </td>
         `;
 
         tbodyRecuperacao.appendChild(tr);
@@ -977,6 +1062,7 @@
         const selectDestino = tr.querySelector('.rec-destino');
         const inputMotivo = tr.querySelector('.rec-motivo');
         const btnRemover = tr.querySelector('.rec-remover');
+        const btnCadastrar = tr.querySelector('.rec-cadastrar');
 
         await carregarTiposRecuperacao(selectTipo);
 
@@ -994,7 +1080,24 @@
             inputMotivo.value = '';
           }
         });
+        btnCadastrar.addEventListener('click', () => {
+          const tipo = selectTipo.value;
 
+          if (!tipo) {
+            alert('Selecione primeiro o tipo da linha.');
+            return;
+          }
+
+          linhaRecuperacaoAtual = tr;
+
+          document.getElementById('cadRecTipo').value = tipo;
+          document.getElementById('cadRecMaterial').value = '';
+          document.getElementById('cadRecMarca').value = '';
+          document.getElementById('cadRecEspecificacao').value = '';
+          document.getElementById('cadRecNF').value = '';
+
+          new bootstrap.Modal(modalCadastrarRecuperadoEl).show();
+        });
         btnRemover.addEventListener('click', () => {
           tr.remove();
 
@@ -1077,7 +1180,9 @@
         try {
           await fetchJson('/condenar-maquina-com-recuperacao', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload),
           });
 
@@ -1093,7 +1198,7 @@
     const modalDet = document.getElementById('modalDetalhesProcedimento');
 
     if (modalDet) {
-      modalDet.addEventListener('show.bs.modal', function (event) {
+      modalDet.addEventListener('show.bs.modal', function(event) {
         const btn = event.relatedTarget;
         if (!btn) return;
 

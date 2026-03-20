@@ -17,7 +17,7 @@
                 <label for="empresaImport">Selecione a Empresa</label>
                 <select class="form-select" name="empresaId" id="empresaImport" required>
                   <% (empresas || []).forEach(function(empresa) { %>
-                    <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+                  <option value="<%= empresa.id %>"><%= empresa.nome %></option>
                   <% }); %>
                 </select>
               </div>

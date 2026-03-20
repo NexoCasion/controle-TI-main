@@ -31,7 +31,13 @@ class MaterialController {
       where.quantidade_disponivel = { [Op.gt]: 0 };
     }
 
-    const list = await Material.findAll({ where, order: [['tipo', 'ASC'], ['material', 'ASC']] });
+    const list = await Material.findAll({
+      where,
+      order: [
+        ['tipo', 'ASC'],
+        ['material', 'ASC'],
+      ],
+    });
 
     return list.map((m) => ({
       id: m.id,
@@ -103,7 +109,11 @@ class MaterialController {
     // (ela só muda via procedimentos/recuperação)
 
     // validações de quantidade
-    if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0 || (mat.quantidade_baixada ?? 0) < 0) {
+    if (
+      mat.quantidade_disponivel < 0 ||
+      mat.quantidade_em_uso < 0 ||
+      (mat.quantidade_baixada ?? 0) < 0
+    ) {
       throw new Error('Quantidades não podem ser negativas.');
     }
 
@@ -122,9 +132,7 @@ class MaterialController {
       order: [['tipo', 'ASC']],
     });
 
-    return rows
-      .map((r) => r.get('tipo'))
-      .filter((t) => t && String(t).trim().length > 0);
+    return rows.map((r) => r.get('tipo')).filter((t) => t && String(t).trim().length > 0);
   }
   async usoPorMaquina(materialId) {
     const ManutencaoMaterial = require('../models/ManutencaoMaterial');
@@ -135,23 +143,29 @@ class MaterialController {
     const rows = await ManutencaoMaterial.findAll({
       where: { material_id: materialId },
       attributes: ['quantidade'],
-      include: [{
-        model: ManutencaoItem,
-        as: 'manutencaoItem',
-        attributes: ['id', 'tipo', 'manutencaoId'],
-        include: [{
-          model: Manutencao,
-          as: 'manutencao',
-          attributes: ['id', 'computadorId'],
-          include: [{
-            model: Computador,
-            as: 'computador',
-            where: { ativo: true },          // ✅ só ativos
-            required: true,                  // ✅ força o filtro realmente
-            attributes: ['id', 'patrimonio', 'specs', 'specs_override'],
-          }],
-        }],
-      }],
+      include: [
+        {
+          model: ManutencaoItem,
+          as: 'manutencaoItem',
+          attributes: ['id', 'tipo', 'manutencaoId'],
+          include: [
+            {
+              model: Manutencao,
+              as: 'manutencao',
+              attributes: ['id', 'computadorId'],
+              include: [
+                {
+                  model: Computador,
+                  as: 'computador',
+                  where: { ativo: true }, // ✅ só ativos
+                  required: true, // ✅ força o filtro realmente
+                  attributes: ['id', 'patrimonio', 'specs', 'specs_override'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     // agrega por computador
@@ -291,7 +305,9 @@ class MaterialController {
 
       if (origem === 'DISPONIVEL') {
         if (mat.quantidade_disponivel < qtd) {
-          throw new Error(`Saldo insuficiente em DISPONÍVEL. Disponível: ${mat.quantidade_disponivel}`);
+          throw new Error(
+            `Saldo insuficiente em DISPONÍVEL. Disponível: ${mat.quantidade_disponivel}`
+          );
         }
         mat.quantidade_disponivel -= qtd;
       } else {
@@ -303,20 +319,27 @@ class MaterialController {
 
       mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
 
-      if (mat.quantidade_disponivel < 0 || mat.quantidade_em_uso < 0 || mat.quantidade_baixada < 0) {
+      if (
+        mat.quantidade_disponivel < 0 ||
+        mat.quantidade_em_uso < 0 ||
+        mat.quantidade_baixada < 0
+      ) {
         throw new Error('Quantidades não podem ficar negativas.');
       }
 
       await mat.save({ transaction: t });
 
-      await MaterialMovimento.create({
-        material_id: mat.id,
-        tipo_movimento: 'BAIXA',
-        quantidade: qtd,
-        referencia_manutencaoItem_id: manutencaoItemId || null,
-        referencia_computador_id: computadorId || null,
-        observacao: String(motivo).trim(),
-      }, { transaction: t });
+      await MaterialMovimento.create(
+        {
+          material_id: mat.id,
+          tipo_movimento: 'BAIXA',
+          quantidade: qtd,
+          referencia_manutencaoItem_id: manutencaoItemId || null,
+          referencia_computador_id: computadorId || null,
+          observacao: String(motivo).trim(),
+        },
+        { transaction: t }
+      );
 
       return true;
     });
@@ -365,12 +388,7 @@ class MaterialController {
     return baixados;
   }
   async recuperar(payload) {
-    const {
-      materialId,
-      quantidade = 1,
-      computadorId = null,
-      manutencaoItemId = null
-    } = payload;
+    const { materialId, quantidade = 1, computadorId = null, manutencaoItemId = null } = payload;
 
     if (!materialId) throw new Error('materialId é obrigatório.');
 
@@ -378,7 +396,6 @@ class MaterialController {
     if (qtd <= 0) throw new Error('Quantidade inválida.');
 
     return await database.transaction(async (t) => {
-
       const mat = await Material.findByPk(materialId, { transaction: t });
       if (!mat) throw new Error('Material não encontrado.');
 
@@ -391,17 +408,19 @@ class MaterialController {
 
       await mat.save({ transaction: t });
 
-      await MaterialMovimento.create({
-        material_id: mat.id,
-        tipo_movimento: 'ENTRADA_RECUPERACAO',
-        quantidade: qtd,
-        referencia_manutencaoItem_id: manutencaoItemId || null,
-        referencia_computador_id: computadorId || null,
-        observacao: 'Peça recuperada de manutenção'
-      }, { transaction: t });
+      await MaterialMovimento.create(
+        {
+          material_id: mat.id,
+          tipo_movimento: 'ENTRADA_RECUPERACAO',
+          quantidade: qtd,
+          referencia_manutencaoItem_id: manutencaoItemId || null,
+          referencia_computador_id: computadorId || null,
+          observacao: 'Peça recuperada de manutenção',
+        },
+        { transaction: t }
+      );
 
       return true;
-
     });
   }
 }

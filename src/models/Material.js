@@ -43,10 +43,10 @@ const Material = database.define('materiais', {
   },
 
   quantidade_baixada: {
-  type: Sequelize.INTEGER,
-  allowNull: false,
-  defaultValue: 0,
-},
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
 
   nf: {
     type: Sequelize.STRING,

@@ -573,17 +573,8 @@ class ManutencaoController {
         manutencao.dataSaida = new Date();
         await manutencao.save({ transaction: t });
 
-        await ManutencaoItem.create(
-          {
-            manutencaoId: manutencaoId,
-            tipo: 'CONDENACAO',
-            descricao: `⚠️ MÁQUINA CONDENADA — Motivo: ${String(motivoCondenacao).trim()}`,
-            material_snapshot: itensResumo.join(' || '),
-            specs_antes: pc.specs_override || pc.specs || null,
-            specs_depois: pc.specs_override || pc.specs || null,
-          },
-          { transaction: t }
-        );
+        itemCondenacao.material_snapshot = itensResumo.join(' || ');
+        await itemCondenacao.save({ transaction: t });
 
         return true;
       });

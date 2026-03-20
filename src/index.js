@@ -61,5 +61,3 @@ const PORT = process.env.PORT || 3000;
     console.error('Erro ao sincronizar o banco:', err);
   }
 })();
-
-

@@ -18,7 +18,7 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: false,
   },
-    specs_override: {
+  specs_override: {
     type: Sequelize.TEXT,
     allowNull: true,
   },
@@ -57,7 +57,6 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: true,
   },
-  
 });
 
 Computador.belongsTo(Empresa, { foreignKey: 'empresaId', as: 'empresa' });

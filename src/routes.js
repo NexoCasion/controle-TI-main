@@ -124,7 +124,7 @@ router.get('/ver-pc', async (req, res) => {
     return res.render('pages/computador', {
       alert: res.locals.alert,
       computador: pc,
-      empresas: empresasList
+      empresas: empresasList,
     });
   } catch (error) {
     console.error('Erro ao procurar pc:', error);
@@ -232,15 +232,15 @@ router.post('/add-item-manutencao', async (req, res) => {
       descricao,
 
       // novos campos do procedimento
-      tipo,          // 'TROCA_PECA' | 'LIMPEZA' | 'MANUT_SIMPLES'
-      materialId,    // somente se TROCA_PECA
-      quantidade,    // somente se TROCA_PECA
-      specs_depois,  // string editada (somente se TROCA_PECA)
+      tipo, // 'TROCA_PECA' | 'LIMPEZA' | 'MANUT_SIMPLES'
+      materialId, // somente se TROCA_PECA
+      quantidade, // somente se TROCA_PECA
+      specs_depois, // string editada (somente se TROCA_PECA)
       //peça removida
       materialRemovidoId, // somente se TROCA_PECA e tiver peça removida
-      qtdRemovida,       // somente se TROCA_PECA e tiver peça removida
-      destinoRemovida,   // 'DESCARTE' ou 'ESTOQUE' (somente se TROCA_PECA e tiver peça removida)
-      motivoRemovida,    // string editada (somente se TROCA_PECA e tiver peça removida)
+      qtdRemovida, // somente se TROCA_PECA e tiver peça removida
+      destinoRemovida, // 'DESCARTE' ou 'ESTOQUE' (somente se TROCA_PECA e tiver peça removida)
+      motivoRemovida, // string editada (somente se TROCA_PECA e tiver peça removida)
     } = req.body;
 
     await manutencaoController.addItemManutencao({
@@ -339,7 +339,7 @@ router.post('/condenar-maquina-com-recuperacao', async (req, res) => {
   }
 });
 //TRANSFERENCIAS
-router.get('/transferir', async (req, res) => { });
+router.get('/transferir', async (req, res) => {});
 
 router.post('/transferir', async (req, res) => {
   console.log(req.body);
@@ -438,17 +438,13 @@ router.get('/materiais/:id/uso-por-maquina', async (req, res) => {
 });
 router.post('/materiais/recuperar', async (req, res) => {
   try {
-
     const ok = await materialController.recuperar(req.body);
 
     return res.json({ ok: !!ok });
-
   } catch (err) {
-
     console.error('Erro ao recuperar material:', err);
 
     return res.status(400).json({ error: err.message });
-
   }
 });
 // Listar materiais (com filtros opcionais):
@@ -459,7 +455,8 @@ router.get('/materiais', async (req, res) => {
 
     const list = await materialController.getAll({
       tipo,
-      somenteDisponivel: String(somenteDisponivel) === '1' || String(somenteDisponivel).toLowerCase() === 'true',
+      somenteDisponivel:
+        String(somenteDisponivel) === '1' || String(somenteDisponivel).toLowerCase() === 'true',
       q,
     });
 

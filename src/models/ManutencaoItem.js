@@ -18,8 +18,8 @@ const ManutencaoItem = database.define('manutencaoItems', {
     allowNull: false,
   },
   tipo: {
-  type: Sequelize.STRING,
-  allowNull: true, // mantém compatibilidade com itens antigos
+    type: Sequelize.STRING,
+    allowNull: true, // mantém compatibilidade com itens antigos
   },
   specs_antes: {
     type: Sequelize.TEXT,

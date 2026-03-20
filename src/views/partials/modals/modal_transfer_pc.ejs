@@ -23,7 +23,7 @@
                 <select class="form-select" name="emp_destino" id="transferEmpDestinoId" required>
                   <option value="" selected disabled>Selecione a empresa destino</option>
                   <% (empresas || []).forEach(function(e) { %>
-                    <option value="<%= e.id %>"><%= e.nome %></option>
+                  <option value="<%= e.id %>"><%= e.nome %></option>
                   <% }) %>
                 </select>
               </div>
