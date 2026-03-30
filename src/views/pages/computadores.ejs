@@ -5,101 +5,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Informações do Computador</title>
-  <!-- Adicionando Bootstrap CSS (opcional, caso queira usar o framework para estilização) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Adicionando Font Awesome (opcional, caso queira usar os ícones) -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css">
-
-
 </head>
 
 <body>
   <header class="headerComponent">
     <%- include("./../partials/header.ejs") %>
   </header>
+  <main>
+    <div class="container mt-4">
+      <a href="javascript:history.back()" class="btn btn-back">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <div class="text-center align-items-center">
+        <h1 class="mt-4 mb-4">Lista de Computadores</h1>
+        <button type="button" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterPc">
+          Adicionar Computador
+        </button>
 
-  <div class="container">
-    <a href="javascript:history.back()" class="btn btn-back">
-      <i class="fas fa-arrow-left"></i>
-    </a>
-    <h1 class="mt-4 mb-4">Lista de Computadores</h1>
-    <button type="button" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterPc">
-      Adicionar Computador
-    </button>
+        <div class="mt-3 mb-2">
+          <small class="text-muted" id="totalComputadores">Computadores exibidos: 0 / Total: 0</small>
+        </div>
 
-    <div class="mt-3 mb-2">
-      <small class="text-muted" id="totalComputadores">Computadores exibidos: 0 / Total: 0</small>
-    </div>
+        <div class="mb-3 text-start">
+          <label for="selectEmpresa" class="form-label">Filtrar por Empresa:</label>
+          <select id="selectEmpresa" class="form-select">
+            <option value="">Todas as Empresas</option>
+            <% empresas.forEach(function(empresa) { %>
+            <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+            <% }); %>
+          </select>
+        </div>
 
+        <div class="row g-3 mb-3 text-start">
+          <div class="col-md-8">
+            <label for="searchInput" class="form-label">Pesquisar:</label>
+            <input id="searchInput" class="form-control" type="text" placeholder="Digite patrimônio, especificações, setor ou empresa...">
+          </div>
+          <div class="col-md-4">
+            <label for="pageSizeSelect" class="form-label">Máximo por página:</label>
+            <select id="pageSizeSelect" class="form-select">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
 
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')" data-sort-col="0">
+                Patrimônio <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')" data-sort-col="1">
+                Especificações <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')" data-sort-col="2">
+                Setor <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')" data-sort-col="3">
+                Empresa <span class="sort-indicator"></span>
+              </th>
+              <th scope="col" class="text-center">Ações</th>
+            </thead>
 
-    <!-- Dropdown para filtrar por empresa -->
-    <div class="mb-3">
-      <label for="selectEmpresa" class="form-label">Filtrar por Empresa:</label>
-      <select id="selectEmpresa" class="form-select">
-        <option value="">Todas as Empresas</option>
-        <% empresas.forEach(function(empresa) { %>
-        <option value="<%= empresa.id %>"><%= empresa.nome %></option>
-        <% }); %>
-      </select>
-      <div class="mb-3">
-        <label for="searchInput" class="form-label">Pesquisar:</label>
-        <input id="searchInput" class="form-control" type="text" placeholder="Digite patrimônio, especificações ou empresa...">
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+          <small class="text-muted" id="pageInfo">Página 1 de 1</small>
+          <div class="d-flex align-items-center gap-2 flex-wrap" id="paginationControls"></div>
+        </div>
       </div>
-
     </div>
-    <!-- Tabela de computadores -->
-    <table class="table">
-      <thead>
+  </main>
 
-        <th scope="col" style="cursor:pointer" onclick="ordenarPor('patrimonio')" data-sort-col="0">
-          Patrimônio <span class="sort-indicator"></span>
-        </th>
-        <th scope="col" style="cursor:pointer" onclick="ordenarPor('specs')" data-sort-col="1">
-          Especificações <span class="sort-indicator"></span>
-        </th>
-        <th scope="col" style="cursor:pointer" onclick="ordenarPor('setor')" data-sort-col="2">
-          Setor <span class="sort-indicator"></span>
-        </th>
-        <th scope="col" style="cursor:pointer" onclick="ordenarPor('empresa')" data-sort-col="3">
-          Empresa <span class="sort-indicator"></span>
-        </th>
-        <th scope="col">Ações</th>
-      </thead>
-
-
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- Adicionando Bootstrap JS (opcional, caso queira usar funcionalidades como modals ou dropdowns) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Adicionando script personalizado para filtrar computadores por empresa -->
   <%- include("../partials/modals/modal_register_pc", { empresas: empresas }) %>
   <%- include("../partials/modals/modal_edit_pc") %>
   <%- include("../partials/modals/modal_register_manutencao") %>
   <%- include("../partials/modals/modal_transfer_pc", { empresas: empresas }) %>
   <%- include("../partials/modals/modal_import_csv", { empresas: empresas }) %>
 
-
-
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const selectEmpresa = document.getElementById("selectEmpresa");
       const searchInput = document.getElementById("searchInput");
+      const pageSizeSelect = document.getElementById("pageSizeSelect");
       const tableBody = document.getElementById("tableBody");
       const totalComputadoresEl = document.getElementById("totalComputadores");
+      const pageInfoEl = document.getElementById("pageInfo");
+      const paginationControls = document.getElementById("paginationControls");
 
-
-      // Se algum elemento não existir, para aqui e mostra no console
-      if (!selectEmpresa || !searchInput || !tableBody) {
-        console.error("IDs não encontrados. Verifique selectEmpresa/searchInput/tableBody no HTML.");
+      if (!selectEmpresa || !searchInput || !pageSizeSelect || !tableBody) {
+        console.error("IDs não encontrados. Verifique selectEmpresa/searchInput/pageSizeSelect/tableBody no HTML.");
         return;
       }
 
       let currentComputadores = [];
-      let direcaoOrdenacao = {};
+      let currentMeta = {
+        total: 0,
+        page: 1,
+        totalPages: 1,
+        limit: 20,
+      };
+      let searchDebounce = null;
       let currentOrder = {
         coluna: null,
         asc: true
@@ -110,12 +125,55 @@
           totalComputadoresEl.textContent = `Computadores exibidos: ${visiveis} / Total: ${total}`;
         }
       }
-      // Importar CSV (fecha Register PC -> abre Import CSV)
+
+      function atualizarInfoPaginacao() {
+        if (pageInfoEl) {
+          pageInfoEl.textContent = `Página ${currentMeta.page} de ${currentMeta.totalPages}`;
+        }
+      }
+
+      function criarBotaoPagina(label, page, disabled = false, active = false) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `btn btn-sm ${active ? 'btn-primary' : 'btn-outline-secondary'}`;
+        btn.textContent = label;
+        btn.disabled = disabled;
+        btn.addEventListener("click", () => {
+          if (!disabled) carregarComputadores(page);
+        });
+        return btn;
+      }
+
+      function renderizarPaginacao() {
+        paginationControls.innerHTML = "";
+
+        const totalPages = currentMeta.totalPages || 1;
+        const currentPage = currentMeta.page || 1;
+
+        paginationControls.appendChild(
+          criarBotaoPagina("Anterior", currentPage - 1, currentPage <= 1)
+        );
+
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        for (let page = startPage; page <= endPage; page++) {
+          paginationControls.appendChild(
+            criarBotaoPagina(String(page), page, false, page === currentPage)
+          );
+        }
+
+        paginationControls.appendChild(
+          criarBotaoPagina("Próxima", currentPage + 1, currentPage >= totalPages)
+        );
+
+        atualizarInfoPaginacao();
+      }
+
       const btnOpenImport = document.getElementById("btnOpenImportCsvFromRegister");
       if (btnOpenImport) {
         btnOpenImport.addEventListener("click", () => {
           switchModal("modalRegisterPc", "modalImportCsv", () => {
-            // opcional: se você estiver filtrando uma empresa na tela, já preseleciona no import
             const filtro = document.getElementById("selectEmpresa");
             const empresaId = filtro ? filtro.value : "";
             const empresaImport = document.getElementById("empresaImport");
@@ -124,77 +182,35 @@
         });
       }
 
-
-
-      async function carregarComputadores(empresaId) {
+      async function carregarComputadores(page = 1) {
         try {
-          const response = await fetch(`/computadores-by-empresa?empresaId=${empresaId || ""}`);
-          const computadores = await response.json();
-          currentComputadores = Array.isArray(computadores) ? computadores : [];
-          aplicarFiltrosEOrdenacao();
+          const params = new URLSearchParams({
+            empresaId: selectEmpresa.value || "",
+            q: searchInput.value || "",
+            page: String(page),
+            limit: String(pageSizeSelect.value || 20),
+            sortBy: currentOrder.coluna === 1 ? "specs" : currentOrder.coluna === 2 ? "setor" : currentOrder.coluna === 3 ? "empresa" : "patrimonio",
+            sortDir: currentOrder.asc ? "ASC" : "DESC",
+          });
+
+          const response = await fetch(`/computadores-by-empresa?${params.toString()}`);
+          const resultado = await response.json();
+
+          currentComputadores = Array.isArray(resultado.rows) ? resultado.rows : [];
+          currentMeta = {
+            total: Number(resultado.total || 0),
+            page: Number(resultado.page || 1),
+            totalPages: Number(resultado.totalPages || 1),
+            limit: Number(resultado.limit || pageSizeSelect.value || 20),
+          };
+
+          renderizarComputadores(currentComputadores);
+          atualizarContadores(currentMeta.total, currentComputadores.length);
+          renderizarPaginacao();
+          atualizarSetasOrdenacaoComputadores();
         } catch (error) {
           console.log(`Erro ao buscar computadores: ${error}`);
         }
-      }
-
-      function aplicarFiltrosEOrdenacao() {
-        const termo = (searchInput.value || "").trim().toLowerCase();
-
-        // total sempre do conjunto carregado (empresa selecionada ou todas)
-        const total = currentComputadores.length;
-
-        // filtra pelo termo
-        let filtrados = currentComputadores.filter((c) => {
-          const patrimonio = (c.patrimonio || "").toString().toLowerCase();
-          const specs = (c.specs || "").toString().toLowerCase();
-          const empresa = (c.empresa?.nome || "").toString().toLowerCase();
-          const setor = (c.setor || "").toString().toLowerCase();
-
-
-          const texto = ` ${patrimonio} ${specs} ${empresa} ${setor}`;
-          return termo === "" || texto.includes(termo);
-        });
-
-        // ordena se tiver coluna selecionada
-        if (currentOrder.coluna !== null) {
-          const colunaIndex = currentOrder.coluna;
-          const asc = currentOrder.asc;
-
-          filtrados.sort((a, b) => {
-            let valorA = "";
-            let valorB = "";
-
-            // mapeia colunas: 0=patrimonio, 1=specs, 2=setor, 3=empresa
-            if (colunaIndex === 0) {
-              valorA = (a.patrimonio ?? "").toString();
-              valorB = (b.patrimonio ?? "").toString();
-            } else if (colunaIndex === 1) {
-              valorA = (a.specs ?? "").toString();
-              valorB = (b.specs ?? "").toString();
-            } else if (colunaIndex === 2) {
-              valorA = (a.setor ?? "").toString();
-              valorB = (b.setor ?? "").toString();
-            } else if (colunaIndex === 3) {
-              valorA = (a.empresa?.nome ?? "").toString();
-              valorB = (b.empresa?.nome ?? "").toString();
-            }
-
-
-            // tenta número
-            const numA = parseFloat(valorA.replace(/\D/g, ""));
-            const numB = parseFloat(valorB.replace(/\D/g, ""));
-            const ambosNumeros = !isNaN(numA) && !isNaN(numB) && valorA !== "" && valorB !== "";
-
-            if (ambosNumeros) return asc ? numA - numB : numB - numA;
-
-            valorA = valorA.trim().toLowerCase();
-            valorB = valorB.trim().toLowerCase();
-            return asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
-          });
-        }
-
-        renderizarComputadores(filtrados);
-        atualizarContadores(total, filtrados.length);
       }
 
       function renderizarComputadores(computadores) {
@@ -202,13 +218,13 @@
 
         computadores.forEach((computador) => {
           const row = `
-  <tr class= editar-pcs>
+  <tr class="editar-pcs">
     <td>${computador.patrimonio ?? ""}</td>
     <td>${computador.specs ?? "Sem descrição"}</td>
     <td>${computador.setor ?? ""}</td>
     <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
     <td>
-      <div  class="btn-group m-2 align-items-center " role="group">
+      <div class="btn-group m-2 align-items-center" role="group">
         <button
           type="button"
           class="btn btn-primary btn-sm btn-edit"
@@ -231,7 +247,6 @@
   </tr>
 `;
 
-
           tableBody.innerHTML += row;
         });
       }
@@ -243,9 +258,8 @@
           currentOrder.coluna = colunaIndex;
           currentOrder.asc = true;
         }
-        aplicarFiltrosEOrdenacao();
-        atualizarSetasOrdenacaoComputadores();
 
+        carregarComputadores(1);
       }
 
       function atualizarSetasOrdenacaoComputadores() {
@@ -273,10 +287,9 @@
           empresa: 3
         };
 
-
         if (map[tipo] !== undefined) ordenarTabela(map[tipo]);
       }
-      // Clique no botão "Editar" (event delegation)
+
       tableBody.addEventListener("click", (e) => {
         const btn = e.target.closest(".btn-edit");
         if (!btn) return;
@@ -291,7 +304,6 @@
           empresaId: empresaId
         };
 
-
         const form = document.getElementById("formEditPc");
         const inPatrimonio = document.getElementById("editPatrimonio");
         const inSetor = document.getElementById("editSetor");
@@ -305,7 +317,6 @@
         inSpecs.value = specs;
       });
 
-      // ====== BOTÕES DO MODAL EDITAR + HELPERS (Bootstrap 5 beta3 compat) ======
       const btnAddMan = document.getElementById("btnAddManutencaoFromEdit");
       const btnTransf = document.getElementById("btnTransferirFromEdit");
 
@@ -321,7 +332,6 @@
         return inst;
       }
 
-      // Fecha um modal e só depois abre o outro (evita “backdrop” duplicado)
       function switchModal(fromId, toId, beforeShow) {
         const fromEl = document.getElementById(fromId);
         const fromInst = ensureModal(fromId);
@@ -345,7 +355,6 @@
         fromInst.hide();
       }
 
-      // Adicionar Manutenção (fecha Editar -> abre Manutenção com prefill)
       if (btnAddMan) {
         btnAddMan.addEventListener("click", () => {
           if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
@@ -362,7 +371,6 @@
         });
       }
 
-      // Transferir Unidade (fecha Editar -> abre Transferência com hidden inputs)
       if (btnTransf) {
         btnTransf.addEventListener("click", () => {
           if (!window.__editPcCtx || !window.__editPcCtx.computadorId) {
@@ -382,26 +390,25 @@
         });
       }
 
-
-
-      // expõe pro onclick do <th>
       window.ordenarTabela = ordenarTabela;
       window.ordenarPor = ordenarPor;
 
       selectEmpresa.addEventListener("change", function() {
-        carregarComputadores(this.value);
+        carregarComputadores(1);
       });
 
-      searchInput.addEventListener("input", aplicarFiltrosEOrdenacao);
+      pageSizeSelect.addEventListener("change", function() {
+        carregarComputadores(1);
+      });
 
-      // carrega tudo ao abrir
-      carregarComputadores("");
+      searchInput.addEventListener("input", function() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => carregarComputadores(1), 250);
+      });
 
+      carregarComputadores(1);
     });
   </script>
-
-
-
 </body>
 
 </html>

@@ -71,6 +71,8 @@ class ManutencaoController {
         dataSaida: manutencao.dataValues.dataSaida,
         empresa: manutencao.computador.empresa.nome,
         pcName: manutencao.computador.patrimonio,
+        setor: manutencao.computador.setor,
+        local: manutencao.computador.setor,
 
         // ✅ NOVO (para a tela saber se o PC foi condenado)
         pcStatus: manutencao.computador.status, // aqui fica o ID da manutenção que condenou
@@ -79,6 +81,156 @@ class ManutencaoController {
       return manutencoesJSON;
     } catch (error) {
       throw new Error(`Erro ao listar manutenções: ${error.message}`);
+    }
+  }
+
+  async getPaged({
+    page = 1,
+    limit = 20,
+    q = '',
+    empresa = 'todas',
+    status = 'todas_sem_condenados',
+    dataInicio = '',
+    dataFim = '',
+    sortBy = 'id',
+    sortDir = 'ASC',
+  } = {}) {
+    try {
+      const pageNumber = Math.max(Number(page) || 1, 1);
+      const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 200);
+      const busca = String(q || '').trim().toLowerCase();
+      const empresaFiltro = String(empresa || 'todas');
+      const statusFiltro = String(status || 'todas_sem_condenados');
+      const dataInicioFiltro = String(dataInicio || '').trim();
+      const dataFimFiltro = String(dataFim || '').trim();
+
+      const lista = await this.findAll();
+
+      let filtrada = lista.filter((manutencao) => {
+        const dataManutencao =
+          manutencao.dataSaida && String(manutencao.dataSaida).trim() !== ''
+            ? manutencao.dataSaida
+            : manutencao.dataEntrada;
+
+        const statusLinha = manutencao.dataSaida ? 'finalizadas' : 'em_manutencao';
+        const condenado = !!manutencao.pcCondenado;
+        const empresaLinha = manutencao.empresa || '';
+        const textoBusca = [
+          manutencao.id,
+          manutencao.pcName,
+          manutencao.empresa,
+          manutencao.local || manutencao.setor,
+          manutencao.descricao,
+          manutencao.computadorId,
+        ]
+          .filter((v) => v !== undefined && v !== null)
+          .join(' ')
+          .toLowerCase();
+
+        let statusMatch = true;
+        if (statusFiltro === 'em_manutencao') {
+          statusMatch = statusLinha === 'em_manutencao' && !condenado;
+        } else if (statusFiltro === 'finalizadas_sem_condenacao') {
+          statusMatch = statusLinha === 'finalizadas' && !condenado;
+        } else if (statusFiltro === 'condenados') {
+          statusMatch = condenado;
+        } else if (statusFiltro === 'todas_sem_condenados') {
+          statusMatch = !condenado;
+        }
+
+        const empresaMatch = empresaFiltro === 'todas' || empresaLinha === empresaFiltro;
+        const buscaMatch = !busca || textoBusca.includes(busca);
+
+        let dataMatch = true;
+        const rowDate = dataManutencao ? new Date(dataManutencao) : null;
+        if (dataInicioFiltro) {
+          const de = new Date(`${dataInicioFiltro}T00:00:00`);
+          dataMatch = dataMatch && rowDate && rowDate >= de;
+        }
+        if (dataFimFiltro) {
+          const ate = new Date(`${dataFimFiltro}T23:59:59.999`);
+          dataMatch = dataMatch && rowDate && rowDate <= ate;
+        }
+
+        return statusMatch && empresaMatch && buscaMatch && dataMatch;
+      });
+
+      const direction = String(sortDir).toUpperCase() === 'DESC' ? -1 : 1;
+
+      filtrada.sort((a, b) => {
+        const dataA =
+          a.dataSaida && String(a.dataSaida).trim() !== '' ? a.dataSaida : a.dataEntrada;
+        const dataB =
+          b.dataSaida && String(b.dataSaida).trim() !== '' ? b.dataSaida : b.dataEntrada;
+
+        let valorA = '';
+        let valorB = '';
+
+        if (sortBy === 'patrimonio') {
+          valorA = a.pcName || '';
+          valorB = b.pcName || '';
+        } else if (sortBy === 'empresa') {
+          valorA = a.empresa || '';
+          valorB = b.empresa || '';
+        } else if (sortBy === 'descricao') {
+          valorA = a.descricao || '';
+          valorB = b.descricao || '';
+        } else if (sortBy === 'status') {
+          valorA = a.pcCondenado ? 'condenado' : (a.dataSaida ? 'finalizada' : 'em_manutencao');
+          valorB = b.pcCondenado ? 'condenado' : (b.dataSaida ? 'finalizada' : 'em_manutencao');
+        } else if (sortBy === 'data') {
+          valorA = dataA || '';
+          valorB = dataB || '';
+        } else {
+          valorA = String(a.id || '');
+          valorB = String(b.id || '');
+        }
+
+        if (sortBy === 'data') {
+          const da = valorA ? new Date(valorA).getTime() : 0;
+          const db = valorB ? new Date(valorB).getTime() : 0;
+          return (da - db) * direction;
+        }
+
+        const numA = parseFloat(String(valorA).replace(/\D/g, ''));
+        const numB = parseFloat(String(valorB).replace(/\D/g, ''));
+        const ambosNumeros =
+          !Number.isNaN(numA) && !Number.isNaN(numB) && String(valorA) !== '' && String(valorB) !== '';
+
+        if (ambosNumeros) {
+          return (numA - numB) * direction;
+        }
+
+        return String(valorA).localeCompare(String(valorB), 'pt-BR', { sensitivity: 'base' }) * direction;
+      });
+
+      const total = filtrada.length;
+      const totalPages = Math.max(Math.ceil(total / limitNumber), 1);
+      const safePage = Math.min(pageNumber, totalPages);
+      const offset = (safePage - 1) * limitNumber;
+      const rows = filtrada.slice(offset, offset + limitNumber).map((manutencao, index) => {
+        const dataManutencao =
+          manutencao.dataSaida && String(manutencao.dataSaida).trim() !== ''
+            ? manutencao.dataSaida
+            : manutencao.dataEntrada;
+
+        return {
+          ...manutencao,
+          rowNumber: offset + index + 1,
+          dataManutencao,
+          local: manutencao.local || manutencao.setor || '-',
+        };
+      });
+
+      return {
+        rows,
+        total,
+        page: safePage,
+        limit: limitNumber,
+        totalPages,
+      };
+    } catch (error) {
+      throw new Error(`Erro ao paginar manutenÃ§Ãµes: ${error.message}`);
     }
   }
 

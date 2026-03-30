@@ -9,7 +9,7 @@
               <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
                 <i class="fas fa-arrow-left"></i>
               </button>
-              <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
+              <h2 class="card-title mb-0 mx-auto">Cadastro de ManutenÃ§Ã£o</h2>
             </div>
 
             <form id="manutencaoFormModal" action="/register-manutencao" method="post">
@@ -28,8 +28,8 @@
               </div>
 
               <div class="form-group">
-                <label for="descricao">Descrição</label>
-                <textarea placeholder="Informe a queixa do usuário e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
+                <label for="descricao">DescriÃ§Ã£o</label>
+                <textarea placeholder="Informe a queixa do usuÃ¡rio e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
               </div>
 
               <hr>
@@ -43,54 +43,56 @@
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
-          // roda quando o modal abre
           document.addEventListener("shown.bs.modal", function(ev) {
             if (ev.target.id !== "modalRegisterManutencao") return;
 
-            // carregar empresas
+            const pref = window.__prefManutencao || null;
+
             $.get("/get-empresas", function(data) {
               $('#empresaModal').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
+
               data.forEach(function(empresa) {
                 $('#empresaModal').append($('<option>', {
                   value: empresa.id,
                   text: empresa.nome
                 }));
               });
-              if (window.__prefManutencao && window.__prefManutencao.empresaId) {
-                $('#empresaModal').val(window.__prefManutencao.empresaId).trigger('change');
-              }
 
-            });
-
-            // change empresa -> carrega computadores
-            $('#empresaModal').off('change').on('change', function() {
-              var empresaId = $(this).val();
-              $('#computadorModal').empty();
-              if (empresaId) {
-                $.get("/computadores-by-empresa?empresaId=" + empresaId, function(data) {
-                  $('#computadorModal').empty();
-                  data.forEach(function(computador) {
-                    $('#computadorModal').append($('<option>', {
-                      value: computador.id,
-                      text: `${computador.id} - ${computador.patrimonio}`
-                    }));
-                  });
-
-                  $('#computadorGroupModal').show();
-
-                  // seta o computador só no final
-                  if (window.__prefManutencao && window.__prefManutencao.computadorId) {
-                    $('#computadorModal').val(window.__prefManutencao.computadorId);
-
-                    // opcional: limpa depois de aplicar (pra não ficar "grudado")
-                    window.__prefManutencao = null;
-                  }
-
-                  $('#computadorGroupModal').show();
-                });
+              if (pref && pref.empresaId !== undefined && pref.empresaId !== null && pref.empresaId !== '') {
+                $('#empresaModal').val(String(pref.empresaId)).trigger('change');
               } else {
+                $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
                 $('#computadorGroupModal').hide();
               }
+            });
+
+            $('#empresaModal').off('change').on('change', function() {
+              var empresaId = $(this).val();
+
+              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+
+              if (empresaId === undefined || empresaId === null || empresaId === '') {
+                $('#computadorGroupModal').hide();
+                return;
+              }
+
+              $.get("/computadores-by-empresa?empresaId=" + empresaId, function(data) {
+                $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+
+                data.forEach(function(computador) {
+                  $('#computadorModal').append($('<option>', {
+                    value: computador.id,
+                    text: `${computador.id} - ${computador.patrimonio}`
+                  }));
+                });
+
+                if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== '') {
+                  $('#computadorModal').val(String(pref.computadorId));
+                  window.__prefManutencao = null;
+                }
+
+                $('#computadorGroupModal').show();
+              });
             });
           });
         </script>

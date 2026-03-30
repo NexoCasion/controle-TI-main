@@ -4,15 +4,11 @@ const MaterialMovimento = require('../models/MaterialMovimento');
 const database = require('../db/init.js');
 
 class MaterialController {
-  // LISTAR (com filtros opcionais)
-  // filtros: tipo, somenteDisponivel (true/false), q (busca)
-  async getAll({ tipo, somenteDisponivel, q } = {}) {
+  buildWhere({ tipo, somenteDisponivel, q } = {}) {
     const where = {};
 
     if (tipo && tipo.trim()) where.tipo = tipo.trim();
 
-    // Busca simples em campos principais (LIKE)
-    // Observação: SQLite + Sequelize: Op.like funciona.
     if (q && q.trim()) {
       const { Op } = require('sequelize');
       const term = `%${q.trim()}%`;
@@ -25,21 +21,16 @@ class MaterialController {
       ];
     }
 
-    // Se somenteDisponivel = true -> quantidade_disponivel > 0
     if (somenteDisponivel === true) {
       const { Op } = require('sequelize');
       where.quantidade_disponivel = { [Op.gt]: 0 };
     }
 
-    const list = await Material.findAll({
-      where,
-      order: [
-        ['tipo', 'ASC'],
-        ['material', 'ASC'],
-      ],
-    });
+    return where;
+  }
 
-    return list.map((m) => ({
+  mapMaterial(m) {
+    return {
       id: m.id,
       material: m.material,
       tipo: m.tipo,
@@ -51,12 +42,52 @@ class MaterialController {
       nf: m.nf,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,
-    }));
+    };
+  }
+
+  // LISTAR (com filtros opcionais)
+  // filtros: tipo, somenteDisponivel (true/false), q (busca)
+  async getAll({ tipo, somenteDisponivel, q } = {}) {
+    const where = this.buildWhere({ tipo, somenteDisponivel, q });
+
+    const list = await Material.findAll({
+      where,
+      order: [
+        ['tipo', 'ASC'],
+        ['material', 'ASC'],
+      ],
+    });
+
+    return list.map((m) => this.mapMaterial(m));
+  }
+
+  async getPaged({ tipo, somenteDisponivel, q, page = 1, limit = 20 } = {}) {
+    const safePage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const safeLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 20;
+    const where = this.buildWhere({ tipo, somenteDisponivel, q });
+
+    const { count, rows } = await Material.findAndCountAll({
+      where,
+      order: [
+        ['tipo', 'ASC'],
+        ['material', 'ASC'],
+      ],
+      limit: safeLimit,
+      offset: (safePage - 1) * safeLimit,
+    });
+
+    return {
+      rows: rows.map((m) => this.mapMaterial(m)),
+      total: Number(count || 0),
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.max(1, Math.ceil(Number(count || 0) / safeLimit)),
+    };
   }
 
   async getById(id) {
     const mat = await Material.findByPk(id);
-    if (!mat) throw new Error('Material não encontrado.');
+    if (!mat) throw new Error('Material nao encontrado.');
     return mat;
   }
 
@@ -71,14 +102,13 @@ class MaterialController {
       nf = null,
     } = payload;
 
-    if (!material || !material.trim()) throw new Error('Campo "Material" é obrigatório.');
-    if (!tipo || !tipo.trim()) throw new Error('Campo "Tipo" é obrigatório.');
+    if (!material || !material.trim()) throw new Error('Campo "Material" e obrigatorio.');
+    if (!tipo || !tipo.trim()) throw new Error('Campo "Tipo" e obrigatorio.');
 
-    // garante inteiros
     const qDisp = Number(quantidade_disponivel) || 0;
     const qUso = Number(quantidade_em_uso) || 0;
 
-    if (qDisp < 0 || qUso < 0) throw new Error('Quantidades não podem ser negativas.');
+    if (qDisp < 0 || qUso < 0) throw new Error('Quantidades nao podem ser negativas.');
 
     const created = await Material.create({
       material: material.trim(),
@@ -95,7 +125,7 @@ class MaterialController {
 
   async update(id, payload) {
     const mat = await Material.findByPk(id);
-    if (!mat) throw new Error('Material não encontrado.');
+    if (!mat) throw new Error('Material nao encontrado.');
 
     const fields = ['material', 'tipo', 'marca', 'especificacao', 'quantidade_disponivel', 'nf'];
 
@@ -105,28 +135,22 @@ class MaterialController {
       }
     }
 
-    // 🔒 3A (A3): quantidade_em_uso não é editável manualmente
-    // (ela só muda via procedimentos/recuperação)
-
-    // validações de quantidade
     if (
       mat.quantidade_disponivel < 0 ||
       mat.quantidade_em_uso < 0 ||
       (mat.quantidade_baixada ?? 0) < 0
     ) {
-      throw new Error('Quantidades não podem ser negativas.');
+      throw new Error('Quantidades nao podem ser negativas.');
     }
 
-    if (!mat.material || !mat.material.trim()) throw new Error('Campo "Material" é obrigatório.');
-    if (!mat.tipo || !mat.tipo.trim()) throw new Error('Campo "Tipo" é obrigatório.');
+    if (!mat.material || !mat.material.trim()) throw new Error('Campo "Material" e obrigatorio.');
+    if (!mat.tipo || !mat.tipo.trim()) throw new Error('Campo "Tipo" e obrigatorio.');
 
     await mat.save();
     return mat;
   }
 
-  // Tipos distintos (pra preencher o select “tipo de peça”)
   async getTipos() {
-    // SQLite: DISTINCT simples
     const rows = await Material.findAll({
       attributes: [[require('sequelize').fn('DISTINCT', require('sequelize').col('tipo')), 'tipo']],
       order: [['tipo', 'ASC']],
@@ -134,6 +158,7 @@ class MaterialController {
 
     return rows.map((r) => r.get('tipo')).filter((t) => t && String(t).trim().length > 0);
   }
+
   async usoPorMaquina(materialId) {
     const ManutencaoMaterial = require('../models/ManutencaoMaterial');
     const ManutencaoItem = require('../models/ManutencaoItem');
@@ -157,8 +182,8 @@ class MaterialController {
                 {
                   model: Computador,
                   as: 'computador',
-                  where: { ativo: true }, // ✅ só ativos
-                  required: true, // ✅ força o filtro realmente
+                  where: { ativo: true },
+                  required: true,
                   attributes: ['id', 'patrimonio', 'specs', 'specs_override'],
                 },
               ],
@@ -168,14 +193,11 @@ class MaterialController {
       ],
     });
 
-    // agrega por computador
     const map = new Map();
 
     for (const r of rows) {
       const item = r.manutencaoItem;
       if (!item) continue;
-
-      // conta só troca de peça (pra não poluir com limpeza etc.)
       if (item.tipo !== 'TROCA_PECA') continue;
 
       const manut = item.manutencao;
@@ -199,7 +221,6 @@ class MaterialController {
       map.get(key).unidade += qtd;
     }
 
-    // ordena por “mais unidades” desc
     const porMaquina = Array.from(map.values()).sort((a, b) => (b.unidade || 0) - (a.unidade || 0));
 
     return {
@@ -208,10 +229,10 @@ class MaterialController {
       porMaquina,
     };
   }
-  // Log de movimentos do material
+
   async getMovimentos(materialId) {
     const mat = await Material.findByPk(materialId);
-    if (!mat) throw new Error('Material não encontrado.');
+    if (!mat) throw new Error('Material nao encontrado.');
 
     const movs = await MaterialMovimento.findAll({
       where: { material_id: materialId },
@@ -229,13 +250,11 @@ class MaterialController {
   }
 
   async getRecuperados(materialId) {
-    const Material = require('../models/Material');
-    const MaterialMovimento = require('../models/MaterialMovimento');
     const Computador = require('../models/Computador');
     const ManutencaoItem = require('../models/ManutencaoItem');
 
     const mat = await Material.findByPk(materialId);
-    if (!mat) throw new Error('Material não encontrado.');
+    if (!mat) throw new Error('Material nao encontrado.');
 
     const movs = await MaterialMovimento.findAll({
       where: {
@@ -272,42 +291,40 @@ class MaterialController {
 
     return recuperados;
   }
+
   async baixar(payload) {
     const {
       materialId,
       quantidade = 1,
-      origem, // 'DISPONIVEL' | 'EM_USO'
+      origem,
       motivo,
       computadorId = null,
       manutencaoItemId = null,
     } = payload;
 
-    if (!materialId) throw new Error('materialId é obrigatório.');
+    if (!materialId) throw new Error('materialId e obrigatorio.');
     const qtd = Number(quantidade) || 0;
-    if (qtd <= 0) throw new Error('Quantidade inválida.');
+    if (qtd <= 0) throw new Error('Quantidade invalida.');
 
     if (origem !== 'DISPONIVEL' && origem !== 'EM_USO') {
       throw new Error("origem deve ser 'DISPONIVEL' ou 'EM_USO'.");
     }
 
     if (!motivo || !String(motivo).trim()) {
-      throw new Error('Motivo da baixa é obrigatório.');
+      throw new Error('Motivo da baixa e obrigatorio.');
     }
 
-    // Regra: se está baixando do EM_USO, precisa saber qual máquina
     if (origem === 'EM_USO' && !computadorId) {
-      throw new Error('computadorId é obrigatório quando origem = EM_USO.');
+      throw new Error('computadorId e obrigatorio quando origem = EM_USO.');
     }
 
     return await database.transaction(async (t) => {
       const mat = await Material.findByPk(materialId, { transaction: t });
-      if (!mat) throw new Error('Material não encontrado.');
+      if (!mat) throw new Error('Material nao encontrado.');
 
       if (origem === 'DISPONIVEL') {
         if (mat.quantidade_disponivel < qtd) {
-          throw new Error(
-            `Saldo insuficiente em DISPONÍVEL. Disponível: ${mat.quantidade_disponivel}`
-          );
+          throw new Error(`Saldo insuficiente em DISPONIVEL. Disponivel: ${mat.quantidade_disponivel}`);
         }
         mat.quantidade_disponivel -= qtd;
       } else {
@@ -324,7 +341,7 @@ class MaterialController {
         mat.quantidade_em_uso < 0 ||
         mat.quantidade_baixada < 0
       ) {
-        throw new Error('Quantidades não podem ficar negativas.');
+        throw new Error('Quantidades nao podem ficar negativas.');
       }
 
       await mat.save({ transaction: t });
@@ -344,14 +361,13 @@ class MaterialController {
       return true;
     });
   }
+
   async getBaixados(materialId) {
-    const Material = require('../models/Material');
-    const MaterialMovimento = require('../models/MaterialMovimento');
     const Computador = require('../models/Computador');
     const ManutencaoItem = require('../models/ManutencaoItem');
 
     const mat = await Material.findByPk(materialId);
-    if (!mat) throw new Error('Material não encontrado.');
+    if (!mat) throw new Error('Material nao encontrado.');
 
     const movs = await MaterialMovimento.findAll({
       where: {
@@ -373,6 +389,7 @@ class MaterialController {
       if (m.referencia_manutencaoItem_id) {
         manutItem = await ManutencaoItem.findByPk(m.referencia_manutencaoItem_id);
       }
+
       baixados.push({
         id: m.id,
         quantidade: m.quantidade,
@@ -387,17 +404,18 @@ class MaterialController {
 
     return baixados;
   }
+
   async recuperar(payload) {
     const { materialId, quantidade = 1, computadorId = null, manutencaoItemId = null } = payload;
 
-    if (!materialId) throw new Error('materialId é obrigatório.');
+    if (!materialId) throw new Error('materialId e obrigatorio.');
 
     const qtd = Number(quantidade) || 0;
-    if (qtd <= 0) throw new Error('Quantidade inválida.');
+    if (qtd <= 0) throw new Error('Quantidade invalida.');
 
     return await database.transaction(async (t) => {
       const mat = await Material.findByPk(materialId, { transaction: t });
-      if (!mat) throw new Error('Material não encontrado.');
+      if (!mat) throw new Error('Material nao encontrado.');
 
       if (mat.quantidade_em_uso < qtd) {
         throw new Error(`Saldo insuficiente em EM USO. Em uso: ${mat.quantidade_em_uso}`);
@@ -415,7 +433,7 @@ class MaterialController {
           quantidade: qtd,
           referencia_manutencaoItem_id: manutencaoItemId || null,
           referencia_computador_id: computadorId || null,
-          observacao: 'Peça recuperada de manutenção',
+          observacao: 'Peca recuperada de manutencao',
         },
         { transaction: t }
       );

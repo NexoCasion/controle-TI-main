@@ -17,34 +17,51 @@
   </header>
   <main>
     <div class="container mt-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h3 class="mb-0">Materiais do Departamento de T.I</h3>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddMaterial">
-          Adicionar material
-        </button>
+      <a href="javascript:history.back()" class="btn btn-back">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+
+      <div class="text-center align-items-center">
+        <h1 class="mt-4 mb-4">Materiais do Departamento de T.I</h1>
       </div>
 
       <div class="card p-3 mb-3">
-        <div class="row g-2">
-          <div class="col-md-4">
-            <input class="form-control" id="q" placeholder="Buscar (material, tipo, marca, NF...)">
+        <div class="row g-3 align-items-end">
+          <div class="col-lg-6">
+            <label for="q" class="form-label">Buscar</label>
+            <input class="form-control" id="q" placeholder="Buscar por material, tipo, marca, especificação ou NF">
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-6 col-lg-3">
+            <label for="filtroTipo" class="form-label">Tipo</label>
             <select class="form-select" id="filtroTipo">
               <option value="">Todos os tipos</option>
             </select>
           </div>
 
-          <div class="col-md-3">
-            <div class="form-check mt-2">
+          <div class="col-md-6 col-lg-3">
+            <label for="pageSizeSelect" class="form-label">Máximo por página</label>
+            <select class="form-select" id="pageSizeSelect">
+              <option value="10">10 por página</option>
+              <option value="20" selected>20 por página</option>
+              <option value="50">50 por página</option>
+              <option value="100">100 por página</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 align-items-center mt-1">
+          <div class="col-md-6">
+            <div class="form-check pt-md-4">
               <input class="form-check-input" type="checkbox" id="somenteDisponivel">
               <label class="form-check-label" for="somenteDisponivel">Somente disponíveis</label>
             </div>
           </div>
 
-          <div class="col-md-2 text-end">
-            <button class="btn btn-outline-secondary w-100" id="btnFiltrar">Filtrar</button>
+          <div class="col-md-6 d-flex justify-content-md-end">
+            <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#modalAddMaterial">
+              Adicionar material
+            </button>
           </div>
         </div>
       </div>
@@ -54,7 +71,6 @@
           <table class="table table-striped align-middle mb-0">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Material</th>
                 <th>Tipo</th>
                 <th>Marca</th>
@@ -62,7 +78,7 @@
                 <th>Disponível</th>
                 <th>Em uso</th>
                 <th>NF</th>
-                <th style="width: 140px;">Ações</th>
+                <th style="width: 170px;" class="text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tbodyMateriais">
@@ -71,6 +87,14 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+        <small class="text-muted" id="totalMateriais">Materiais exibidos: 0 / Total: 0</small>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <small class="text-muted" id="pageInfo">Página 1 de 1</small>
+          <div class="d-flex align-items-center gap-2 flex-wrap" id="paginationControls"></div>
         </div>
       </div>
     </div>
@@ -307,7 +331,16 @@
     const filtroTipo = document.getElementById('filtroTipo');
     const q = document.getElementById('q');
     const somenteDisponivel = document.getElementById('somenteDisponivel');
-    const btnFiltrar = document.getElementById('btnFiltrar');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    const totalMateriais = document.getElementById('totalMateriais');
+    const pageInfo = document.getElementById('pageInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    let currentMeta = {
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      limit: 20,
+    };
 
     function debounce(fn, wait = 300) {
       let t;
@@ -317,7 +350,7 @@
       };
     }
 
-    const carregarMateriaisDebounced = debounce(() => carregarMateriais(), 300);
+    const carregarMateriaisDebounced = debounce(() => carregarMateriais(1), 300);
     async function carregarTipos() {
       const tipos = await fetchJson('/materiais-tipos');
 
@@ -345,18 +378,75 @@
       }
     }
 
-    async function carregarMateriais() {
+    function atualizarContadores(total, visiveis) {
+      totalMateriais.textContent = `Materiais exibidos: ${visiveis} / Total: ${total}`;
+    }
+
+    function atualizarInfoPaginacao() {
+      pageInfo.textContent = `Página ${currentMeta.page} de ${currentMeta.totalPages}`;
+    }
+
+    function criarBotaoPagina(label, page, disabled = false, active = false) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `btn btn-sm ${active ? 'btn-primary' : 'btn-outline-secondary'}`;
+      btn.textContent = label;
+      btn.disabled = disabled;
+      btn.addEventListener('click', () => {
+        if (!disabled) carregarMateriais(page);
+      });
+      return btn;
+    }
+
+    function renderizarPaginacao() {
+      paginationControls.innerHTML = '';
+
+      const totalPages = currentMeta.totalPages || 1;
+      const currentPage = currentMeta.page || 1;
+
+      paginationControls.appendChild(
+        criarBotaoPagina('Anterior', currentPage - 1, currentPage <= 1)
+      );
+
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      for (let page = startPage; page <= endPage; page++) {
+        paginationControls.appendChild(
+          criarBotaoPagina(String(page), page, false, page === currentPage)
+        );
+      }
+
+      paginationControls.appendChild(
+        criarBotaoPagina('Próxima', currentPage + 1, currentPage >= totalPages)
+      );
+
+      atualizarInfoPaginacao();
+    }
+
+    async function carregarMateriais(page = 1) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Carregando...</td></tr>';
 
       const params = new URLSearchParams();
       if (filtroTipo.value) params.set('tipo', filtroTipo.value);
       if (somenteDisponivel.checked) params.set('somenteDisponivel', '1');
       if (q.value && q.value.trim()) params.set('q', q.value.trim());
+      params.set('page', String(page));
+      params.set('limit', String(pageSizeSelect.value || 20));
 
-      const list = await fetchJson('/materiais?' + params.toString());
+      const resultado = await fetchJson('/materiais-data?' + params.toString());
+      const list = Array.isArray(resultado.rows) ? resultado.rows : [];
+      currentMeta = {
+        total: Number(resultado.total || 0),
+        page: Number(resultado.page || 1),
+        totalPages: Number(resultado.totalPages || 1),
+        limit: Number(resultado.limit || pageSizeSelect.value || 20),
+      };
 
       if (!list.length) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Nenhum material encontrado.</td></tr>';
+        atualizarContadores(currentMeta.total, 0);
+        renderizarPaginacao();
         return;
       }
 
@@ -364,7 +454,6 @@
       list.forEach((m) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-        <td>${m.id}</td>
         <td>${m.material || '-'}</td>
         <td>${m.tipo || '-'}</td>
         <td>${m.marca || '-'}</td>
@@ -373,13 +462,22 @@
         <td>${m.quantidade_em_uso ?? 0}</td>
         <td>${m.nf || '-'}</td>
         <td>
-        <button class="btn btn-sm btn-outline-secondary me-1" data-action="detalhes">Detalhes</button>
-        <button class="btn btn-sm btn-outline-primary" data-action="edit">Editar</button>
+        <div class="btn-group m-2 align-items-center" role="group">
+          <button class="btn btn-primary btn-sm btn-edit" data-action="edit">
+            <i class="fas fa-pencil-alt"></i> Editar
+          </button>
+          <button class="btn m-1 btn-info btn-sm" data-action="detalhes">
+            <i class="fas fa-eye"></i> Detalhes
+          </button>
+        </div>
         </td>
       `;
         tr.dataset.json = JSON.stringify(m);
         tbody.appendChild(tr);
       });
+
+      atualizarContadores(currentMeta.total, list.length);
+      renderizarPaginacao();
     }
 
     // criar
@@ -406,7 +504,7 @@
         bootstrap.Modal.getInstance(document.getElementById('modalAddMaterial')).hide();
         e.target.reset();
         await carregarTipos();
-        await carregarMateriais();
+        await carregarMateriais(currentMeta.page);
       } catch (err) {
         alert(err.message || 'Erro ao criar material.');
       } finally {
@@ -582,7 +680,7 @@
 
         bootstrap.Modal.getInstance(document.getElementById('modalEditMaterial')).hide();
         await carregarTipos();
-        await carregarMateriais();
+        await carregarMateriais(currentMeta.page);
       } catch (err) {
         alert(err.message || 'Erro ao atualizar material.');
       } finally {
@@ -590,13 +688,10 @@
       }
     });
 
-    btnFiltrar.addEventListener('click', async () => {
-      await carregarMateriais();
-    });
     q.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        await carregarMateriais();
+        await carregarMateriais(1);
       }
     });
 
@@ -635,11 +730,12 @@
         novoTipoBox.style.display = 'none';
       });
       await carregarTipos();
-      await carregarMateriais();
+      await carregarMateriais(1);
     });
     q.addEventListener('input', () => carregarMateriaisDebounced());
     filtroTipo.addEventListener('change', () => carregarMateriaisDebounced());
     somenteDisponivel.addEventListener('change', () => carregarMateriaisDebounced());
+    pageSizeSelect.addEventListener('change', () => carregarMateriais(1));
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

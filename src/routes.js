@@ -76,15 +76,27 @@ router.post('/editar-pc', async (req, res) => {
   return res.redirect(`/ver-pc?id=${id}`);
 });
 router.get('/computadores-by-empresa', async (req, res) => {
-  const { empresaId, status = 'ativos' } = req.query; // ativos | descartados | todos
+  const {
+    empresaId,
+    status = 'ativos',
+    q = '',
+    page = 1,
+    limit = 20,
+    sortBy = 'patrimonio',
+    sortDir = 'ASC',
+  } = req.query;
 
-  if (!empresaId) {
-    const allComputadoresList = await computadorController.getAll({ status });
-    return res.json(allComputadoresList);
-  }
+  const resultado = await computadorController.getPaged({
+    empresaId,
+    status,
+    q,
+    page: Number(page),
+    limit: Number(limit),
+    sortBy,
+    sortDir,
+  });
 
-  const computadoresList = await computadorController.getByEmpresa(empresaId, { status });
-  return res.json(computadoresList);
+  return res.json(resultado);
 });
 
 router.get('/computadores', async (req, res) => {
@@ -165,8 +177,19 @@ router.get('/manutencoes-by-empresa', async (req, res) => {
 router.get('/manutencoes-by-computador', async (req, res) => {
   const { id } = req.query; //////CHAAANGE
   const manutencoesList = await manutencaoController.findByComputador(id);
+  const transferenciasList = await transferenciaController.findByComputador(id);
 
-  return res.json(manutencoesList);
+  const historico = [
+    ...(manutencoesList || []).map((manutencao) => ({
+      ...manutencao,
+      tipo: 'MANUTENCAO',
+      dataReferencia: manutencao.dataEntrada,
+      dataFim: manutencao.dataSaida,
+    })),
+    ...(transferenciasList || []),
+  ].sort((a, b) => new Date(b.dataReferencia) - new Date(a.dataReferencia));
+
+  return res.json(historico);
 });
 
 router.get('/manutencoes', async (req, res) => {
@@ -174,6 +197,39 @@ router.get('/manutencoes', async (req, res) => {
   const empresasList = await empresaController.getAll();
 
   return res.render('pages/manutencoes', { empresas: empresasList, manutencoes: manutencaoList });
+});
+
+router.get('/manutencoes-data', async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      q = '',
+      empresa = 'todas',
+      status = 'todas_sem_condenados',
+      dataInicio = '',
+      dataFim = '',
+      sortBy = 'id',
+      sortDir = 'ASC',
+    } = req.query;
+
+    const resultado = await manutencaoController.getPaged({
+      page: Number(page),
+      limit: Number(limit),
+      q,
+      empresa,
+      status,
+      dataInicio,
+      dataFim,
+      sortBy,
+      sortDir,
+    });
+
+    return res.json(resultado);
+  } catch (err) {
+    console.error('Erro ao paginar manutencoes:', err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/manutencoes-open', async (req, res) => {
@@ -463,6 +519,32 @@ router.get('/materiais', async (req, res) => {
     return res.json(list);
   } catch (err) {
     console.error('Erro ao listar materiais:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/materiais-data', async (req, res) => {
+  try {
+    const {
+      tipo,
+      somenteDisponivel,
+      q,
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const resultado = await materialController.getPaged({
+      tipo,
+      somenteDisponivel:
+        String(somenteDisponivel) === '1' || String(somenteDisponivel).toLowerCase() === 'true',
+      q,
+      page: Number(page),
+      limit: Number(limit),
+    });
+
+    return res.json(resultado);
+  } catch (err) {
+    console.error('Erro ao paginar materiais:', err);
     return res.status(500).json({ error: err.message });
   }
 });

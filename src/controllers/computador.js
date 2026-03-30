@@ -3,13 +3,54 @@ const Empresa = require('../models/Empresa');
 const { Op } = require('sequelize');
 
 class ComputadorController {
+  mapComputador(computador) {
+    return {
+      id: computador.dataValues.id,
+      patrimonio: computador.dataValues.patrimonio,
+      specs: computador.dataValues.specs,
+      setor: computador.dataValues.setor,
+      empresaId: computador.dataValues.empresaId,
+      ativo: computador.dataValues.ativo,
+      status: computador.dataValues.status,
+      dataDescarte: computador.dataValues.dataDescarte,
+      motivoDescarte: computador.dataValues.motivoDescarte,
+      empresa: computador.empresa ? computador.empresa.dataValues : null,
+    };
+  }
+
+  buildStatusWhere(status = 'ativos') {
+    const where = {};
+
+    if (status === 'ativos') {
+      where.ativo = true;
+      where.status = null;
+    }
+
+    if (status === 'descartados') {
+      where.ativo = false;
+      where.status = { [Op.ne]: null };
+    }
+
+    return where;
+  }
+
+  buildOrder(sortBy, sortDir) {
+    const direction = String(sortDir).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    if (sortBy === 'specs') return [['specs', direction]];
+    if (sortBy === 'setor') return [['setor', direction]];
+    if (sortBy === 'empresa') return [[{ model: Empresa, as: 'empresa' }, 'nome', direction]];
+
+    return [['patrimonio', direction]];
+  }
+
   async create(name, description, empresaId, local) {
     try {
       if (!empresaId) {
-        throw new Error('ID da empresa não fornecido');
+        throw new Error('ID da empresa nÃ£o fornecido');
       }
       if (!name) {
-        throw new Error('Numero de Patrimonio não fornecido');
+        throw new Error('Numero de Patrimonio nÃ£o fornecido');
       }
       const computador = await Computador.create({
         patrimonio: name,
@@ -25,42 +66,14 @@ class ComputadorController {
 
   async getAll({ status = 'ativos' } = {}) {
     try {
-      const where = {};
-
-      // Ativos: ativo=true e status NULL (não condenado)
-      if (status === 'ativos') {
-        where.ativo = true;
-        where.status = null;
-      }
-
-      // Descartados/Condenados: ativo=false e status preenchido (guarda id da manutenção)
-      if (status === 'descartados') {
-        where.ativo = false;
-        where.status = { [Op.ne]: null };
-      }
-
-      // Se quiser "todos"
-      if (status === 'todos') {
-        // sem filtro
-      }
+      const where = this.buildStatusWhere(status);
 
       const computadoresList = await Computador.findAll({
         where,
         include: { model: Empresa, as: 'empresa', attributes: ['nome'] },
       });
 
-      return computadoresList.map((computador) => ({
-        id: computador.dataValues.id,
-        patrimonio: computador.dataValues.patrimonio,
-        specs: computador.dataValues.specs,
-        setor: computador.dataValues.setor,
-        empresaId: computador.dataValues.empresaId,
-        ativo: computador.dataValues.ativo,
-        status: computador.dataValues.status, // <-- ID da manutenção que condenou (ou null)
-        dataDescarte: computador.dataValues.dataDescarte,
-        motivoDescarte: computador.dataValues.motivoDescarte,
-        empresa: computador.empresa ? computador.empresa.dataValues : null,
-      }));
+      return computadoresList.map((computador) => this.mapComputador(computador));
     } catch (error) {
       throw new Error('Erro ao buscar computadores: ' + error.message);
     }
@@ -68,41 +81,69 @@ class ComputadorController {
 
   async getByEmpresa(empresaId, { status = 'ativos' } = {}) {
     try {
-      const where = { empresaId };
-
-      if (status === 'ativos') {
-        where.ativo = true;
-        where.status = null;
-      }
-
-      if (status === 'descartados') {
-        where.ativo = false;
-        where.status = { [Op.ne]: null };
-      }
-
-      if (status === 'todos') {
-        // sem filtro adicional
-      }
+      const where = {
+        ...this.buildStatusWhere(status),
+        empresaId,
+      };
 
       const computadoresList = await Computador.findAll({
         where,
         include: { model: Empresa, as: 'empresa', attributes: ['nome'] },
       });
 
-      return computadoresList.map((computador) => ({
-        id: computador.dataValues.id,
-        patrimonio: computador.dataValues.patrimonio,
-        specs: computador.dataValues.specs,
-        setor: computador.dataValues.setor,
-        empresaId: computador.dataValues.empresaId,
-        ativo: computador.dataValues.ativo,
-        status: computador.dataValues.status,
-        dataDescarte: computador.dataValues.dataDescarte,
-        motivoDescarte: computador.dataValues.motivoDescarte,
-        empresa: computador.empresa ? computador.empresa.dataValues : null,
-      }));
+      return computadoresList.map((computador) => this.mapComputador(computador));
     } catch (error) {
       throw new Error('Erro ao buscar computadores por empresa: ' + error.message);
+    }
+  }
+
+  async getPaged({
+    empresaId = null,
+    status = 'ativos',
+    q = '',
+    page = 1,
+    limit = 20,
+    sortBy = 'patrimonio',
+    sortDir = 'ASC',
+  } = {}) {
+    try {
+      const where = this.buildStatusWhere(status);
+      const busca = String(q || '').trim();
+      const pageNumber = Math.max(Number(page) || 1, 1);
+      const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 200);
+      const offset = (pageNumber - 1) * limitNumber;
+
+      if (empresaId !== undefined && empresaId !== null && String(empresaId) !== '') {
+        where.empresaId = Number(empresaId);
+      }
+
+      if (busca) {
+        where[Op.or] = [
+          { patrimonio: { [Op.like]: `%${busca}%` } },
+          { specs: { [Op.like]: `%${busca}%` } },
+          { setor: { [Op.like]: `%${busca}%` } },
+          { '$empresa.nome$': { [Op.like]: `%${busca}%` } },
+        ];
+      }
+
+      const { rows, count } = await Computador.findAndCountAll({
+        where,
+        include: [{ model: Empresa, as: 'empresa', attributes: ['nome'] }],
+        order: this.buildOrder(sortBy, sortDir),
+        limit: limitNumber,
+        offset,
+        distinct: true,
+      });
+
+      return {
+        rows: rows.map((computador) => this.mapComputador(computador)),
+        total: count,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.max(Math.ceil(count / limitNumber), 1),
+      };
+    } catch (error) {
+      throw new Error('Erro ao paginar computadores: ' + error.message);
     }
   }
 
@@ -111,22 +152,21 @@ class ComputadorController {
       const computador = await Computador.findByPk(id, { include: 'empresa' });
 
       if (!computador) {
-        throw new Error('Computador não encontrado');
+        throw new Error('Computador nÃ£o encontrado');
       }
       return computador;
     } catch (error) {
       throw new Error(`Erro ao buscar computador: ${error.message}`);
     }
   }
+
   async descartar(id, manutencaoId, motivo = null) {
     try {
       const pc = await Computador.findByPk(id);
-      if (!pc) throw new Error('Computador não encontrado.');
+      if (!pc) throw new Error('Computador nÃ£o encontrado.');
 
-      // irreversível na regra do negócio (a gente pode até manter reativar no código,
-      // mas não expor rota/botão)
       pc.ativo = false;
-      pc.status = manutencaoId; // <-- guarda o ID da manutenção que condenou
+      pc.status = manutencaoId;
       pc.dataDescarte = new Date();
       pc.motivoDescarte = motivo;
 
@@ -140,7 +180,7 @@ class ComputadorController {
   async reativar(id) {
     try {
       const pc = await Computador.findByPk(id);
-      if (!pc) throw new Error('Computador não encontrado.');
+      if (!pc) throw new Error('Computador nÃ£o encontrado.');
 
       pc.ativo = true;
       pc.dataDescarte = null;
@@ -157,7 +197,7 @@ class ComputadorController {
     try {
       const computador = await Computador.findByPk(computador_new.id);
       if (!computador) {
-        throw new Error('Computador não encontrado');
+        throw new Error('Computador nÃ£o encontrado');
       }
       console.log(computador_new);
       computador.patrimonio = computador_new.patrimonio;
