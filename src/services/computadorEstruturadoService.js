@@ -229,10 +229,7 @@ class ComputadorEstruturadoService {
   }
 
   detectStorageType(text = '') {
-    const upper = String(text || '').toUpperCase();
-    if (upper.includes('NVME')) return 'SSD NVME';
-    if (upper.includes('SSD')) return 'SSD';
-    return 'HDD';
+    return 'Armazenamento';
   }
 
   splitManualItems(text = '') {
@@ -263,8 +260,8 @@ class ComputadorEstruturadoService {
         : null,
       memorias: memoriasInformadas.map((memoria) => ({
         categoria: 'MEMORIA',
-        tipo: 'Memoria RAM',
-        material: 'Memoria RAM',
+        tipo: 'Memoria',
+        material: 'Memoria',
         especificacao: memoria,
         quantidade: 1,
       })),

@@ -15,6 +15,7 @@ class DashboardController {
       maquinasTotal,
       manutencoesAbertas,
       totalEmpresas,
+      empresasRows,
       rankingRows,
       maquinasPorEmpresaRows,
       materiaisDisponiveisPorTipo,
@@ -23,6 +24,10 @@ class DashboardController {
       Computador.count(),
       Manutencao.count({ where: { dataSaida: null } }),
       Empresa.count(),
+      Empresa.findAll({
+        attributes: ['id', 'nome', 'sigla'],
+        order: [['nome', 'ASC']],
+      }),
       Manutencao.findAll({
         attributes: [[fn('COUNT', col('manutencoes.id')), 'total']],
         include: [
@@ -78,12 +83,22 @@ class DashboardController {
       maquinasTotal: Number(maquinasTotal || 0),
       manutencoesAbertas: Number(manutencoesAbertas || 0),
       totalEmpresas: Number(totalEmpresas || 0),
+      empresasFiltro: (empresasRows || []).map((empresa) => ({
+        id: Number(empresa.id),
+        nomeCompleto: empresa.nome || 'Sem empresa',
+        nome: empresa.sigla || empresa.nome || 'Sem empresa',
+        isDeptoTi:
+          String(empresa.sigla || '').trim().toUpperCase() === 'DEPTO TI' ||
+          String(empresa.nome || '').trim().toUpperCase().includes('DEPARTAMENTO DE TI'),
+      })),
       rankingEmpresas: (rankingRows || []).map((row) => ({
+        empresaId: Number(row.computador?.empresa?.id || row.computador?.empresaId || 0),
         nomeCompleto: row.computador?.empresa?.nome || 'Sem empresa',
         nome: row.computador?.empresa?.sigla || row.computador?.empresa?.nome || 'Sem empresa',
         total: Number(row.get('total') || 0),
       })),
       maquinasPorEmpresa: (maquinasPorEmpresaRows || []).map((row) => ({
+        empresaId: Number(row.empresa?.id || row.empresaId || 0),
         nomeCompleto: row.empresa?.nome || 'Sem empresa',
         nome: row.empresa?.sigla || row.empresa?.nome || 'Sem empresa',
         total: Number(row.get('total') || 0),

@@ -56,13 +56,16 @@
 
     <div class="maintenance-">
       <div class="d-flex gap-2 justify-content-center flex-wrap">
-        <button type="button" class="btn btn-outline-secondary btn-sm btn-verpcs" id="btnTransferPcFromView" data-bs-toggle="modal" data-bs-target="#modalTransferPc">
+        <button type="button" class="btn btn-outline-secondary btn-sm btn-verpcs" id="btnTransferPcFromView">
           <i class="fas fa-exchange-alt"></i> Transferir Unidade
         </button>
-        <button type="button" class="btn btn-primary btn-sm btn-verpcs" id="btnEditPcFromView" data-bs-toggle="modal" data-bs-target="#modalEditPc">
+        <button type="button" class="btn btn-primary btn-sm btn-verpcs" id="btnEditPcFromView">
           <i class="fas fa-pencil-alt"></i> Editar PC
         </button>
-        <button type="button" id="btnRegisterManutFromView" class="btn btn-outline-secondary btn-sm btn-verpcs" data-bs-toggle="modal" data-bs-target="#modalRegisterManutencao">
+        <button
+          type="button"
+          id="btnRegisterManutFromView"
+          class="btn btn-outline-secondary btn-sm btn-verpcs">
           Registrar Manutenção
         </button>
       </div>
@@ -195,29 +198,63 @@
       const btnAbrirEstruturadoCsvPc = document.getElementById("btnAbrirEstruturadoCsvPc");
       const formEstruturadoManualPc = document.getElementById("formEstruturadoManualPc");
       const formEstruturadoCsvPc = document.getElementById("formEstruturadoCsvPc");
+      const modalEscolhaEstruturadoPcEl = document.getElementById("modalEscolhaEstruturadoPc");
+      let modalLegadoPcJaExibido = false;
 
       if (btnAddManFromEdit) btnAddManFromEdit.style.display = "none";
       if (btnTransferFromEdit) btnTransferFromEdit.style.display = "none";
 
+      function getModalInstance(modalEl) {
+        if (!modalEl || typeof bootstrap === "undefined" || !bootstrap.Modal) return null;
+
+        if (typeof bootstrap.Modal.getOrCreateInstance === "function") {
+          return bootstrap.Modal.getOrCreateInstance(modalEl);
+        }
+
+        return bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      }
+
+      function showModal(modalId, beforeOpen = null) {
+        const modalEl = document.getElementById(modalId);
+        if (!modalEl) return;
+
+        if (typeof beforeOpen === "function") beforeOpen();
+
+        const modal = getModalInstance(modalEl);
+        if (modal) modal.show();
+      }
+
       function switchModal(fromId, toId, beforeOpen = null) {
         const fromEl = document.getElementById(fromId);
         const toEl = document.getElementById(toId);
-        if (!fromEl || !toEl) return;
+        if (!toEl) return;
 
-        const fromInst = bootstrap.Modal.getInstance(fromEl) || new bootstrap.Modal(fromEl);
-        const toInst = bootstrap.Modal.getOrCreateInstance(toEl);
+        if (!fromEl) {
+          showModal(toId, beforeOpen);
+          return;
+        }
+
+        const fromInst = getModalInstance(fromEl);
+        const toInst = getModalInstance(toEl);
+        if (!fromInst || !toInst) return;
+        let opened = false;
+
+        const openTarget = () => {
+          if (opened) return;
+          opened = true;
+          if (typeof beforeOpen === "function") beforeOpen();
+          toInst.show();
+        };
 
         fromEl.addEventListener(
           "hidden.bs.modal",
-          () => {
-            if (typeof beforeOpen === "function") beforeOpen();
-            toInst.show();
-          }, {
+          openTarget, {
             once: true
           }
         );
 
         fromInst.hide();
+        setTimeout(openTarget, 350);
       }
 
       async function fetchJson(url, opts) {
@@ -225,6 +262,26 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || "Erro na requisição");
         return data;
+      }
+
+      function isEstruturadoPc() {
+        return (pcCtx.specsModo || "LEGADO").toUpperCase() === "ESTRUTURADO";
+      }
+
+      function abrirFluxoEstruturadoPc(force = false) {
+        if (isEstruturadoPc() || !modalEscolhaEstruturadoPcEl) return;
+        if (!force && modalLegadoPcJaExibido) return;
+
+        modalLegadoPcJaExibido = true;
+        const modal = getModalInstance(modalEscolhaEstruturadoPcEl);
+        if (modal) modal.show();
+      }
+
+      if (btnConverterEstruturadoFromView) {
+        btnConverterEstruturadoFromView.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          abrirFluxoEstruturadoPc(true);
+        });
       }
 
       const btnEdit = document.getElementById("btnEditPcFromView");
@@ -255,6 +312,8 @@
             computadorId: pcCtx.id,
             empresaId: pcCtx.empresaId ?? "",
           };
+
+          showModal("modalEditPc");
         });
       }
 
@@ -268,23 +327,25 @@
           if (inputPc) inputPc.value = pcCtx.id;
           if (inputOrigem) inputOrigem.value = pcCtx.empresaId ?? "";
           if (selectDestino) selectDestino.value = "";
+
+          showModal("modalTransferPc");
         });
       }
 
       if (btnRegisterManutFromView) {
-        btnRegisterManutFromView.addEventListener("click", () => {
+        btnRegisterManutFromView.addEventListener("click", (ev) => {
+          if (!isEstruturadoPc()) {
+            ev.preventDefault();
+            abrirFluxoEstruturadoPc(true);
+            return;
+          }
+
           window.__prefManutencao = {
             empresaId: pcCtx.empresaId ?? "",
             computadorId: pcCtx.id,
           };
-        });
-      }
 
-      if (btnConverterEstruturadoFromView) {
-        btnConverterEstruturadoFromView.addEventListener("click", () => {
-          const modal = document.getElementById("modalEscolhaEstruturadoPc");
-          if (!modal) return;
-          bootstrap.Modal.getOrCreateInstance(modal).show();
+          showModal("modalRegisterManutencao");
         });
       }
 

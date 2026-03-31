@@ -90,13 +90,18 @@
             </div>
 
             <div class="home-chart-nav">
-              <button type="button" class="home-chart-arrow" id="chartPrevBtn" aria-label="Gráfico anterior">
-                <i class="fas fa-chevron-left"></i>
-              </button>
-              <div class="home-chart-caption" id="homeChartCaption">1 de 3</div>
-              <button type="button" class="home-chart-arrow" id="chartNextBtn" aria-label="Próximo gráfico">
-                <i class="fas fa-chevron-right"></i>
-              </button>
+              <div class="home-chart-nav-right">
+                <button type="button" class="home-filter-btn" id="btnOpenHomeChartFilters" aria-label="Filtrar lojas" title="Filtrar lojas">
+                  <i class="fas fa-filter"></i>
+                </button>
+                <button type="button" class="home-chart-arrow" id="chartPrevBtn" aria-label="Gráfico anterior">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="home-chart-caption" id="homeChartCaption">1 de 3</div>
+                <button type="button" class="home-chart-arrow" id="chartNextBtn" aria-label="Próximo gráfico">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -104,9 +109,75 @@
     </div>
   </main>
 
+  <div class="modal fade" id="modalHomeChartFilters" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Filtrar lojas dos gráficos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-light border mb-3">
+            Escolha quais lojas devem aparecer em cada gráfico de empresas. O gráfico de materiais continua global.
+          </div>
+
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Empresas com Mais Manutenções</h6>
+                  <div class="home-filter-actions">
+                    <button type="button" class="btn btn-link btn-sm p-0" data-filter-check-all="ranking">Marcar todas</button>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-filter-clear-all="ranking">Limpar</button>
+                  </div>
+                </div>
+                <div class="home-filter-list">
+                  <% (empresasFiltro || []).forEach(function(empresa) { %>
+                  <label class="home-filter-option">
+                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="ranking" <%= empresa.isDeptoTi ? '' : 'checked' %>>
+                    <span><%= empresa.nome %></span>
+                    <small><%= empresa.nomeCompleto %></small>
+                  </label>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Máquinas Ativas por Empresa</h6>
+                  <div class="home-filter-actions">
+                    <button type="button" class="btn btn-link btn-sm p-0" data-filter-check-all="maquinas">Marcar todas</button>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-filter-clear-all="maquinas">Limpar</button>
+                  </div>
+                </div>
+                <div class="home-filter-list">
+                  <% (empresasFiltro || []).forEach(function(empresa) { %>
+                  <label class="home-filter-option">
+                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="maquinas" checked>
+                    <span><%= empresa.nome %></span>
+                    <small><%= empresa.nomeCompleto %></small>
+                  </label>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" id="btnResetHomeChartFilters">Restaurar padrão</button>
+          <button type="button" class="btn btn-primary" id="btnApplyHomeChartFilters" data-bs-dismiss="modal">Aplicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      const empresasFiltro = <%- JSON.stringify(empresasFiltro || []) %>;
       const rankingEmpresas = <%- JSON.stringify(rankingEmpresas || []) %>;
       const maquinasPorEmpresa = <%- JSON.stringify(maquinasPorEmpresa || []) %>;
       const materiaisDisponiveisPorTipo = <%- JSON.stringify(materiaisDisponiveisPorTipo || []) %>;
@@ -117,7 +188,19 @@
       const prevBtn = document.getElementById('chartPrevBtn');
       const nextBtn = document.getElementById('chartNextBtn');
       const cardInner = document.getElementById('homeChartCardInner');
+      const btnOpenFilters = document.getElementById('btnOpenHomeChartFilters');
+      const btnApplyFilters = document.getElementById('btnApplyHomeChartFilters');
+      const btnResetFilters = document.getElementById('btnResetHomeChartFilters');
+      const modalFiltersEl = document.getElementById('modalHomeChartFilters');
       if (!ctx) return;
+
+      function getModalInstance(modalEl) {
+        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) return null;
+        if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+          return bootstrap.Modal.getOrCreateInstance(modalEl);
+        }
+        return bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      }
 
       function labelQuebrada(texto) {
         const normalizado = String(texto || 'Sem empresa').trim();
@@ -125,29 +208,70 @@
         return normalizado.split(/\s+-\s+|\s+/).filter(Boolean);
       }
 
-      const chartConfigs = [
-        {
-          titulo: 'Empresas com Mais Manutenções',
-          legenda: 'Manutenções',
-          labels: rankingEmpresas.map((item) => labelQuebrada(item.nome)),
-          tooltipLabels: rankingEmpresas.map((item) => item.nomeCompleto || item.nome),
-          data: rankingEmpresas.map((item) => Number(item.total || 0)),
-        },
-        {
-          titulo: 'Máquinas Ativas por Empresa',
-          legenda: 'Máquinas ativas',
-          labels: maquinasPorEmpresa.map((item) => labelQuebrada(item.nome)),
-          tooltipLabels: maquinasPorEmpresa.map((item) => item.nomeCompleto || item.nome),
-          data: maquinasPorEmpresa.map((item) => Number(item.total || 0)),
-        },
-        {
-          titulo: 'Materiais Disponíveis por Tipo',
-          legenda: 'Disponíveis',
-          labels: materiaisDisponiveisPorTipo.map((item) => labelQuebrada(item.tipo)),
-          tooltipLabels: materiaisDisponiveisPorTipo.map((item) => item.tipo),
-          data: materiaisDisponiveisPorTipo.map((item) => Number(item.total || 0)),
-        },
-      ];
+      function getAllEmpresaIds() {
+        return empresasFiltro.map((empresa) => Number(empresa.id));
+      }
+
+      function getCheckedIds(chartKey) {
+        return Array.from(document.querySelectorAll(`input[data-filter-chart="${chartKey}"]`))
+          .filter((input) => input.checked)
+          .map((input) => Number(input.value));
+      }
+
+      function setCheckedIds(chartKey, ids) {
+        const idsSet = new Set((ids || []).map((id) => Number(id)));
+        document.querySelectorAll(`input[data-filter-chart="${chartKey}"]`).forEach((input) => {
+          input.checked = idsSet.has(Number(input.value));
+        });
+      }
+
+      function filtrarEmpresas(lista, selectedIds) {
+        const ids = Array.isArray(selectedIds) ? selectedIds : [];
+        if (!ids.length) return [];
+
+        const idsSet = new Set(ids.map((id) => Number(id)));
+        return (lista || []).filter((item) => idsSet.has(Number(item.empresaId)));
+      }
+
+      function getDefaultRankingIds() {
+        return empresasFiltro
+          .filter((empresa) => !empresa.isDeptoTi)
+          .map((empresa) => Number(empresa.id));
+      }
+
+      const filtros = {
+        ranking: getDefaultRankingIds(),
+        maquinas: getAllEmpresaIds(),
+      };
+
+      function buildChartConfigs() {
+        const rankingFiltrado = filtrarEmpresas(rankingEmpresas, filtros.ranking);
+        const maquinasFiltradas = filtrarEmpresas(maquinasPorEmpresa, filtros.maquinas);
+
+        return [
+          {
+            titulo: 'Empresas com Mais Manutenções',
+            legenda: 'Manutenções',
+            labels: rankingFiltrado.map((item) => labelQuebrada(item.nome)),
+            tooltipLabels: rankingFiltrado.map((item) => item.nomeCompleto || item.nome),
+            data: rankingFiltrado.map((item) => Number(item.total || 0)),
+          },
+          {
+            titulo: 'Máquinas Ativas por Empresa',
+            legenda: 'Máquinas ativas',
+            labels: maquinasFiltradas.map((item) => labelQuebrada(item.nome)),
+            tooltipLabels: maquinasFiltradas.map((item) => item.nomeCompleto || item.nome),
+            data: maquinasFiltradas.map((item) => Number(item.total || 0)),
+          },
+          {
+            titulo: 'Materiais Disponíveis por Tipo',
+            legenda: 'Disponíveis',
+            labels: materiaisDisponiveisPorTipo.map((item) => labelQuebrada(item.tipo)),
+            tooltipLabels: materiaisDisponiveisPorTipo.map((item) => item.tipo),
+            data: materiaisDisponiveisPorTipo.map((item) => Number(item.total || 0)),
+          },
+        ];
+      }
 
       const colors = [
         '#2f80ed',
@@ -162,15 +286,16 @@
         '#bb6bd9',
       ];
 
+      let chartConfigs = buildChartConfigs();
       let currentIndex = 0;
 
       const chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: chartConfigs[0].labels,
+          labels: chartConfigs[0].labels.length ? chartConfigs[0].labels : ['Sem dados'],
           datasets: [{
             label: chartConfigs[0].legenda,
-            data: chartConfigs[0].data,
+            data: chartConfigs[0].data.length ? chartConfigs[0].data : [0],
             backgroundColor: colors,
             borderRadius: 8,
             maxBarThickness: 42,
@@ -219,13 +344,14 @@
       });
 
       function applyChart(index) {
+        chartConfigs = buildChartConfigs();
         const config = chartConfigs[index];
         currentIndex = index;
         if (titleEl) titleEl.textContent = config.titulo;
         if (captionEl) captionEl.textContent = `${index + 1} de ${chartConfigs.length}`;
-        chart.data.labels = config.labels;
+        chart.data.labels = config.labels.length ? config.labels : ['Sem dados'];
         chart.data.datasets[0].label = config.legenda;
-        chart.data.datasets[0].data = config.data;
+        chart.data.datasets[0].data = config.data.length ? config.data : [0];
         chart.update();
       }
 
@@ -254,6 +380,53 @@
         nextBtn.addEventListener('click', function() {
           const nextIndex = (currentIndex + 1) % chartConfigs.length;
           rotateTo(nextIndex);
+        });
+      }
+
+      document.querySelectorAll('[data-filter-check-all]').forEach((btn) => {
+        btn.addEventListener('click', function() {
+          const chartKey = this.getAttribute('data-filter-check-all');
+          setCheckedIds(chartKey, getAllEmpresaIds());
+        });
+      });
+
+      document.querySelectorAll('[data-filter-clear-all]').forEach((btn) => {
+        btn.addEventListener('click', function() {
+          const chartKey = this.getAttribute('data-filter-clear-all');
+          setCheckedIds(chartKey, []);
+        });
+      });
+
+      if (btnOpenFilters) {
+        btnOpenFilters.addEventListener('click', function() {
+          setCheckedIds('ranking', filtros.ranking);
+          setCheckedIds('maquinas', filtros.maquinas);
+
+          const modal = getModalInstance(modalFiltersEl);
+          if (modal) modal.show();
+        });
+      }
+
+      if (btnApplyFilters) {
+        btnApplyFilters.addEventListener('click', function() {
+          const rankingIds = getCheckedIds('ranking');
+          const maquinasIds = getCheckedIds('maquinas');
+
+          filtros.ranking = rankingIds.length ? rankingIds : getDefaultRankingIds();
+          filtros.maquinas = maquinasIds.length ? maquinasIds : getAllEmpresaIds();
+
+          rotateTo(currentIndex);
+        });
+      }
+
+      if (btnResetFilters) {
+        btnResetFilters.addEventListener('click', function() {
+          const ids = getAllEmpresaIds();
+          const rankingDefault = getDefaultRankingIds();
+          filtros.ranking = [...rankingDefault];
+          filtros.maquinas = [...ids];
+          setCheckedIds('ranking', rankingDefault);
+          setCheckedIds('maquinas', ids);
         });
       }
 

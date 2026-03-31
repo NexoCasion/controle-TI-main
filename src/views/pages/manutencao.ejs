@@ -121,6 +121,17 @@
       <% } %>
     </div>
 
+    <% if (!manutencao.dataSaida && (manutencao?.computador?.specs_modo || 'LEGADO') !== 'ESTRUTURADO') { %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 mb-3">
+      <div>
+        Esta manutenção está vinculada a uma máquina em modo legado. Antes de continuar, converta esta mesma máquina para estruturado.
+      </div>
+      <button type="button" class="btn btn-dark btn-sm" id="btnConverterEstruturadoFromManutencao" data-bs-toggle="modal" data-bs-target="#modalEscolhaEstruturado">
+        Converter agora
+      </button>
+    </div>
+    <% } %>
+
     <h1 class="mt-4 mb-3">Histórico de Procedimentos</h1>
 
     <% if (!manutencao.dataSaida) { %>
@@ -129,7 +140,15 @@
         <i class="fas fa-check"></i> Fechar manutenção
       </a>
 
-      <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddProcedimento">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        id="btnOpenProcedimento"
+        <% if ((manutencao?.computador?.specs_modo || 'LEGADO') === 'ESTRUTURADO') { %>
+        data-bs-toggle="modal" data-bs-target="#modalAddProcedimento"
+        <% } else { %>
+        data-bs-toggle="modal" data-bs-target="#modalEscolhaEstruturado"
+        <% } %>>
         <i class="fas fa-plus"></i> Adicionar procedimento
       </button>
 
@@ -265,18 +284,18 @@
                     <div class="row g-3">
                       <div class="col-md-4">
                         <label class="form-label">Tipo removido</label>
-                        <select class="form-select" id="tipoRemovido">
-                          <option value="" selected disabled>Selecione...</option>
+                        <select class="form-select" id="tipoRemovido" disabled>
+                          <option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>
                         </select>
-                        <small class="text-muted">Carregado de Materiais</small>
+                        <small class="text-muted">O tipo removido acompanha o tipo escolhido para a troca.</small>
                       </div>
 
                       <div class="col-md-5">
-                        <label class="form-label">Material removido</label>
+                        <label class="form-label">Material removido da máquina</label>
                         <select class="form-select" id="materialRemovidoId">
                           <option value="" selected disabled>Selecione o tipo removido primeiro...</option>
                         </select>
-                        <small class="text-muted" id="infoRemovido"></small>
+                        <small class="text-muted" id="infoRemovido">Somente componentes vinculados a esta máquina aparecem aqui.</small>
                       </div>
 
                       <div class="col-md-3">
@@ -295,13 +314,6 @@
                       <div class="col-md-7">
                         <label class="form-label">Motivo (obrigatório se Defeito)</label>
                         <input class="form-control" id="motivoRemovida" placeholder="Ex: queimada, instável, sem vídeo...">
-                      </div>
-
-                      <div class="col-12">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCadastrarRemovida">
-                          + Cadastrar item removido
-                        </button>
-                        <small class="text-muted ms-2">Use quando o modelo removido não existir no sistema.</small>
                       </div>
                     </div>
                   </div>
@@ -463,54 +475,6 @@
     </div>
   </div>
 
-  <!-- Modal: Cadastrar item removido -->
-  <div class="modal fade" id="modalCadastrarRemovida" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <form class="modal-content" id="formCadastrarRemovida">
-        <div class="modal-header">
-          <h5 class="modal-title">Cadastrar item removido</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-
-        <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label">Tipo</label>
-            <input class="form-control" id="cadRemTipo" required readonly>
-            <small class="text-muted">Vem do “Tipo removido”.</small>
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Material</label>
-            <input class="form-control" id="cadRemMaterial" required placeholder="Ex: Fonte ATX">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Marca</label>
-            <input class="form-control" id="cadRemMarca" placeholder="Ex: Razer">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Especificação</label>
-            <input class="form-control" id="cadRemEspecificacao" placeholder="Ex: 300W">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">NF (opcional)</label>
-            <input class="form-control" id="cadRemNF">
-          </div>
-
-          <div class="alert alert-info mt-3 mb-0">
-            Esse cadastro cria o material com <b>Qtd disponível = 0</b> e <b>Qtd em uso = 0</b>.
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
   <div class="modal fade" id="modalCadastrarRecuperado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <form class="modal-content" id="formCadastrarRecuperado">
@@ -693,6 +657,9 @@
       const alertLegadoEstruturado = document.getElementById('alertLegadoEstruturado');
       const infoDisponivel = document.getElementById('infoDisponivel');
       const btnSalvar = document.getElementById('btnSalvarProcedimento');
+      const btnOpenProcedimento = document.getElementById('btnOpenProcedimento');
+      const btnConverterEstruturadoFromManutencao = document.getElementById('btnConverterEstruturadoFromManutencao');
+      const modalAddProcedimentoEl = document.getElementById('modalAddProcedimento');
       const modalEscolhaEstruturadoEl = document.getElementById('modalEscolhaEstruturado');
       const modalEstruturadoCsvExistenteEl = document.getElementById('modalEstruturadoCsvExistente');
       const modalEstruturadoManualExistenteEl = document.getElementById('modalEstruturadoManualExistente');
@@ -707,10 +674,7 @@
       const destinoRemovida = document.getElementById('destinoRemovida');
       const motivoRemovida = document.getElementById('motivoRemovida');
       const infoRemovido = document.getElementById('infoRemovido');
-
-      const btnCadastrarRemovida = document.getElementById('btnCadastrarRemovida');
-      const modalCadastrarRemovidaEl = document.getElementById('modalCadastrarRemovida');
-      const formCadastrarRemovida = document.getElementById('formCadastrarRemovida');
+      const computadorIdAtual = Number('<%= manutencao.computador.id %>');
 
       const formCondenarMaquina = document.getElementById('formCondenarMaquina');
       const modalCondenarMaquinaEl = document.getElementById('modalCondenarMaquina');
@@ -727,6 +691,7 @@
       const modalCadastrarRecuperadoEl = document.getElementById('modalCadastrarRecuperado');
       const formCadastrarRecuperado = document.getElementById('formCadastrarRecuperado');
       let linhaRecuperacaoAtual = null;
+      let componentesEstruturadosCache = [];
 
       function isEstruturado() {
         return (specsModo?.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
@@ -764,12 +729,11 @@
         specsDepois.disabled = !enabled;
         specsDepois.readOnly = enabled && estruturado;
 
-        tipoRemovido.disabled = !enabled;
+        tipoRemovido.disabled = true;
         materialRemovidoId.disabled = !enabled;
         qtdRemovida.disabled = !enabled;
         destinoRemovida.disabled = !enabled;
         motivoRemovida.disabled = !enabled;
-        btnCadastrarRemovida.disabled = !enabled;
 
         tipoPeca.required = enabled;
         materialId.required = enabled;
@@ -793,8 +757,12 @@
 
       setTrocaPecaEnabled(false);
 
-      if (!isEstruturado()) {
-        abrirFluxoEstruturado();
+      if (modalAddProcedimentoEl) {
+        modalAddProcedimentoEl.addEventListener('show.bs.modal', (ev) => {
+          if (isEstruturado()) return;
+          ev.preventDefault();
+          abrirFluxoEstruturado(true);
+        });
       }
 
       if (specsDepois && specsBase) {
@@ -859,19 +827,34 @@
         const tipos = await fetchJson('/materiais-tipos');
 
         tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
-        tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+        tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
 
         tipos.forEach((t) => {
           const opt1 = document.createElement('option');
           opt1.value = t;
           opt1.textContent = t;
           tipoPeca.appendChild(opt1);
-
-          const opt2 = document.createElement('option');
-          opt2.value = t;
-          opt2.textContent = t;
-          tipoRemovido.appendChild(opt2);
         });
+      }
+
+      async function carregarComponentesEstruturados() {
+        componentesEstruturadosCache = await fetchJson(`/computadores/${computadorIdAtual}/componentes-estruturados`);
+        return componentesEstruturadosCache;
+      }
+
+      function definirTipoRemovido(tipo) {
+        tipoRemovido.innerHTML = '';
+
+        if (!tipo) {
+          tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
+          return;
+        }
+
+        const opt = document.createElement('option');
+        opt.value = tipo;
+        opt.textContent = tipo;
+        opt.selected = true;
+        tipoRemovido.appendChild(opt);
       }
 
       async function carregarMateriaisPorTipo(tipo) {
@@ -901,15 +884,19 @@
 
       async function carregarMateriaisRemovidosPorTipo(tipo) {
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
-        infoRemovido.textContent = '';
+        infoRemovido.textContent = 'Somente componentes vinculados a esta máquina aparecem aqui.';
 
-        const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}`);
+        if (!componentesEstruturadosCache.length) {
+          await carregarComponentesEstruturados();
+        }
+
+        const list = componentesEstruturadosCache.filter((item) => item.tipo === tipo);
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
         if (!list.length) {
           const opt = document.createElement('option');
           opt.value = '';
-          opt.textContent = 'Nenhum material cadastrado nesse tipo';
+          opt.textContent = 'Esta máquina não possui componente desse tipo';
           opt.disabled = true;
           materialRemovidoId.appendChild(opt);
           return;
@@ -918,9 +905,10 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp:${m.quantidade_disponivel ?? 0} | Uso:${m.quantidade_em_uso ?? 0}`;
+          opt.textContent = `${m.material} (${m.marca || '-'}) — Na máquina: ${m.quantidade_no_computador ?? 0}`;
           opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
           opt.dataset.uso = m.quantidade_em_uso ?? 0;
+          opt.dataset.qtdNoComputador = m.quantidade_no_computador ?? 0;
           materialRemovidoId.appendChild(opt);
         });
       }
@@ -939,13 +927,14 @@
 
           setTrocaPecaEnabled(true);
           await carregarTipos();
+          await carregarComponentesEstruturados();
 
           tipoPeca.value = '';
           materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
           quantidade.value = 1;
           infoDisponivel.textContent = '';
 
-          tipoRemovido.value = '';
+          definirTipoRemovido('');
           materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
           qtdRemovida.value = 1;
           destinoRemovida.value = 'RECUPERAR';
@@ -962,7 +951,7 @@
           specsDepois.value = '';
           infoDisponivel.textContent = '';
 
-          tipoRemovido.value = '';
+          definirTipoRemovido('');
           materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
           qtdRemovida.value = 1;
           destinoRemovida.value = 'RECUPERAR';
@@ -971,19 +960,13 @@
         }
       });
 
-      tipoRemovido.addEventListener('change', async () => {
-        const tipo = tipoRemovido.value;
-        if (!tipo) return;
-        await carregarMateriaisRemovidosPorTipo(tipo);
-      });
-
       tipoPeca.addEventListener('change', async () => {
         const tipo = tipoPeca.value;
         if (!tipo) return;
 
         await carregarMateriaisPorTipo(tipo);
 
-        tipoRemovido.value = tipo;
+        definirTipoRemovido(tipo);
         await carregarMateriaisRemovidosPorTipo(tipo);
       });
 
@@ -1002,60 +985,14 @@
         const opt = materialRemovidoId.options[materialRemovidoId.selectedIndex];
         const disp = Number(opt?.dataset?.disponivel || 0);
         const uso = Number(opt?.dataset?.uso || 0);
-        infoRemovido.textContent = `Disp: ${disp} | Em uso: ${uso}`;
-      });
+        const qtdNoComputador = Number(opt?.dataset?.qtdNoComputador || 0);
+        infoRemovido.textContent = `Na máquina: ${qtdNoComputador} | Em uso sist.: ${uso} | Disponível sist.: ${disp}`;
 
-      btnCadastrarRemovida.addEventListener('click', () => {
-        const tipo = tipoRemovido.value;
-        if (!tipo) {
-          alert('Selecione primeiro o Tipo removido.');
-          return;
-        }
-
-        document.getElementById('cadRemTipo').value = tipo;
-        document.getElementById('cadRemMaterial').value = '';
-        document.getElementById('cadRemMarca').value = '';
-        document.getElementById('cadRemEspecificacao').value = '';
-        document.getElementById('cadRemNF').value = '';
-
-        new bootstrap.Modal(modalCadastrarRemovidaEl).show();
-      });
-
-      formCadastrarRemovida.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const payload = {
-          tipo: document.getElementById('cadRemTipo').value,
-          material: document.getElementById('cadRemMaterial').value,
-          marca: document.getElementById('cadRemMarca').value,
-          especificacao: document.getElementById('cadRemEspecificacao').value,
-          nf: document.getElementById('cadRemNF').value,
-          quantidade_disponivel: 0,
-          quantidade_em_uso: 0,
-        };
-
-        if (!payload.tipo || !payload.material) {
-          alert('Tipo e Material são obrigatórios.');
-          return;
-        }
-
-        try {
-          await fetchJson('/materiais', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload),
-          });
-
-          bootstrap.Modal.getInstance(modalCadastrarRemovidaEl).hide();
-
-          await carregarMateriaisRemovidosPorTipo(payload.tipo);
-          const opts = [...materialRemovidoId.options];
-          const found = opts.find(o => (o.textContent || '').includes(payload.material));
-          if (found) materialRemovidoId.value = found.value;
-        } catch (err) {
-          alert(err.message || 'Erro ao cadastrar removida.');
+        if (qtdNoComputador > 0) {
+          qtdRemovida.max = qtdNoComputador;
+          if (Number(qtdRemovida.value) > qtdNoComputador) qtdRemovida.value = qtdNoComputador;
+        } else {
+          qtdRemovida.removeAttribute('max');
         }
       });
       formCadastrarRecuperado.addEventListener('submit', async (e) => {
@@ -1138,6 +1075,15 @@
 
             const remQtd = Number(qtdRemovida.value || 1);
             if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
+
+            const optRemovido = materialRemovidoId.options[materialRemovidoId.selectedIndex];
+            const qtdNoComputador = Number(optRemovido?.dataset?.qtdNoComputador || 0);
+            if (qtdNoComputador <= 0) {
+              throw new Error('Selecione um componente realmente vinculado a esta máquina.');
+            }
+            if (remQtd > qtdNoComputador) {
+              throw new Error(`Qtd removida maior que a quantidade vinculada à máquina. Vinculado: ${qtdNoComputador}.`);
+            }
 
             const dest = destinoRemovida.value;
             if (dest === 'DEFEITO' && (!motivoRemovida.value || !motivoRemovida.value.trim())) {

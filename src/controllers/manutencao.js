@@ -58,21 +58,114 @@ class ManutencaoController {
     material.quantidade_em_uso = 0;
   }
 
+  async consumirEmUsoEstrito(material, quantidade, transaction) {
+    const qtd = Number(quantidade || 0);
+    if (qtd <= 0) throw new Error('Quantidade inválida para retirada do em uso.');
+
+    const emUsoAtual = Number(material.quantidade_em_uso || 0);
+    if (emUsoAtual < qtd) {
+      throw new Error(
+        `Inconsistência no estoque do componente removido. Em uso atual: ${emUsoAtual}, solicitado: ${qtd}.`
+      );
+    }
+
+    material.quantidade_em_uso = emUsoAtual - qtd;
+    await material.save({ transaction });
+  }
+
+  async getQuantidadeEstruturadaNoComputador(computadorId, materialId, transaction) {
+    const vinculos = await ComputadorMaterial.findAll({
+      where: {
+        computador_id: Number(computadorId),
+        material_id: Number(materialId),
+      },
+      transaction,
+    });
+
+    return vinculos.reduce((acc, vinculo) => acc + Number(vinculo.quantidade || 0), 0);
+  }
+
+  async getComponentesEstruturadosDoComputador(computadorId, tipo = null) {
+    const computador = await Computador.findByPk(Number(computadorId));
+    if (!computador) throw new Error('Computador não encontrado.');
+
+    const estruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+    if (!estruturado) throw new Error('Computador não está em modo estruturado.');
+
+    const whereMaterial = {};
+    if (tipo && String(tipo).trim()) {
+      whereMaterial.tipo = String(tipo).trim();
+    }
+
+    const vinculos = await ComputadorMaterial.findAll({
+      where: { computador_id: Number(computadorId) },
+      include: [
+        {
+          model: Material,
+          as: 'material',
+          required: true,
+          where: whereMaterial,
+        },
+      ],
+      order: [
+        [{ model: Material, as: 'material' }, 'tipo', 'ASC'],
+        [{ model: Material, as: 'material' }, 'material', 'ASC'],
+      ],
+    });
+
+    const agrupado = new Map();
+
+    vinculos.forEach((vinculo) => {
+      const material = vinculo.material;
+      if (!material) return;
+
+      const qtd = Number(vinculo.quantidade || 0);
+      if (qtd <= 0) return;
+
+      if (!agrupado.has(material.id)) {
+        agrupado.set(material.id, {
+          id: material.id,
+          tipo: material.tipo,
+          material: material.material,
+          marca: material.marca,
+          especificacao: material.especificacao,
+          quantidade_no_computador: 0,
+          quantidade_disponivel: Number(material.quantidade_disponivel || 0),
+          quantidade_em_uso: Number(material.quantidade_em_uso || 0),
+        });
+      }
+
+      const atual = agrupado.get(material.id);
+      atual.quantidade_no_computador += qtd;
+    });
+
+    return Array.from(agrupado.values()).sort((a, b) => {
+      const tipoDiff = String(a.tipo || '').localeCompare(String(b.tipo || ''));
+      if (tipoDiff !== 0) return tipoDiff;
+      return String(a.material || '').localeCompare(String(b.material || ''));
+    });
+  }
+
   async create(descricao, computadorId) {
     if (!computadorId) {
       throw new Error('Não foi informado um computador para registrar a manutenção!');
     }
 
-    const manutencao = await Manutencao.create({
-      descricao,
-      computadorId,
-    });
     const pc = await Computador.findByPk(computadorId);
     if (!pc) throw new Error('Computador não encontrado.');
 
     if (pc.status !== null && pc.status !== undefined) {
       throw new Error('Este computador está CONDENADO e não pode abrir novas manutenções.');
     }
+
+    if (String(pc.specs_modo || 'LEGADO').toUpperCase() !== 'ESTRUTURADO') {
+      throw new Error('Converta esta máquina legado para estruturado antes de abrir uma nova manutenção.');
+    }
+
+    const manutencao = await Manutencao.create({
+      descricao,
+      computadorId,
+    });
 
     return manutencao;
   }
@@ -367,6 +460,10 @@ class ManutencaoController {
     const specs_antes = computador.specs_override || computador.specs || null;
     const computadorEstruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
 
+    if (!computadorEstruturado) {
+      throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de continuar a manutenção.');
+    }
+
     // 3) Se NÃO for troca de peça, salva procedimento simples
     if (tipo !== 'TROCA_PECA') {
       await ManutencaoItem.create({
@@ -419,6 +516,18 @@ class ManutencaoController {
       // 6) Snapshot congelado (histórico)
       const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
       if (!matRem) throw new Error('Material removido não encontrado.');
+
+      const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
+        computadorId,
+        materialRemovidoId,
+        t
+      );
+
+      if (quantidadeNoComputador < qtdRem) {
+        throw new Error(
+          `A máquina não possui esse componente em quantidade suficiente para remoção. Vinculado: ${quantidadeNoComputador}.`
+        );
+      }
 
       const snapshot = [
         `Instalado: ${[
@@ -502,7 +611,7 @@ class ManutencaoController {
       // se não tem saldo e não é recém-cadastrada, continua barrando.
 
       if (destinoRemovida === 'RECUPERAR') {
-        await this.consumirEmUsoOuSemear(matRem, qtdRem, t);
+        await this.consumirEmUsoEstrito(matRem, qtdRem, t);
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -518,7 +627,7 @@ class ManutencaoController {
           { transaction: t }
         );
       } else if (destinoRemovida === 'DEFEITO') {
-        await this.consumirEmUsoOuSemear(matRem, qtdRem, t);
+        await this.consumirEmUsoEstrito(matRem, qtdRem, t);
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 

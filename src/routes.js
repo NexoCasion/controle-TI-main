@@ -295,6 +295,18 @@ router.get('/ver-manutencao', async (req, res) => {
   }
 });
 
+router.get('/computadores/:id/componentes-estruturados', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo } = req.query;
+    const componentes = await manutencaoController.getComponentesEstruturadosDoComputador(Number(id), tipo);
+    return res.json(componentes);
+  } catch (err) {
+    console.error('Erro ao buscar componentes estruturados do computador:', err);
+    return res.status(400).json({ error: err.message });
+  }
+});
+
 router.post('/add-item-manutencao', async (req, res) => {
   try {
     const {

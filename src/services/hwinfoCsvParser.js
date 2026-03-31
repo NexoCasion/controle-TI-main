@@ -27,9 +27,20 @@ function detectMemoryType(text = '') {
 function detectStorageKind(section = '', model = '') {
   const text = `${section} ${model}`.toUpperCase();
   if (text.includes('DVD') || text.includes('OPTICA') || text.includes('OPTICAL')) return 'OPTICAL';
-  if (text.includes('NVME')) return 'SSD NVME';
+  if (text.includes('NVME')) return 'NVME';
   if (text.includes('SSD')) return 'SSD';
   return 'HDD';
+}
+
+function buildStorageMaterialName(model = '', kind = '') {
+  const baseModel = String(model || '').trim();
+  if (!baseModel) return baseModel;
+
+  if (kind === 'NVME' && !baseModel.toUpperCase().includes('NVME')) {
+    return `NVMe ${baseModel}`;
+  }
+
+  return baseModel;
 }
 
 function shouldIgnoreStorageModel(model = '') {
@@ -79,8 +90,8 @@ function pushMemoryDetail(memorias, detail) {
 
   memorias.push({
     categoria: 'MEMORIA',
-    tipo: 'Memoria RAM',
-    material: 'Memoria RAM',
+    tipo: 'Memoria',
+    material: 'Memoria',
     especificacao,
     quantidade: 1,
   });
@@ -127,8 +138,8 @@ function parseHwinfoCsv(content) {
       const raw = line.replace(/^Fileira:\s*\d+\s*-\s*/i, '').trim();
       memorias.push({
         categoria: 'MEMORIA',
-        tipo: 'Memoria RAM',
-        material: 'Memoria RAM',
+        tipo: 'Memoria',
+        material: 'Memoria',
         especificacao: normalizeMemorySpec(raw) || raw,
         bruto: raw,
         quantidade: 1,
@@ -188,8 +199,8 @@ function parseHwinfoCsv(content) {
         const kind = detectStorageKind(currentDiskSection, model);
         currentDisk = {
           categoria: 'ARMAZENAMENTO',
-          tipo: kind,
-          material: model,
+          tipo: 'Armazenamento',
+          material: buildStorageMaterialName(model, kind),
           especificacao: '',
           quantidade: 1,
           kind,
