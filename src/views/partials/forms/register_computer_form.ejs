@@ -55,6 +55,9 @@
     <button type="button" id="btnOpenImportCsvFromRegister" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2 btn-importcsv">
       Importar Computadores (CSV)
     </button>
+    <button type="button" id="btnOpenStructuredManualFromRegister" style="font-size: .75rem;" class="btn btn-outline-secondary btn-lg btn-block mb-2">
+      Cadastrar Estruturado Manual
+    </button>
     <% } else { %>
     <a href="/importar-csv" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2 ">
       Importar Computadores
@@ -65,3 +68,60 @@
 
 
 </form>
+
+<% if (_inModal) { %>
+<script>
+  (function() {
+    const btnImport = document.getElementById('btnOpenImportCsvFromRegister');
+    const btnManual = document.getElementById('btnOpenStructuredManualFromRegister');
+
+    function getEmpresaFiltroAtual() {
+      const filtro = document.getElementById('selectEmpresa');
+      return filtro ? filtro.value : '';
+    }
+
+    function abrirModalEstruturado(fromId, toId, beforeOpen) {
+      const fromEl = document.getElementById(fromId);
+      const toEl = document.getElementById(toId);
+      if (!fromEl || !toEl || !window.bootstrap) return;
+
+      const fromInst = bootstrap.Modal.getOrCreateInstance(fromEl);
+      const toInst = bootstrap.Modal.getOrCreateInstance(toEl);
+
+      let opened = false;
+      const openTarget = function() {
+        if (opened || toEl.classList.contains('show')) return;
+        opened = true;
+        if (typeof beforeOpen === 'function') beforeOpen();
+        toInst.show();
+      };
+
+      fromEl.addEventListener('hidden.bs.modal', openTarget, { once: true });
+      fromInst.hide();
+      setTimeout(openTarget, 450);
+    }
+
+    if (btnImport) {
+      btnImport.onclick = function(ev) {
+        ev.preventDefault();
+        abrirModalEstruturado('modalRegisterPc', 'modalImportCsv', function() {
+          const empresaImport = document.getElementById('empresaImport');
+          const empresaId = getEmpresaFiltroAtual();
+          if (empresaImport && empresaId) empresaImport.value = empresaId;
+        });
+      };
+    }
+
+    if (btnManual) {
+      btnManual.onclick = function(ev) {
+        ev.preventDefault();
+        abrirModalEstruturado('modalRegisterPc', 'modalRegisterStructuredPc', function() {
+          const empresaManual = document.getElementById('manualEmpresaId');
+          const empresaId = getEmpresaFiltroAtual();
+          if (empresaManual && empresaId) empresaManual.value = empresaId;
+        });
+      };
+    }
+  })();
+</script>
+<% } %>

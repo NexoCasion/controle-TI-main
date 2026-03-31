@@ -164,6 +164,7 @@ class MaterialController {
     const ManutencaoItem = require('../models/ManutencaoItem');
     const Manutencao = require('../models/Manutencao');
     const Computador = require('../models/Computador');
+    const ComputadorMaterial = require('../models/ComputadorMaterial');
 
     const rows = await ManutencaoMaterial.findAll({
       where: { material_id: materialId },
@@ -202,6 +203,41 @@ class MaterialController {
 
       const manut = item.manutencao;
       const pc = manut?.computador;
+      if (!pc) continue;
+
+      const qtd = Number(r.quantidade || 0);
+      if (!qtd) continue;
+
+      const key = pc.id;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          computadorId: pc.id,
+          patrimonio: pc.patrimonio || null,
+          specs: pc.specs_override || pc.specs || null,
+          unidade: 0,
+        });
+      }
+
+      map.get(key).unidade += qtd;
+    }
+
+    const rowsEstruturados = await ComputadorMaterial.findAll({
+      where: { material_id: materialId },
+      attributes: ['quantidade'],
+      include: [
+        {
+          model: Computador,
+          as: 'computador',
+          where: { ativo: true },
+          required: true,
+          attributes: ['id', 'patrimonio', 'specs', 'specs_override'],
+        },
+      ],
+    });
+
+    for (const r of rowsEstruturados) {
+      const pc = r.computador;
       if (!pc) continue;
 
       const qtd = Number(r.quantidade || 0);

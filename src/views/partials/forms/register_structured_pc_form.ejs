@@ -1,0 +1,93 @@
+<%
+  const _inModal = (typeof inModal !== 'undefined') ? inModal : false;
+  const _empresas = (typeof empresas !== 'undefined') ? empresas : [];
+  const _actionUrl = (typeof actionUrl !== 'undefined') ? actionUrl : '/computadores/estruturado-manual';
+  const _csvTargetModal = (typeof csvTargetModal !== 'undefined') ? csvTargetModal : 'modalImportCsv';
+  const _csvEmpresaTargetId = (typeof csvEmpresaTargetId !== 'undefined') ? csvEmpresaTargetId : 'empresaImport';
+  const _structuredModalId = (typeof structuredModalId !== 'undefined') ? structuredModalId : 'modalRegisterStructuredPc';
+%>
+
+<div class="d-flex align-items-center justify-content-start mb-4">
+  <% if (_inModal) { %>
+  <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+    <i class="fas fa-arrow-left"></i>
+  </button>
+  <% } else { %>
+  <a href="javascript:history.back()" class="btn btn-back">
+    <i class="fas fa-arrow-left"></i>
+  </a>
+  <% } %>
+
+  <div class="mx-auto text-center">
+    <h2 class="card-title mb-1">Cadastrar Computador Estruturado</h2>
+    <small class="text-muted">Preencha manualmente os campos do nome do arquivo e do HWiNFO.</small>
+  </div>
+</div>
+
+<form action="<%= _actionUrl %>" method="post">
+  <div class="row g-3 text-start">
+    <div class="col-md-4">
+      <label for="manualPatrimonio" class="form-label">Patrimônio</label>
+      <input type="text" class="form-control" name="patrimonio" id="manualPatrimonio" required>
+    </div>
+    <div class="col-md-4">
+      <label for="manualSetor" class="form-label">Setor</label>
+      <input type="text" class="form-control" name="setor" id="manualSetor" required>
+    </div>
+    <div class="col-md-4">
+      <label for="manualEmpresaId" class="form-label">Empresa</label>
+      <select class="form-select" name="empresaId" id="manualEmpresaId" required>
+        <% _empresas.forEach(function(empresa) { %>
+        <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label for="manualNomeComputador" class="form-label">Nome do computador</label>
+      <input type="text" class="form-control" name="nomeComputador" id="manualNomeComputador" placeholder="Ex: FELIPE-TI">
+    </div>
+    <div class="col-md-6">
+      <label for="manualModeloComputador" class="form-label">Modelo</label>
+      <input type="text" class="form-control" name="modeloComputador" id="manualModeloComputador" placeholder="Ex: DELL OptiPlex 7050" required>
+    </div>
+
+    <div class="col-12">
+      <label for="manualProcessador" class="form-label">Processador</label>
+      <input type="text" class="form-control" name="processador" id="manualProcessador" placeholder="Ex: Intel Core i5-6500" required>
+    </div>
+
+    <div class="col-md-6">
+      <label for="manualMemoria" class="form-label">Memória</label>
+      <textarea class="form-control" name="memoria" id="manualMemoria" rows="3" placeholder="Um item por linha&#10;Ex: 8 GB DDR4 2133 MT/s" required></textarea>
+      <small class="text-muted">Use uma linha por módulo, se houver mais de um.</small>
+    </div>
+    <div class="col-md-6">
+      <label for="manualArmazenamento" class="form-label">Armazenamento</label>
+      <textarea class="form-control" name="armazenamento" id="manualArmazenamento" rows="3" placeholder="Um item por linha&#10;Ex: NVME SSD 256GB - 256 GB" required></textarea>
+      <small class="text-muted">Use uma linha por unidade de armazenamento.</small>
+    </div>
+
+    <div class="col-12">
+      <div class="small text-muted">
+        O sistema vai criar o computador, montar as specs e registrar processador, memória e armazenamento como materiais em uso.
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    <% if (_inModal) { %>
+    <button type="button" id="btnImportCsvFromStructured" class="btn btn-outline-secondary">
+      Importar CSV
+    </button>
+    <% } else { %>
+    <a href="/importar-csv" class="btn btn-outline-secondary">
+      Importar CSV
+    </a>
+    <% } %>
+
+    <button type="submit" class="btn btn-primary px-4">Cadastrar</button>
+  </div>
+</form>

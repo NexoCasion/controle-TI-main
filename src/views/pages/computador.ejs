@@ -36,12 +36,23 @@
       </p>
 
       <p class="mb-1">Local: <b><%= computador.setor %></b></p>
-      <small class="text-muted"><%= computador.specs %></small>
+      <small class="text-muted d-block" style="white-space: pre-line;"><%= (computador.specs_override || computador.specs || '-') %></small>
 
       <div class="mt-2">
         <small id="createdAtFormatted" class="text-muted"></small>
       </div>
     </div>
+
+    <% if ((computador.specs_modo || 'LEGADO') !== 'ESTRUTURADO') { %>
+    <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        Esta máquina ainda está em modo legado. Converta para estruturado para registrar componentes reais e usar troca de peça com consistência.
+      </div>
+      <button type="button" class="btn btn-sm btn-dark" id="btnConverterEstruturadoFromView">
+        Converter para Estruturado
+      </button>
+    </div>
+    <% } %>
 
     <div class="maintenance-">
       <div class="d-flex gap-2 justify-content-center flex-wrap">
@@ -65,6 +76,92 @@
   <%- include("../partials/modals/modal_transfer_pc", { empresas: (typeof empresas !== 'undefined' ? empresas : []) }) %>
   <%- include("../partials/modals/modal_register_manutencao", { empresas: (typeof empresas !== 'undefined' ? empresas : []) }) %>
 
+  <div class="modal fade" id="modalEscolhaEstruturadoPc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Converter máquina legado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">Esta máquina ainda está em modo legado.</p>
+          <p class="text-muted mb-0">Escolha se deseja converter por cadastro manual ou por CSV do HWiNFO.</p>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary" id="btnAbrirEstruturadoManualPc">
+            Cadastro manual
+          </button>
+          <button type="button" class="btn btn-primary" id="btnAbrirEstruturadoCsvPc">
+            Enviar CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalEstruturadoCsvPc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" id="formEstruturadoCsvPc" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Converter por CSV</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-light border text-start">
+            O patrimônio, local e empresa atuais serão mantidos. O CSV será usado para montar os componentes reais desta máquina.
+          </div>
+          <label for="csvEstruturadoPc" class="form-label">Arquivo CSV do HWiNFO</label>
+          <input type="file" class="form-control" id="csvEstruturadoPc" name="csvFile" accept=".csv" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Importar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalEstruturadoManualPc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <form class="modal-content" id="formEstruturadoManualPc">
+        <div class="modal-header">
+          <h5 class="modal-title">Converter manualmente para estruturado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="manualNomeComputadorPc" class="form-label">Nome do computador</label>
+              <input type="text" class="form-control" id="manualNomeComputadorPc" name="nomeComputador" placeholder="Ex: FELIPE-TI">
+            </div>
+            <div class="col-md-6">
+              <label for="manualModeloComputadorPc" class="form-label">Modelo</label>
+              <input type="text" class="form-control" id="manualModeloComputadorPc" name="modeloComputador" placeholder="Ex: DELL OptiPlex 7050" required>
+            </div>
+            <div class="col-12">
+              <label for="manualProcessadorPc" class="form-label">Processador</label>
+              <input type="text" class="form-control" id="manualProcessadorPc" name="processador" placeholder="Ex: Intel Core i5-6500" required>
+            </div>
+            <div class="col-md-6">
+              <label for="manualMemoriaPc" class="form-label">Memória</label>
+              <textarea class="form-control" id="manualMemoriaPc" name="memoria" rows="3" placeholder="Um item por linha&#10;Ex: 8 GB DDR4 2133 MT/s" required></textarea>
+              <small class="text-muted">Use uma linha por módulo, se houver mais de um.</small>
+            </div>
+            <div class="col-md-6">
+              <label for="manualArmazenamentoPc" class="form-label">Armazenamento</label>
+              <textarea class="form-control" id="manualArmazenamentoPc" name="armazenamento" rows="3" placeholder="Um item por linha&#10;Ex: NVME SSD 256GB - 256 GB" required></textarea>
+              <small class="text-muted">Use uma linha por unidade de armazenamento.</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Converter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
@@ -85,13 +182,19 @@
         id: computador.id,
         patrimonio: computador.patrimonio || "",
         setor: computador.setor || "",
-        specs: computador.specs || "",
+        specs: (computador.specs_override || computador.specs || ""),
+        specsModo: computador.specs_modo || "LEGADO",
         empresaId: computador.empresaId ?? ""
       }) %>;
 
       const btnRegisterManutFromView = document.getElementById("btnRegisterManutFromView");
       const btnAddManFromEdit = document.getElementById("btnAddManutencaoFromEdit");
       const btnTransferFromEdit = document.getElementById("btnTransferirFromEdit");
+      const btnConverterEstruturadoFromView = document.getElementById("btnConverterEstruturadoFromView");
+      const btnAbrirEstruturadoManualPc = document.getElementById("btnAbrirEstruturadoManualPc");
+      const btnAbrirEstruturadoCsvPc = document.getElementById("btnAbrirEstruturadoCsvPc");
+      const formEstruturadoManualPc = document.getElementById("formEstruturadoManualPc");
+      const formEstruturadoCsvPc = document.getElementById("formEstruturadoCsvPc");
 
       if (btnAddManFromEdit) btnAddManFromEdit.style.display = "none";
       if (btnTransferFromEdit) btnTransferFromEdit.style.display = "none";
@@ -117,6 +220,13 @@
         fromInst.hide();
       }
 
+      async function fetchJson(url, opts) {
+        const res = await fetch(url, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || "Erro na requisição");
+        return data;
+      }
+
       const btnEdit = document.getElementById("btnEditPcFromView");
       if (btnEdit) {
         btnEdit.addEventListener("click", () => {
@@ -124,11 +234,22 @@
           const inPatrimonio = document.getElementById("editPatrimonio");
           const inSetor = document.getElementById("editSetor");
           const inSpecs = document.getElementById("editSpecs");
+          const inSpecsModo = document.getElementById("specsModo");
+          const inSpecsHelp = document.getElementById("editSpecsHelp");
 
           if (form) form.action = `/editar-pc?id=${pcCtx.id}`;
           if (inPatrimonio) inPatrimonio.value = pcCtx.patrimonio;
           if (inSetor) inSetor.value = pcCtx.setor;
-          if (inSpecs) inSpecs.value = pcCtx.specs;
+          if (inSpecs) {
+            inSpecs.value = pcCtx.specs;
+            inSpecs.readOnly = pcCtx.specsModo === "ESTRUTURADO";
+          }
+          if (inSpecsModo) inSpecsModo.value = pcCtx.specsModo || "LEGADO";
+          if (inSpecsHelp) {
+            inSpecsHelp.textContent = pcCtx.specsModo === "ESTRUTURADO" ?
+              "Este computador esta em modo estruturado. As specs sao recalculadas pelos componentes vinculados." :
+              "Edite as specs livremente para computadores no modo legado.";
+          }
 
           window.__editPcCtx = {
             computadorId: pcCtx.id,
@@ -156,6 +277,68 @@
             empresaId: pcCtx.empresaId ?? "",
             computadorId: pcCtx.id,
           };
+        });
+      }
+
+      if (btnConverterEstruturadoFromView) {
+        btnConverterEstruturadoFromView.addEventListener("click", () => {
+          const modal = document.getElementById("modalEscolhaEstruturadoPc");
+          if (!modal) return;
+          bootstrap.Modal.getOrCreateInstance(modal).show();
+        });
+      }
+
+      if (btnAbrirEstruturadoManualPc) {
+        btnAbrirEstruturadoManualPc.addEventListener("click", () => {
+          switchModal("modalEscolhaEstruturadoPc", "modalEstruturadoManualPc");
+        });
+      }
+
+      if (btnAbrirEstruturadoCsvPc) {
+        btnAbrirEstruturadoCsvPc.addEventListener("click", () => {
+          switchModal("modalEscolhaEstruturadoPc", "modalEstruturadoCsvPc");
+        });
+      }
+
+      if (formEstruturadoManualPc) {
+        formEstruturadoManualPc.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          try {
+            const payload = Object.fromEntries(new FormData(formEstruturadoManualPc).entries());
+            await fetchJson(`/computadores/${pcCtx.id}/estruturado-manual`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload),
+            });
+
+            window.location.reload();
+          } catch (err) {
+            alert(err.message || "Erro ao converter manualmente.");
+          }
+        });
+      }
+
+      if (formEstruturadoCsvPc) {
+        formEstruturadoCsvPc.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          try {
+            const body = new FormData(formEstruturadoCsvPc);
+            const res = await fetch(`/computadores/${pcCtx.id}/importar-hwinfo-csv`, {
+              method: "POST",
+              body,
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || "Erro ao importar CSV.");
+
+            window.location.reload();
+          } catch (err) {
+            alert(err.message || "Erro ao importar CSV.");
+          }
         });
       }
 

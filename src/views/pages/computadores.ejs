@@ -21,7 +21,7 @@
       </a>
       <div class="text-center align-items-center">
         <h1 class="mt-4 mb-4">Lista de Computadores</h1>
-        <button type="button" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterPc">
+        <button type="button" id="btnAddStructuredPc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterStructuredPc">
           Adicionar Computador
         </button>
 
@@ -86,11 +86,15 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
-  <%- include("../partials/modals/modal_register_pc", { empresas: empresas }) %>
   <%- include("../partials/modals/modal_edit_pc") %>
   <%- include("../partials/modals/modal_register_manutencao") %>
   <%- include("../partials/modals/modal_transfer_pc", { empresas: empresas }) %>
-  <%- include("../partials/modals/modal_import_csv", { empresas: empresas }) %>
+  <%- include("../partials/modals/modal_import_csv_computadores", { empresas: empresas }) %>
+  <%- include("../partials/modals/modal_register_structured_pc", {
+    empresas: empresas,
+    csvTargetModal: 'modalImportCsvComputadores',
+    csvEmpresaTargetId: 'empresaImportComputadores'
+  }) %>
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -170,16 +174,31 @@
         atualizarInfoPaginacao();
       }
 
-      const btnOpenImport = document.getElementById("btnOpenImportCsvFromRegister");
-      if (btnOpenImport) {
-        btnOpenImport.addEventListener("click", () => {
-          switchModal("modalRegisterPc", "modalImportCsv", () => {
-            const filtro = document.getElementById("selectEmpresa");
-            const empresaId = filtro ? filtro.value : "";
-            const empresaImport = document.getElementById("empresaImport");
-            if (empresaImport && empresaId) empresaImport.value = empresaId;
-          });
+      const btnAddStructuredPc = document.getElementById("btnAddStructuredPc");
+      const btnImportCsvFromStructured = document.getElementById("btnImportCsvFromStructured");
+      const btnBackToStructuredFromCsvComputadores = document.getElementById("btnBackToStructuredFromCsvComputadores");
+      if (btnAddStructuredPc) {
+        btnAddStructuredPc.addEventListener("click", () => {
+          const empresaId = selectEmpresa.value || "";
+          const empresaImport = document.getElementById("empresaImportComputadores");
+          const empresaManual = document.getElementById("manualEmpresaId");
+
+          if (empresaImport && empresaId) empresaImport.value = empresaId;
+          if (empresaManual && empresaId) empresaManual.value = empresaId;
         });
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderSpecsCell(specs) {
+        return escapeHtml(specs || "Sem descrição").replace(/\n/g, "<br>");
       }
 
       async function carregarComputadores(page = 1) {
@@ -217,10 +236,11 @@
         tableBody.innerHTML = "";
 
         computadores.forEach((computador) => {
+          const specsExibicao = computador.specs_override || computador.specs;
           const row = `
   <tr class="editar-pcs">
     <td>${computador.patrimonio ?? ""}</td>
-    <td>${computador.specs ?? "Sem descrição"}</td>
+    <td class="align-middle text-start"><div style="line-height: 1.35; text-align: left;">${renderSpecsCell(specsExibicao)}</div></td>
     <td>${computador.setor ?? ""}</td>
     <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
     <td>
@@ -231,7 +251,8 @@
           data-id="${computador.id}"
           data-patrimonio="${(computador.patrimonio ?? "").toString().replace(/"/g, '&quot;')}"
           data-setor="${(computador.setor ?? "").toString().replace(/"/g, '&quot;')}"
-          data-specs="${(computador.specs ?? "").toString().replace(/"/g, '&quot;')}"
+          data-specs="${(specsExibicao ?? "").toString().replace(/"/g, '&quot;')}"
+          data-specs-modo="${(computador.specs_modo ?? "LEGADO").toString().replace(/"/g, '&quot;')}"
           data-bs-toggle="modal"
           data-bs-target="#modalEditPc"
           data-empresa-id="${computador.empresaId ?? ''}"
@@ -298,6 +319,7 @@
         const patrimonio = btn.getAttribute("data-patrimonio") || "";
         const setor = btn.getAttribute("data-setor") || "";
         const specs = btn.getAttribute("data-specs") || "";
+        const specsModo = btn.getAttribute("data-specs-modo") || "LEGADO";
         const empresaId = btn.getAttribute("data-empresa-id");
         window.__editPcCtx = {
           computadorId: id,
@@ -308,6 +330,8 @@
         const inPatrimonio = document.getElementById("editPatrimonio");
         const inSetor = document.getElementById("editSetor");
         const inSpecs = document.getElementById("editSpecs");
+        const inSpecsModo = document.getElementById("specsModo");
+        const inSpecsHelp = document.getElementById("editSpecsHelp");
 
         if (!form || !inPatrimonio || !inSetor || !inSpecs) return;
 
@@ -315,6 +339,13 @@
         inPatrimonio.value = patrimonio;
         inSetor.value = setor;
         inSpecs.value = specs;
+        inSpecs.readOnly = specsModo === "ESTRUTURADO";
+        if (inSpecsModo) inSpecsModo.value = specsModo;
+        if (inSpecsHelp) {
+          inSpecsHelp.textContent = specsModo === "ESTRUTURADO" ?
+            "Este computador esta em modo estruturado. As specs sao recalculadas pelos componentes vinculados." :
+            "Edite as specs livremente para computadores no modo legado.";
+        }
       });
 
       const btnAddMan = document.getElementById("btnAddManutencaoFromEdit");
@@ -353,6 +384,30 @@
         );
 
         fromInst.hide();
+      }
+
+      if (btnBackToStructuredFromCsvComputadores) {
+        btnBackToStructuredFromCsvComputadores.addEventListener("click", () => {
+          switchModal("modalImportCsvComputadores", "modalRegisterStructuredPc", () => {
+            const empresaImport = document.getElementById("empresaImportComputadores");
+            const empresaManual = document.getElementById("manualEmpresaId");
+            if (empresaImport && empresaManual && empresaImport.value) {
+              empresaManual.value = empresaImport.value;
+            }
+          });
+        });
+      }
+
+      if (btnImportCsvFromStructured) {
+        btnImportCsvFromStructured.addEventListener("click", () => {
+          switchModal("modalRegisterStructuredPc", "modalImportCsvComputadores", () => {
+            const empresaImport = document.getElementById("empresaImportComputadores");
+            const empresaManual = document.getElementById("manualEmpresaId");
+            if (empresaImport && empresaManual && empresaManual.value) {
+              empresaImport.value = empresaManual.value;
+            }
+          });
+        });
       }
 
       if (btnAddMan) {

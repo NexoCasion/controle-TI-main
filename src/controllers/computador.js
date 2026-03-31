@@ -1,6 +1,7 @@
 const Computador = require('../models/Computador');
 const Empresa = require('../models/Empresa');
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
+const ComputadorEstruturadoService = require('../services/computadorEstruturadoService');
 
 class ComputadorController {
   mapComputador(computador) {
@@ -8,6 +9,9 @@ class ComputadorController {
       id: computador.dataValues.id,
       patrimonio: computador.dataValues.patrimonio,
       specs: computador.dataValues.specs,
+      specs_override: computador.dataValues.specs_override,
+      specs_modo: computador.dataValues.specs_modo,
+      specs_estruturadas: computador.dataValues.specs_estruturadas,
       setor: computador.dataValues.setor,
       empresaId: computador.dataValues.empresaId,
       ativo: computador.dataValues.ativo,
@@ -16,6 +20,10 @@ class ComputadorController {
       motivoDescarte: computador.dataValues.motivoDescarte,
       empresa: computador.empresa ? computador.empresa.dataValues : null,
     };
+  }
+
+  criarService() {
+    return new ComputadorEstruturadoService();
   }
 
   buildStatusWhere(status = 'ativos') {
@@ -37,7 +45,7 @@ class ComputadorController {
   buildOrder(sortBy, sortDir) {
     const direction = String(sortDir).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    if (sortBy === 'specs') return [['specs', direction]];
+    if (sortBy === 'specs') return [[literal('COALESCE(specs_override, specs)'), direction]];
     if (sortBy === 'setor') return [['setor', direction]];
     if (sortBy === 'empresa') return [[{ model: Empresa, as: 'empresa' }, 'nome', direction]];
 
@@ -47,10 +55,10 @@ class ComputadorController {
   async create(name, description, empresaId, local) {
     try {
       if (!empresaId) {
-        throw new Error('ID da empresa nÃ£o fornecido');
+        throw new Error('ID da empresa nao fornecido');
       }
       if (!name) {
-        throw new Error('Numero de Patrimonio nÃ£o fornecido');
+        throw new Error('Numero de Patrimonio nao fornecido');
       }
       const computador = await Computador.create({
         patrimonio: name,
@@ -121,6 +129,7 @@ class ComputadorController {
         where[Op.or] = [
           { patrimonio: { [Op.like]: `%${busca}%` } },
           { specs: { [Op.like]: `%${busca}%` } },
+          { specs_override: { [Op.like]: `%${busca}%` } },
           { setor: { [Op.like]: `%${busca}%` } },
           { '$empresa.nome$': { [Op.like]: `%${busca}%` } },
         ];
@@ -152,7 +161,7 @@ class ComputadorController {
       const computador = await Computador.findByPk(id, { include: 'empresa' });
 
       if (!computador) {
-        throw new Error('Computador nÃ£o encontrado');
+        throw new Error('Computador nao encontrado');
       }
       return computador;
     } catch (error) {
@@ -163,7 +172,7 @@ class ComputadorController {
   async descartar(id, manutencaoId, motivo = null) {
     try {
       const pc = await Computador.findByPk(id);
-      if (!pc) throw new Error('Computador nÃ£o encontrado.');
+      if (!pc) throw new Error('Computador nao encontrado.');
 
       pc.ativo = false;
       pc.status = manutencaoId;
@@ -180,7 +189,7 @@ class ComputadorController {
   async reativar(id) {
     try {
       const pc = await Computador.findByPk(id);
-      if (!pc) throw new Error('Computador nÃ£o encontrado.');
+      if (!pc) throw new Error('Computador nao encontrado.');
 
       pc.ativo = true;
       pc.dataDescarte = null;
@@ -197,17 +206,52 @@ class ComputadorController {
     try {
       const computador = await Computador.findByPk(computador_new.id);
       if (!computador) {
-        throw new Error('Computador nÃ£o encontrado');
+        throw new Error('Computador nao encontrado');
       }
-      console.log(computador_new);
+
       computador.patrimonio = computador_new.patrimonio;
-      computador.specs = computador_new.specs;
       computador.setor = computador_new.setor;
-      computador.save();
+
+      if (String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO') {
+        const resultado = await this.criarService().syncSpecsEstruturadasDoComputador(computador.id);
+        computador.specs = resultado.specsText || computador.specs;
+        computador.specs_override = resultado.specsText || computador.specs_override;
+      } else {
+        const specsEditadas = String(computador_new.specs || '').trim();
+        computador.specs = specsEditadas;
+        computador.specs_override = specsEditadas;
+      }
+
+      await computador.save();
       return computador;
     } catch (error) {
       throw new Error(`Erro ao atualizar computador: ${error.message}`);
     }
+  }
+
+  async importarHwinfoCsv(computadorId, csvContent) {
+    const service = this.criarService();
+    return service.importarCsv(Number(computadorId), csvContent);
+  }
+
+  async criarEstruturadoManual(payload) {
+    const service = this.criarService();
+    return service.criarComputadorEstruturadoManual(payload);
+  }
+
+  async estruturarManualExistente(computadorId, payload) {
+    const service = this.criarService();
+    return service.estruturarComputadorExistenteManual(Number(computadorId), payload);
+  }
+
+  async criarEstruturadoPorCsv(payload) {
+    const service = this.criarService();
+    return service.criarComputadorEstruturadoPorCsv(payload);
+  }
+
+  async importarHwinfoCsvDeArquivo(computadorId, csvPath) {
+    const service = this.criarService();
+    return service.importarCsvDeArquivo(Number(computadorId), csvPath);
   }
 }
 

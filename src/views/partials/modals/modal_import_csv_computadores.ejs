@@ -1,4 +1,4 @@
-<div class="modal fade" id="modalImportCsv" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalImportCsvComputadores" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-body">
@@ -22,8 +22,8 @@
             <form action="/importar-csv" method="post" enctype="multipart/form-data">
               <div class="row g-3">
                 <div class="col-12">
-                  <label for="empresaImport" class="form-label">Empresa</label>
-                  <select class="form-select" name="empresaId" id="empresaImport" required>
+                  <label for="empresaImportComputadores" class="form-label">Empresa</label>
+                  <select class="form-select" name="empresaId" id="empresaImportComputadores" required>
                     <% (empresas || []).forEach(function(empresa) { %>
                     <option value="<%= empresa.id %>"><%= empresa.nome %></option>
                     <% }); %>
@@ -31,8 +31,8 @@
                 </div>
 
                 <div class="col-12">
-                  <label for="csvFileModal" class="form-label">Arquivo CSV do HWiNFO</label>
-                  <input type="file" class="form-control" name="csvFile" id="csvFileModal" accept=".csv" required>
+                  <label for="csvFileModalComputadores" class="form-label">Arquivo CSV do HWiNFO</label>
+                  <input type="file" class="form-control" name="csvFile" id="csvFileModalComputadores" accept=".csv" required>
                 </div>
 
                 <div class="col-12">
@@ -48,7 +48,7 @@
               <hr class="my-4">
 
               <div class="d-flex justify-content-between flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-secondary" data-switch-from="modalImportCsv" data-switch-to="modalRegisterStructuredPc">
+                <button type="button" class="btn btn-outline-secondary" id="btnBackToStructuredFromCsvComputadores">
                   Cadastro manual
                 </button>
                 <button type="submit" class="btn btn-primary px-4">Importar</button>
@@ -60,27 +60,3 @@
     </div>
   </div>
 </div>
-
-<script>
-  window.__switchBootstrapModal = window.__switchBootstrapModal || function(fromId, toId, beforeOpen) {
-    const fromEl = document.getElementById(fromId);
-    const toEl = document.getElementById(toId);
-    if (!fromEl || !toEl || !window.bootstrap) return;
-
-    const fromInst = bootstrap.Modal.getInstance(fromEl) || new bootstrap.Modal(fromEl);
-    const toInst = bootstrap.Modal.getOrCreateInstance(toEl);
-
-    fromEl.addEventListener('hidden.bs.modal', function() {
-      if (typeof beforeOpen === 'function') beforeOpen();
-      toInst.show();
-    }, { once: true });
-
-    fromInst.hide();
-  };
-
-  document.addEventListener('click', function(ev) {
-    const btn = ev.target.closest('[data-switch-from][data-switch-to]');
-    if (!btn) return;
-    window.__switchBootstrapModal(btn.getAttribute('data-switch-from'), btn.getAttribute('data-switch-to'));
-  });
-</script>

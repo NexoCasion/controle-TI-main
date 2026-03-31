@@ -14,6 +14,10 @@ const Empresa = database.define(
       type: Sequelize.STRING,
       allowNull: false,
     },
+    sigla: {
+      type: Sequelize.STRING,
+      allowNull: true,
+    },
 
     descricao: {
       type: Sequelize.STRING,

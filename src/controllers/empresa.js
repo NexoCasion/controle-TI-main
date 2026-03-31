@@ -18,6 +18,7 @@ class EmpresaController {
       const empresasJSON = empresasList.map((empresa) => ({
         id: empresa.dataValues.id,
         nome: empresa.dataValues.nome,
+        sigla: empresa.dataValues.sigla,
         descricao: empresa.dataValues.descricao,
       }));
       return empresasJSON;

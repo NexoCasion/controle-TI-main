@@ -17,6 +17,8 @@ const TransferenciaController = require('./controllers/transferencia');
 const transferenciaController = new TransferenciaController();
 const MaterialController = require('./controllers/material');
 const materialController = new MaterialController();
+const DashboardController = require('./controllers/dashboard');
+const dashboardController = new DashboardController();
 
 router.get('/test', (req, res) => {
   const manutencoesAbertas = manutencaoController.findOpened();
@@ -24,10 +26,14 @@ router.get('/test', (req, res) => {
 
   return res.send();
 });
-router.get('/', (req, res) => {
-  const manutencoes = manutencaoController.findOpened();
-
-  res.render('pages/home.ejs', { manutencoes: manutencoes });
+router.get('/', async (req, res) => {
+  try {
+    const dashboard = await dashboardController.getHomeData();
+    res.render('pages/home.ejs', dashboard);
+  } catch (error) {
+    console.error('Erro ao carregar home:', error);
+    res.status(500).send('Erro ao carregar home: ' + error.message);
+  }
 });
 
 ///EMPRESA///
@@ -63,9 +69,17 @@ router.get('/get-empresas', async (req, res) => {
 router.get('/editar-pc', async (req, res) => {
   const { id } = req.query;
   const computador = await computadorController.getById(id);
-  const { patrimonio, specs, empresa, setor } = computador;
+  const { patrimonio, specs, specs_override, specs_modo, empresa, setor } = computador;
   const empresas = await empresaController.getAll();
-  return res.render('pages/editar-pc', { specs, patrimonio, id, empresas, empresa, setor });
+  return res.render('pages/editar-pc', {
+    specs: specs_override || specs,
+    specsModo: specs_modo || 'LEGADO',
+    patrimonio,
+    id,
+    empresas,
+    empresa,
+    setor,
+  });
 });
 
 router.post('/editar-pc', async (req, res) => {
@@ -424,51 +438,87 @@ router.get('/importar-csv', async (req, res) => {
 });
 
 router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
+  let filePath = null;
   try {
     const { empresaId } = req.body;
     const file = req.file;
+    const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
     if (!file) {
       return res.status(400).send('Nenhum arquivo enviado.');
     }
 
-    const filePath = file.path;
+    filePath = file.path;
     const csvContent = fs.readFileSync(filePath, 'utf-8');
+    const identidade = parseComputerIdentityFromFilename(file.originalname || file.filename);
+    const parsed = parseHwinfoCsv(csvContent);
 
-    const lines = csvContent
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
-
-    // Lê cabeçalho
-    const headers = lines[0].split(';').map((h) => h.trim().toLowerCase());
-
-    const idxPatrimonio = headers.indexOf('identificador');
-    const idxSpecs = headers.indexOf('descricao');
-    const idxSetor = headers.indexOf('localizacao');
-
-    if (idxPatrimonio === -1 || idxSpecs === -1 || idxSetor === -1) {
-      fs.unlinkSync(filePath);
-      return res.status(400).send('CSV fora do padrão esperado.');
+    if (!parsed.processador && !(parsed.memorias || []).length && !(parsed.armazenamentos || []).length) {
+      return res
+        .status(400)
+        .send('CSV HWiNFO fora do padrao esperado para processador, memoria ou armazenamento.');
     }
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(';').map((v) => v.trim());
+    const resultado = await computadorController.criarEstruturadoPorCsv({
+      patrimonio: identidade.patrimonio,
+      setor: identidade.setor,
+      empresaId,
+      csvContent,
+    });
 
-      const patrimonio = values[idxPatrimonio];
-      const specs = values[idxSpecs];
-      const setor = values[idxSetor];
-
-      if (!patrimonio || !specs) continue;
-
-      await computadorController.create(patrimonio, specs, empresaId, setor);
-    }
-
-    fs.unlinkSync(filePath);
-    return res.redirect('/computadores');
+    return res.redirect(`/ver-pc?id=${resultado.computador.id}`);
   } catch (error) {
-    console.error('Erro ao importar CSV:', error);
+    console.error('Erro ao importar CSV estruturado:', error);
     return res.status(500).send('Erro ao importar CSV: ' + error.message);
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  }
+});
+
+router.post('/computadores/estruturado-manual', async (req, res) => {
+  try {
+    const resultado = await computadorController.criarEstruturadoManual(req.body);
+    return res.redirect(`/ver-pc?id=${resultado.computador.id}`);
+  } catch (error) {
+    console.error('Erro ao registrar computador estruturado manual:', error);
+    return res.status(500).send('Erro ao registrar computador estruturado manual: ' + error.message);
+  }
+});
+
+router.post('/computadores/:id/estruturado-manual', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resultado = await computadorController.estruturarManualExistente(Number(id), req.body);
+    return res.json(resultado);
+  } catch (error) {
+    console.error('Erro ao estruturar computador existente manualmente:', error);
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/computadores/:id/importar-hwinfo-csv', upload.single('csvFile'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { csvPath } = req.body;
+
+    let resultado;
+
+    if (req.file?.path) {
+      const csvContent = fs.readFileSync(req.file.path, 'utf-8');
+      resultado = await computadorController.importarHwinfoCsv(Number(id), csvContent);
+      fs.unlinkSync(req.file.path);
+    } else if (csvPath) {
+      resultado = await computadorController.importarHwinfoCsvDeArquivo(Number(id), csvPath);
+    } else {
+      return res.status(400).json({ error: 'Envie csvFile ou csvPath.' });
+    }
+
+    return res.json(resultado);
+  } catch (error) {
+    console.error('Erro ao importar HWiNFO CSV:', error);
+    return res.status(400).json({ error: error.message });
   }
 });
 /// MATERIAIS ///

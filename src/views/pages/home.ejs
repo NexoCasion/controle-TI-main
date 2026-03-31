@@ -1,32 +1,265 @@
-<%- include("../main.ejs") %>
-<%- include("./../partials/header.ejs") %>
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-<link rel="stylesheet" href="/css/app.css">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
 
-<div class="container-fluid bg-light py-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8 text-center">
-      <h1>Bem-vindo ao Controle de TI</h1>
-      <p class="lead">Gerencie seus computadores e manutenções de forma eficiente.</p>
-    </div>
-  </div>
+<body>
+  <header class="headerComponent">
+    <%- include("./../partials/header.ejs") %>
+  </header>
 
+  <main>
+    <div class="container mt-4 home-shell">
+      <div class="row g-4">
+        <div class="col-12 col-xl-3">
+          <div class="home-menu">
+            <a href="/computadores" class="home-menu-card">
+              <span class="home-menu-icon home-menu-icon-blue"><i class="fas fa-desktop"></i></span>
+              <span>Lista de computadores</span>
+            </a>
 
-  <div class="row mt-4 justify-content-center">
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-body text-center">
-          <h2 class="card-title">Listagem</h2>
-          <div class="btn-group-vertical" role="group">
-            <a href="/computadores" class="btn btn-primary btn-lg btn-block mb-2">Lista de computadores</a>
-            <a href="/empresas" class="btn btn-info btn-lg btn-block mb-2">Lista de empresas</a>
-            <a href="/manutencoes" class="btn btn-warning btn-lg btn-block mb-2">Lista de manutenções</a>
-            <a href="/materiais-page" class="btn btn-warning btn-lg btn-block mb-2">Lista de materiais</a>
+            <a href="/empresas" class="home-menu-card">
+              <span class="home-menu-icon home-menu-icon-cyan"><i class="fas fa-city"></i></span>
+              <span>Lista de empresas</span>
+            </a>
+
+            <a href="/manutencoes" class="home-menu-card">
+              <span class="home-menu-icon home-menu-icon-gold"><i class="fas fa-tools"></i></span>
+              <span>Lista de manutenções</span>
+            </a>
+
+            <a href="/materiais-page" class="home-menu-card">
+              <span class="home-menu-icon home-menu-icon-amber"><i class="fas fa-hdd"></i></span>
+              <span>Lista de materiais</span>
+            </a>
           </div>
+        </div>
+
+        <div class="col-md-4 col-xl-3">
+          <section class="home-panel home-overview-panel h-100">
+            <h2 class="home-panel-title">Visão Geral de Máquinas e Empresas</h2>
+
+            <div class="home-stat-block">
+              <span class="home-stat-label">Máquinas Ativas:</span>
+              <strong class="home-stat-value"><%= maquinasAtivas %> / <%= maquinasTotal %></strong>
+            </div>
+
+            <div class="home-stat-block">
+              <span class="home-stat-label">Manutenções em Aberto:</span>
+              <strong class="home-stat-value"><%= manutencoesAbertas %></strong>
+            </div>
+
+            <div class="home-stat-block">
+              <span class="home-stat-label">Empresas Registradas:</span>
+              <strong class="home-stat-value"><%= totalEmpresas %></strong>
+            </div>
+
+            <div class="home-subpanel">
+              <h3 class="home-subpanel-title">Materiais Disponíveis por Tipo</h3>
+
+              <% if ((materiaisDisponiveisPorTipo || []).length) { %>
+              <div class="home-type-list">
+                <% materiaisDisponiveisPorTipo.forEach(function(item) { %>
+                <div class="home-type-row">
+                  <span><%= item.tipo %></span>
+                  <strong><%= item.total %></strong>
+                </div>
+                <% }); %>
+              </div>
+              <% } else { %>
+              <div class="home-empty">Nenhum material disponível no momento.</div>
+              <% } %>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-md-8 col-xl-6">
+          <section class="home-panel h-100" id="homeChartPanel">
+            <div class="home-chart-card-inner" id="homeChartCardInner">
+              <h2 class="home-panel-title" id="homeChartTitle">Empresas com Mais Manutenções</h2>
+              <div class="home-chart-wrap">
+                <canvas id="rankingEmpresasChart"></canvas>
+              </div>
+            </div>
+
+            <div class="home-chart-nav">
+              <button type="button" class="home-chart-arrow" id="chartPrevBtn" aria-label="Gráfico anterior">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="home-chart-caption" id="homeChartCaption">1 de 3</div>
+              <button type="button" class="home-chart-arrow" id="chartNextBtn" aria-label="Próximo gráfico">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
-  </div>
-</div>
+  </main>
 
-<%- include('../main') %>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const rankingEmpresas = <%- JSON.stringify(rankingEmpresas || []) %>;
+      const maquinasPorEmpresa = <%- JSON.stringify(maquinasPorEmpresa || []) %>;
+      const materiaisDisponiveisPorTipo = <%- JSON.stringify(materiaisDisponiveisPorTipo || []) %>;
+
+      const ctx = document.getElementById('rankingEmpresasChart');
+      const titleEl = document.getElementById('homeChartTitle');
+      const captionEl = document.getElementById('homeChartCaption');
+      const prevBtn = document.getElementById('chartPrevBtn');
+      const nextBtn = document.getElementById('chartNextBtn');
+      const cardInner = document.getElementById('homeChartCardInner');
+      if (!ctx) return;
+
+      function labelQuebrada(texto) {
+        const normalizado = String(texto || 'Sem empresa').trim();
+        if (normalizado.length <= 12) return normalizado;
+        return normalizado.split(/\s+-\s+|\s+/).filter(Boolean);
+      }
+
+      const chartConfigs = [
+        {
+          titulo: 'Empresas com Mais Manutenções',
+          legenda: 'Manutenções',
+          labels: rankingEmpresas.map((item) => labelQuebrada(item.nome)),
+          tooltipLabels: rankingEmpresas.map((item) => item.nomeCompleto || item.nome),
+          data: rankingEmpresas.map((item) => Number(item.total || 0)),
+        },
+        {
+          titulo: 'Máquinas Ativas por Empresa',
+          legenda: 'Máquinas ativas',
+          labels: maquinasPorEmpresa.map((item) => labelQuebrada(item.nome)),
+          tooltipLabels: maquinasPorEmpresa.map((item) => item.nomeCompleto || item.nome),
+          data: maquinasPorEmpresa.map((item) => Number(item.total || 0)),
+        },
+        {
+          titulo: 'Materiais Disponíveis por Tipo',
+          legenda: 'Disponíveis',
+          labels: materiaisDisponiveisPorTipo.map((item) => labelQuebrada(item.tipo)),
+          tooltipLabels: materiaisDisponiveisPorTipo.map((item) => item.tipo),
+          data: materiaisDisponiveisPorTipo.map((item) => Number(item.total || 0)),
+        },
+      ];
+
+      const colors = [
+        '#2f80ed',
+        '#56ccf2',
+        '#f2c94c',
+        '#27ae60',
+        '#eb5757',
+        '#9b51e0',
+        '#f2994a',
+        '#6fcf97',
+        '#2d9cdb',
+        '#bb6bd9',
+      ];
+
+      let currentIndex = 0;
+
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: chartConfigs[0].labels,
+          datasets: [{
+            label: chartConfigs[0].legenda,
+            data: chartConfigs[0].data,
+            backgroundColor: colors,
+            borderRadius: 8,
+            maxBarThickness: 42,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                title(items) {
+                  if (!items || !items.length) return '';
+                  const index = items[0].dataIndex;
+                  const config = chartConfigs[currentIndex];
+                  return config.tooltipLabels[index] || '';
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0,
+              },
+            },
+            x: {
+              ticks: {
+                autoSkip: false,
+                maxRotation: 90,
+                minRotation: 90,
+                font: {
+                  size: 10,
+                },
+              },
+              grid: {
+                display: false,
+              }
+            },
+          },
+        },
+      });
+
+      function applyChart(index) {
+        const config = chartConfigs[index];
+        currentIndex = index;
+        if (titleEl) titleEl.textContent = config.titulo;
+        if (captionEl) captionEl.textContent = `${index + 1} de ${chartConfigs.length}`;
+        chart.data.labels = config.labels;
+        chart.data.datasets[0].label = config.legenda;
+        chart.data.datasets[0].data = config.data;
+        chart.update();
+      }
+
+      function rotateTo(index) {
+        if (!cardInner) {
+          applyChart(index);
+          return;
+        }
+
+        cardInner.classList.add('is-flipping');
+
+        window.setTimeout(() => {
+          applyChart(index);
+          cardInner.classList.remove('is-flipping');
+        }, 180);
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+          const nextIndex = (currentIndex - 1 + chartConfigs.length) % chartConfigs.length;
+          rotateTo(nextIndex);
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+          const nextIndex = (currentIndex + 1) % chartConfigs.length;
+          rotateTo(nextIndex);
+        });
+      }
+
+      applyChart(0);
+    });
+  </script>
+</body>
+
+</html>

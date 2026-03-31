@@ -13,6 +13,8 @@ require('./models/Transferencia');
 require('./models/Material');
 require('./models/ManutencaoMaterial');
 require('./models/MaterialMovimento');
+require('./models/ComputadorMaterial');
+const ensureSchema = require('./db/ensureSchema');
 
 const app = express();
 
@@ -40,6 +42,7 @@ const PORT = process.env.PORT || 3000;
 
 (async () => {
   try {
+    await ensureSchema();
     //     // ✅ Limpa tabelas de backup que podem sobrar quando o Sequelize crasha no SQLite
     // await database.query("DROP TABLE IF EXISTS empresas_backup;");
     // await database.query("DROP TABLE IF EXISTS computadores_backup;");

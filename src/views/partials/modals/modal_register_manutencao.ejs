@@ -76,10 +76,11 @@
                 return;
               }
 
-              $.get("/computadores-by-empresa?empresaId=" + empresaId, function(data) {
+              $.get("/computadores-by-empresa?empresaId=" + empresaId, function(resultado) {
+                const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
                 $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
 
-                data.forEach(function(computador) {
+                lista.forEach(function(computador) {
                   $('#computadorModal').append($('<option>', {
                     value: computador.id,
                     text: `${computador.id} - ${computador.patrimonio}`

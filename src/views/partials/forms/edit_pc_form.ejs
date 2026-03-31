@@ -5,9 +5,11 @@
   const patrimonioId = _ids.patrimonioId || 'patrimonio';
   const setorId = _ids.setorId || 'setor';
   const specsId = _ids.specsId || 'specs';
+  const specsModoId = _ids.specsModoId || 'specsModo';
   const _actionUrl = (typeof actionUrl !== 'undefined') ? actionUrl : (typeof id !== 'undefined' ? `/editar-pc?id=${id}` : '#');
+  const _specsModo = (typeof specsModo !== 'undefined' && specsModo) ? specsModo : 'LEGADO';
+  const _specsReadonly = String(_specsModo).toUpperCase() === 'ESTRUTURADO';
 %>
-
 
 <div class="d-flex align-items-center justify-content-start mb-4">
   <% if (_inModal) { %>
@@ -27,6 +29,7 @@
   <% if (typeof id !== 'undefined') { %>
   <input type="hidden" name="id" value="<%= id %>">
   <% } %>
+  <input type="hidden" name="specs_modo" id="<%= specsModoId %>" value="<%= _specsModo %>">
 
   <div class="form-group">
     <label for="<%= patrimonioId %>">Numero de patrimonio do Computador</label>
@@ -34,13 +37,20 @@
   </div>
 
   <div class="form-group">
-    <label for="<%= setorId %>">setor</label>
+    <label for="<%= setorId %>">Setor</label>
     <input type="text" class="form-control" id="<%= setorId %>" name="setor" value="<%= (typeof setor !== 'undefined' && setor !== null) ? setor : '' %>">
   </div>
 
   <div class="form-group">
-    <label for="<%= specsId %>">Descrição</label>
-    <textarea class="form-control" id="<%= specsId %>" name="specs" rows='10'><%= (typeof specs !== 'undefined' && specs !== null) ? specs : '' %></textarea>
+    <label for="<%= specsId %>">Descricao</label>
+    <textarea class="form-control" id="<%= specsId %>" name="specs" rows="10" <%= _specsReadonly ? 'readonly' : '' %>><%= (typeof specs !== 'undefined' && specs !== null) ? specs : '' %></textarea>
+    <small class="text-muted d-block mt-2" id="<%= specsId %>Help">
+      <% if (_specsReadonly) { %>
+      Este computador esta em modo estruturado. As specs sao recalculadas pelos componentes vinculados.
+      <% } else { %>
+      Edite as specs livremente para computadores no modo legado.
+      <% } %>
+    </small>
   </div>
 
   <hr>
@@ -54,7 +64,7 @@
 
 <div class="d-flex gap-2 justify-content-center flex-wrap">
   <button type="button" class="btn btn-secondary" id="btnAddManutencaoFromEdit">
-    Adicionar Manutenção
+    Adicionar Manutencao
   </button>
 
   <button type="button" class="btn btn-warning" id="btnTransferirFromEdit">

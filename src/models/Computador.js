@@ -22,6 +22,15 @@ const Computador = database.define('computadores', {
     type: Sequelize.TEXT,
     allowNull: true,
   },
+  specs_modo: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: 'LEGADO',
+  },
+  specs_estruturadas: {
+    type: Sequelize.TEXT,
+    allowNull: true,
+  },
   // Adicionando a chave estrangeira para a tabela Empresa
   empresaId: {
     type: Sequelize.INTEGER,

@@ -7,9 +7,57 @@ const Computador = require('../models/Computador');
 const Material = require('../models/Material');
 const ManutencaoMaterial = require('../models/ManutencaoMaterial');
 const MaterialMovimento = require('../models/MaterialMovimento');
+const ComputadorMaterial = require('../models/ComputadorMaterial');
 const Empresa = require('../models/Empresa');
+const ComputadorEstruturadoService = require('../services/computadorEstruturadoService');
 
 class ManutencaoController {
+  constructor() {
+    this.computadorEstruturadoService = new ComputadorEstruturadoService();
+  }
+
+  async podeSemearMaterialRemovido(materialId, quantidade, transaction) {
+    const material = await Material.findByPk(materialId, { transaction });
+    if (!material) return false;
+
+    const qtd = Number(quantidade || 0);
+    if (qtd <= 0) return false;
+
+    const semSaldos =
+      Number(material.quantidade_disponivel || 0) === 0 &&
+      Number(material.quantidade_em_uso || 0) === 0 &&
+      Number(material.quantidade_baixada || 0) === 0;
+
+    if (!semSaldos) return false;
+
+    const [movimentos, usosManutencao, usosEstruturados] = await Promise.all([
+      MaterialMovimento.count({ where: { material_id: materialId }, transaction }),
+      ManutencaoMaterial.count({ where: { material_id: materialId }, transaction }),
+      ComputadorMaterial.count({ where: { material_id: materialId }, transaction }),
+    ]);
+
+    return movimentos === 0 && usosManutencao === 0 && usosEstruturados === 0;
+  }
+
+  async consumirEmUsoOuSemear(material, quantidade, transaction) {
+    const qtd = Number(quantidade || 0);
+    const emUsoAtual = Number(material.quantidade_em_uso || 0);
+
+    if (emUsoAtual >= qtd) {
+      material.quantidade_em_uso = emUsoAtual - qtd;
+      return;
+    }
+
+    const podeSemear = await this.podeSemearMaterialRemovido(material.id, qtd, transaction);
+    if (!podeSemear) {
+      throw new Error(
+        `Estoque inconsistente para ${material.material}: EM USO ${emUsoAtual}, tentativa de saida ${qtd}.`
+      );
+    }
+
+    material.quantidade_em_uso = 0;
+  }
+
   async create(descricao, computadorId) {
     if (!computadorId) {
       throw new Error('Não foi informado um computador para registrar a manutenção!');
@@ -317,6 +365,7 @@ class ManutencaoController {
     if (!computador) throw new Error('Computador não encontrado.');
 
     const specs_antes = computador.specs_override || computador.specs || null;
+    const computadorEstruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
 
     // 3) Se NÃO for troca de peça, salva procedimento simples
     if (tipo !== 'TROCA_PECA') {
@@ -340,6 +389,9 @@ class ManutencaoController {
     if (!materialRemovidoId) throw new Error('materialRemovidoId é obrigatório para TROCA_PECA.');
     const qtdRem = Number(qtdRemovida) || 1;
     if (qtdRem <= 0) throw new Error('qtdRemovida inválida.');
+    if (!computadorEstruturado) {
+      throw new Error('Troca de peça exige converter esta máquina para o modo estruturado antes de continuar.');
+    }
 
     if (destinoRemovida !== 'RECUPERAR' && destinoRemovida !== 'DEFEITO') {
       throw new Error("destinoRemovida deve ser 'RECUPERAR' ou 'DEFEITO'.");
@@ -359,7 +411,10 @@ class ManutencaoController {
       }
 
       // 5) Definir specs_depois
-      const specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
+      let specsDepoisFinal = specs_antes;
+      if (!computadorEstruturado) {
+        specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
+      }
 
       // 6) Snapshot congelado (histórico)
       const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
@@ -446,13 +501,8 @@ class ManutencaoController {
       // se foi recém-cadastrada (em_uso = 0 e disponivel = 0), permite entrada direta no sistema.
       // se não tem saldo e não é recém-cadastrada, continua barrando.
 
-      const temSaldoEmUsoSuficiente = Number(matRem.quantidade_em_uso || 0) >= qtdRem;
-
       if (destinoRemovida === 'RECUPERAR') {
-        if (temSaldoEmUsoSuficiente) {
-          matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
-        }
-
+        await this.consumirEmUsoOuSemear(matRem, qtdRem, t);
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -468,10 +518,7 @@ class ManutencaoController {
           { transaction: t }
         );
       } else if (destinoRemovida === 'DEFEITO') {
-        if (temSaldoEmUsoSuficiente) {
-          matRem.quantidade_em_uso = matRem.quantidade_em_uso - qtdRem;
-        }
-
+        await this.consumirEmUsoOuSemear(matRem, qtdRem, t);
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -488,8 +535,22 @@ class ManutencaoController {
         );
       }
 
-      // 11) Atualizar specs_override do computador
-      if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {
+      // 11) Atualizar composição/specs do computador
+      if (computadorEstruturado) {
+        const resultadoEstruturado =
+          await this.computadorEstruturadoService.substituirComponenteEstruturado({
+            computadorId,
+            materialInstaladoId: material.id,
+            quantidadeInstalada: qtd,
+            materialRemovidoId: matRem.id,
+            quantidadeRemovida: qtdRem,
+            transaction: t,
+          });
+
+        specsDepoisFinal = resultadoEstruturado.specsText || specsDepoisFinal;
+        item.specs_depois = specsDepoisFinal;
+        await item.save({ transaction: t });
+      } else if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {
         computador.specs_override = specsDepoisFinal;
         await computador.save({ transaction: t });
       }
@@ -625,13 +686,8 @@ class ManutencaoController {
           const mat = await Material.findByPk(materialId, { transaction: t });
           if (!mat) throw new Error('Material não encontrado na recuperação.');
 
-          const temSaldoEmUsoSuficiente = Number(mat.quantidade_em_uso || 0) >= qtd;
-
           if (destino === 'RECUPERAR') {
-            if (temSaldoEmUsoSuficiente) {
-              mat.quantidade_em_uso = mat.quantidade_em_uso - qtd;
-            }
-
+            await this.consumirEmUsoOuSemear(mat, qtd, t);
             mat.quantidade_disponivel = (mat.quantidade_disponivel || 0) + qtd;
 
             if ((mat.quantidade_em_uso || 0) < 0) {
@@ -672,10 +728,7 @@ class ManutencaoController {
           }
 
           if (destino === 'DEFEITO') {
-            if (temSaldoEmUsoSuficiente) {
-              mat.quantidade_em_uso = mat.quantidade_em_uso - qtd;
-            }
-
+            await this.consumirEmUsoOuSemear(mat, qtd, t);
             mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
             if ((mat.quantidade_em_uso || 0) < 0) {
               throw new Error(`Estoque inválido: EM USO negativo para ${mat.material}.`);
