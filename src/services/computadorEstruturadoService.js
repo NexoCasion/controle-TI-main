@@ -6,6 +6,7 @@ const Material = require('../models/Material');
 const MaterialMovimento = require('../models/MaterialMovimento');
 const ComputadorMaterial = require('../models/ComputadorMaterial');
 const { parseHwinfoCsv, buildStructuredSpecsText } = require('./hwinfoCsvParser');
+const { validarPatrimonioUnico } = require('./patrimonioUnicoService');
 
 class ComputadorEstruturadoService {
   parseStructuredSpecs(rawValue) {
@@ -28,6 +29,7 @@ class ComputadorEstruturadoService {
     const tipo = String(material?.tipo || '').toUpperCase();
     if (tipo.includes('PROCESSADOR')) return 'PROCESSADOR';
     if (tipo.includes('MEMORIA')) return 'MEMORIA';
+    if (tipo.includes('FONTE')) return 'FONTE';
     if (
       tipo.includes('ARMAZENAMENTO') ||
       tipo.includes('SSD') ||
@@ -69,6 +71,7 @@ class ComputadorEstruturadoService {
       processador: null,
       memorias: [],
       armazenamentos: [],
+      fontes: [],
     };
 
     componentes.forEach((item) => {
@@ -92,6 +95,11 @@ class ComputadorEstruturadoService {
 
       if (componente.categoria === 'ARMAZENAMENTO') {
         parsed.armazenamentos.push(componente);
+        return;
+      }
+
+      if (componente.categoria === 'FONTE') {
+        parsed.fontes.push(componente);
       }
     });
 
@@ -239,6 +247,21 @@ class ComputadorEstruturadoService {
       .filter(Boolean);
   }
 
+  applyFonteInformada(parsed = {}, fonte = '') {
+    const fontesInformadas = this.splitManualItems(fonte);
+
+    return {
+      ...parsed,
+      fontes: fontesInformadas.map((item) => ({
+        categoria: 'FONTE',
+        tipo: 'Fonte',
+        material: 'Fonte',
+        especificacao: item,
+        quantidade: 1,
+      })),
+    };
+  }
+
   buildParsedManual(payload = {}) {
     const modelo = String(payload.modeloComputador || '').trim();
     const nomeComputador = String(payload.nomeComputador || '').trim();
@@ -278,6 +301,13 @@ class ComputadorEstruturadoService {
           quantidade: 1,
         };
       }),
+      fontes: this.splitManualItems(payload.fonte).map((fonte) => ({
+        categoria: 'FONTE',
+        tipo: 'Fonte',
+        material: 'Fonte',
+        especificacao: fonte,
+        quantidade: 1,
+      })),
     };
   }
 
@@ -286,6 +316,7 @@ class ComputadorEstruturadoService {
       ...(parsed.processador ? [parsed.processador] : []),
       ...(parsed.memorias || []),
       ...(parsed.armazenamentos || []),
+      ...(parsed.fontes || []),
     ];
   }
 
@@ -392,8 +423,8 @@ class ComputadorEstruturadoService {
     };
   }
 
-  async importarCsv(computadorId, csvContent) {
-    const parsed = parseHwinfoCsv(csvContent);
+  async importarCsv(computadorId, csvContent, options = {}) {
+    const parsed = this.applyFonteInformada(parseHwinfoCsv(csvContent), options.fonte);
 
     return await database.transaction(async (transaction) => {
       const computador = await Computador.findByPk(computadorId, { transaction });
@@ -408,12 +439,13 @@ class ComputadorEstruturadoService {
 
   async criarComputadorEstruturado({ patrimonio, setor, empresaId, parsed, origem = 'ESTRUTURADO_MANUAL' }) {
     if (!empresaId) throw new Error('Empresa obrigatoria.');
-    if (!patrimonio || !String(patrimonio).trim()) throw new Error('Patrimonio obrigatorio.');
 
     return await database.transaction(async (transaction) => {
+      const patrimonioNormalizado = await validarPatrimonioUnico(patrimonio, { transaction });
+
       const computador = await Computador.create(
         {
-          patrimonio: String(patrimonio).trim(),
+          patrimonio: patrimonioNormalizado,
           specs: buildStructuredSpecsText(parsed) || 'Computador estruturado',
           empresaId: Number(empresaId),
           setor: String(setor || '').trim() || null,
@@ -459,8 +491,8 @@ class ComputadorEstruturadoService {
     });
   }
 
-  async criarComputadorEstruturadoPorCsv({ patrimonio, setor, empresaId, csvContent }) {
-    const parsed = parseHwinfoCsv(csvContent);
+  async criarComputadorEstruturadoPorCsv({ patrimonio, setor, empresaId, csvContent, fonte }) {
+    const parsed = this.applyFonteInformada(parseHwinfoCsv(csvContent), fonte);
     return this.criarComputadorEstruturado({
       patrimonio,
       setor,
@@ -470,13 +502,13 @@ class ComputadorEstruturadoService {
     });
   }
 
-  async importarCsvDeArquivo(computadorId, csvPath) {
+  async importarCsvDeArquivo(computadorId, csvPath, options = {}) {
     if (!csvPath || !String(csvPath).trim()) {
       throw new Error('csvPath nao informado.');
     }
 
     const content = fs.readFileSync(String(csvPath), 'utf-8');
-    return this.importarCsv(computadorId, content);
+    return this.importarCsv(computadorId, content, options);
   }
 }
 

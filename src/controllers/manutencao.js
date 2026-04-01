@@ -85,8 +85,46 @@ class ManutencaoController {
     return vinculos.reduce((acc, vinculo) => acc + Number(vinculo.quantidade || 0), 0);
   }
 
-  async getComponentesEstruturadosDoComputador(computadorId, tipo = null) {
-    const computador = await Computador.findByPk(Number(computadorId));
+  async removerQuantidadeEstruturadaDoComputador(computadorId, materialId, quantidade, transaction) {
+    const qtd = Number(quantidade || 0);
+    if (qtd <= 0) throw new Error('Quantidade inválida para remoção estrutural.');
+
+    const vinculos = await ComputadorMaterial.findAll({
+      where: {
+        computador_id: Number(computadorId),
+        material_id: Number(materialId),
+      },
+      order: [['id', 'ASC']],
+      transaction,
+    });
+
+    let restante = qtd;
+
+    for (const vinculo of vinculos) {
+      const qtdVinculo = Number(vinculo.quantidade || 0);
+      if (qtdVinculo <= 0) continue;
+
+      if (qtdVinculo > restante) {
+        vinculo.quantidade = qtdVinculo - restante;
+        await vinculo.save({ transaction });
+        restante = 0;
+        break;
+      }
+
+      restante -= qtdVinculo;
+      await vinculo.destroy({ transaction });
+      if (restante <= 0) break;
+    }
+
+    if (restante > 0) {
+      throw new Error(
+        `A máquina não possui esse componente em quantidade suficiente. Faltou remover ${restante}.`
+      );
+    }
+  }
+
+  async getComponentesEstruturadosDoComputador(computadorId, tipo = null, transaction = null) {
+    const computador = await Computador.findByPk(Number(computadorId), { transaction });
     if (!computador) throw new Error('Computador não encontrado.');
 
     const estruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
@@ -107,6 +145,7 @@ class ManutencaoController {
           where: whereMaterial,
         },
       ],
+      transaction,
       order: [
         [{ model: Material, as: 'material' }, 'tipo', 'ASC'],
         [{ model: Material, as: 'material' }, 'material', 'ASC'],
@@ -748,10 +787,6 @@ class ManutencaoController {
         throw new Error('Motivo da condenação é obrigatório.');
       }
 
-      if (!Array.isArray(componentes) || !componentes.length) {
-        throw new Error('Adicione pelo menos um componente.');
-      }
-
       return await database.transaction(async (t) => {
         const manutencao = await Manutencao.findByPk(manutencaoId, { transaction: t });
         if (!manutencao) throw new Error('Manutenção não encontrada.');
@@ -763,7 +798,54 @@ class ManutencaoController {
           throw new Error('Este computador já está CONDENADO.');
         }
 
+        const computadorEstruturado =
+          String(pc.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
         const itensResumo = [];
+        let componentesProcessados = Array.isArray(componentes) ? [...componentes] : [];
+        let componentesAtuais = [];
+
+        if (computadorEstruturado) {
+          componentesAtuais = await this.getComponentesEstruturadosDoComputador(pc.id, null, t);
+
+          if (!componentesProcessados.length) {
+            componentesProcessados = componentesAtuais
+              .map((comp) => ({
+                materialId: Number(comp.id),
+                quantidade: Number(comp.quantidade_no_computador || 0),
+                destino: 'DEFEITO',
+                motivo: String(motivoCondenacao).trim(),
+              }))
+              .filter((comp) => comp.materialId && comp.quantidade > 0);
+          } else {
+            const totaisSelecionados = componentesProcessados.reduce((acc, comp) => {
+              const key = Number(comp.materialId);
+              acc[key] = (acc[key] || 0) + Number(comp.quantidade || 0);
+              return acc;
+            }, {});
+
+            componentesAtuais.forEach((comp) => {
+              const materialId = Number(comp.id);
+              const qtdAtual = Number(comp.quantidade_no_computador || 0);
+              const qtdSelecionada = Number(totaisSelecionados[materialId] || 0);
+
+              if (qtdSelecionada > qtdAtual) {
+                throw new Error(
+                  `A máquina não possui esse componente em quantidade suficiente. Vinculado: ${qtdAtual}.`
+                );
+              }
+
+              const restante = qtdAtual - qtdSelecionada;
+              if (restante > 0) {
+                componentesProcessados.push({
+                  materialId,
+                  quantidade: restante,
+                  destino: 'DEFEITO',
+                  motivo: String(motivoCondenacao).trim(),
+                });
+              }
+            });
+          }
+        }
 
         const itemCondenacao = await ManutencaoItem.create(
           {
@@ -777,7 +859,7 @@ class ManutencaoController {
           { transaction: t }
         );
 
-        for (const comp of componentes) {
+        for (const comp of componentesProcessados) {
           const materialId = Number(comp.materialId);
           const qtd = Number(comp.quantidade || 0);
           const destino = String(comp.destino || '').trim();
@@ -795,8 +877,21 @@ class ManutencaoController {
           const mat = await Material.findByPk(materialId, { transaction: t });
           if (!mat) throw new Error('Material não encontrado na recuperação.');
 
+          const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
+            pc.id,
+            materialId,
+            t
+          );
+
+          if (quantidadeNoComputador < qtd) {
+            throw new Error(
+              `A máquina não possui esse componente em quantidade suficiente. Vinculado: ${quantidadeNoComputador}.`
+            );
+          }
+
           if (destino === 'RECUPERAR') {
-            await this.consumirEmUsoOuSemear(mat, qtd, t);
+            await this.consumirEmUsoEstrito(mat, qtd, t);
+            await this.removerQuantidadeEstruturadaDoComputador(pc.id, materialId, qtd, t);
             mat.quantidade_disponivel = (mat.quantidade_disponivel || 0) + qtd;
 
             if ((mat.quantidade_em_uso || 0) < 0) {
@@ -837,7 +932,8 @@ class ManutencaoController {
           }
 
           if (destino === 'DEFEITO') {
-            await this.consumirEmUsoOuSemear(mat, qtd, t);
+            await this.consumirEmUsoEstrito(mat, qtd, t);
+            await this.removerQuantidadeEstruturadaDoComputador(pc.id, materialId, qtd, t);
             mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
             if ((mat.quantidade_em_uso || 0) < 0) {
               throw new Error(`Estoque inválido: EM USO negativo para ${mat.material}.`);
@@ -876,7 +972,13 @@ class ManutencaoController {
             );
           }
         }
-        itemCondenacao.material_snapshot = itensResumo.join(' || ');
+        itemCondenacao.material_snapshot = itensResumo.length
+          ? itensResumo.join(' || ')
+          : (
+            computadorEstruturado
+              ? 'Tudo condenado. Nenhum componente foi recuperado; todos os componentes estruturados vinculados foram baixados pelo motivo da condenacao.'
+              : 'Maquina legado condenada sem movimentacao de componentes, pois os materiais nao estao estruturados no sistema.'
+          );
         await itemCondenacao.save({ transaction: t });
         pc.status = manutencaoId;
         pc.ativo = false;

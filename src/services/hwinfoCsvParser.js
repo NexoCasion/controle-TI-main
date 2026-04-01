@@ -243,6 +243,7 @@ function parseHwinfoCsv(content) {
       : null,
     memorias,
     armazenamentos: armazenamentos.map(({ kind, ...item }) => item),
+    fontes: [],
   };
 }
 
@@ -267,6 +268,15 @@ function buildStructuredSpecsText(parsed) {
     linhas.push(
       `Armazenamento: ${parsed.armazenamentos
         .map((item) => [item.material, item.especificacao].filter(Boolean).join(' - '))
+        .join(' | ')}`
+    );
+  }
+
+  if ((parsed.fontes || []).length) {
+    linhas.push(
+      `Fonte: ${(parsed.fontes || [])
+        .map((item) => item.especificacao || item.material)
+        .filter(Boolean)
         .join(' | ')}`
     );
   }

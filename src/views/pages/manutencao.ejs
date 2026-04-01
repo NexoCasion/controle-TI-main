@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -126,7 +126,7 @@
       <div>
         Esta manutenção está vinculada a uma máquina em modo legado. Antes de continuar, converta esta mesma máquina para estruturado.
       </div>
-      <button type="button" class="btn btn-dark btn-sm" id="btnConverterEstruturadoFromManutencao" data-bs-toggle="modal" data-bs-target="#modalEscolhaEstruturado">
+      <button type="button" class="btn btn-dark btn-sm" id="btnConverterEstruturadoFromManutencao">
         Converter agora
       </button>
     </div>
@@ -144,7 +144,7 @@
         type="button"
         class="btn btn-secondary btn-sm"
         id="btnOpenProcedimento"
-        <% if ((manutencao?.computador?.specs_modo || 'LEGADO') === 'ESTRUTURADO') { %>
+        <% if ((manutencao.computador.specs_modo || 'LEGADO') === 'ESTRUTURADO') { %>
         data-bs-toggle="modal" data-bs-target="#modalAddProcedimento"
         <% } else { %>
         data-bs-toggle="modal" data-bs-target="#modalEscolhaEstruturado"
@@ -242,7 +242,7 @@
               <label class="form-label">Descrição</label>
               <textarea class="form-control" name="descricao" rows="3" required placeholder="Ex: Troca de fonte, limpeza, reinstalação do Windows..."></textarea>
               <small class="text-muted d-block mt-2">
-                Isso vai aparecer no “Histórico de Procedimentos”.
+                Isso vai aparecer no "Histórico de Procedimentos".
               </small>
             </div>
 
@@ -376,30 +376,34 @@
             <div class="col-md-4">
               <div class="meta-label text-center">Patrimônio</div>
               <div class="meta-value text-center">
-                <%= manutencao?.computador?.patrimonio || '-' %>
+                <%= manutencao.computador.patrimonio || '-' %>
               </div>
             </div>
 
             <div class="col-md-4">
               <div class="meta-label text-center">Local</div>
               <div class="meta-value text-center">
-                <%= manutencao?.computador?.setor || '-' %>
+                <%= manutencao.computador.setor || '-' %>
               </div>
             </div>
 
             <div class="col-md-4">
               <div class="meta-label text-center">Empresa</div>
               <div class="meta-value text-center">
-                <%= manutencao?.computador?.empresa?.nome || '-' %>
+                <%= manutencao.computador.empresa.nome || '-' %>
               </div>
             </div>
           </div>
 
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">Componentes recuperados / condenados</h6>
+            <h6 class="mb-0">Componentes da maquina para recuperar ou condenar</h6>
             <button type="button" class="btn btn-sm btn-secondary" id="btnAdicionarLinhaRecuperacao">
               <i class="fas fa-plus"></i> Adicionar componente
             </button>
+          </div>
+
+          <div class="alert alert-light border mb-3">
+            Somente componentes realmente vinculados a esta maquina aparecem nas listas abaixo.
           </div>
 
           <div class="table-responsive">
@@ -407,7 +411,7 @@
               <thead>
                 <tr>
                   <th>Tipo</th>
-                  <th>Material</th>
+                  <th>Componente da maquina</th>
                   <th>Qtd</th>
                   <th>Destino</th>
                   <th>Motivo</th>
@@ -427,6 +431,17 @@
           <div class="alert alert-info mt-3 mb-0">
             <b>Recuperar</b> devolve a peça para o estoque disponível. <br>
             <b>Defeito</b> envia a peça para a quantidade baixada.
+          </div>
+          <div class="alert alert-warning mt-3 mb-0">
+            Se voce nao adicionar nenhum componente:
+            <br>
+            - em maquina estruturada, todos os componentes vinculados serao marcados como defeito pelo motivo da condenacao
+            <br>
+            - em maquina legado, nenhum material sera movimentado
+            <br><br>
+            Se voce recuperar apenas alguns componentes em uma maquina estruturada:
+            <br>
+            - todo o restante da maquina sera marcado automaticamente como defeito pelo motivo da condenacao
           </div>
         </div>
 
@@ -472,54 +487,6 @@
           <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="modalCadastrarRecuperado" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <form class="modal-content" id="formCadastrarRecuperado">
-        <div class="modal-header">
-          <h5 class="modal-title">Cadastrar material recuperado</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-
-        <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label">Tipo</label>
-            <input class="form-control" id="cadRecTipo" required readonly>
-            <small class="text-muted">Vem do tipo da linha da recuperação.</small>
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Material</label>
-            <input class="form-control" id="cadRecMaterial" required placeholder="Ex: Fonte ATX">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Marca</label>
-            <input class="form-control" id="cadRecMarca" placeholder="Ex: Corsair">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">Especificação</label>
-            <input class="form-control" id="cadRecEspecificacao" placeholder="Ex: 500W">
-          </div>
-
-          <div class="mb-2">
-            <label class="form-label">NF (opcional)</label>
-            <input class="form-control" id="cadRecNF">
-          </div>
-
-          <div class="alert alert-info mt-3 mb-0">
-            Esse cadastro cria o material com <b>Qtd disponível = 0</b> e <b>Qtd em uso = 0</b>.
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -679,6 +646,7 @@
       const formCondenarMaquina = document.getElementById('formCondenarMaquina');
       const modalCondenarMaquinaEl = document.getElementById('modalCondenarMaquina');
       const modalRecuperacaoComponentesEl = document.getElementById('modalRecuperacaoComponentes');
+      const recManutencaoId = document.getElementById('recManutencaoId');
       const recMotivoCondenacao = document.getElementById('recMotivoCondenacao');
 
       const btnAdicionarLinhaRecuperacao = document.getElementById('btnAdicionarLinhaRecuperacao');
@@ -688,20 +656,28 @@
       let isSubmittingProcedimento = false;
       let modalLegadoJaExibido = false;
 
-      const modalCadastrarRecuperadoEl = document.getElementById('modalCadastrarRecuperado');
-      const formCadastrarRecuperado = document.getElementById('formCadastrarRecuperado');
-      let linhaRecuperacaoAtual = null;
       let componentesEstruturadosCache = [];
 
       function isEstruturado() {
-        return (specsModo?.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+        return (specsModo.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+      }
+
+      function getModalInstance(modalEl) {
+        if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) return null;
+
+        if (typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+          return bootstrap.Modal.getOrCreateInstance(modalEl);
+        }
+
+        return bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
       }
 
       function switchModal(fromEl, toEl) {
         if (!fromEl || !toEl) return;
 
-        const fromInst = bootstrap.Modal.getInstance(fromEl) || new bootstrap.Modal(fromEl);
-        const toInst = bootstrap.Modal.getOrCreateInstance(toEl);
+        const fromInst = getModalInstance(fromEl);
+        const toInst = getModalInstance(toEl);
+        if (!fromInst || !toInst) return;
 
         fromEl.addEventListener('hidden.bs.modal', function() {
           toInst.show();
@@ -715,12 +691,13 @@
         if (!force && modalLegadoJaExibido) return;
 
         modalLegadoJaExibido = true;
-        bootstrap.Modal.getOrCreateInstance(modalEscolhaEstruturadoEl).show();
+        const modal = getModalInstance(modalEscolhaEstruturadoEl);
+        if (modal) modal.show();
       }
 
       function setTrocaPecaEnabled(enabled) {
         blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
-        const estruturado = (specsModo?.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+        const estruturado = (specsModo.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
         const legado = !estruturado;
 
         tipoPeca.disabled = !enabled;
@@ -775,6 +752,13 @@
         });
       }
 
+      if (btnConverterEstruturadoFromManutencao) {
+        btnConverterEstruturadoFromManutencao.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          abrirFluxoEstruturado(true);
+        });
+      }
+
       if (btnAbrirEstruturadoManual) {
         btnAbrirEstruturadoManual.addEventListener('click', () => {
           switchModal(modalEscolhaEstruturadoEl, modalEstruturadoManualExistenteEl);
@@ -793,7 +777,7 @@
             });
 
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error || 'Erro ao importar CSV.');
+            if (!res.ok) throw new Error(data.error || 'Erro ao importar CSV.');
 
             window.location.reload();
           } catch (err) {
@@ -842,6 +826,16 @@
         return componentesEstruturadosCache;
       }
 
+      function renderLinhaVaziaRecuperacao(message = 'Nenhum componente adicionado ainda.') {
+        tbodyRecuperacao.innerHTML = `
+          <tr id="linhaVaziaRecuperacao">
+            <td colspan="6" class="text-muted text-center">
+              ${message}
+            </td>
+          </tr>
+        `;
+      }
+
       function definirTipoRemovido(tipo) {
         tipoRemovido.innerHTML = '';
 
@@ -876,7 +870,7 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp: ${m.quantidade_disponivel}`;
+          opt.textContent = `${m.material} (${m.marca || '-'}) - Disp: ${m.quantidade_disponivel}`;
           opt.dataset.disponivel = m.quantidade_disponivel;
           materialId.appendChild(opt);
         });
@@ -905,7 +899,7 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) — Na máquina: ${m.quantidade_no_computador ?? 0}`;
+          opt.textContent = `${m.material} (${m.marca || '-'}) - Na máquina: ${m.quantidade_no_computador ?? 0}`;
           opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
           opt.dataset.uso = m.quantidade_em_uso ?? 0;
           opt.dataset.qtdNoComputador = m.quantidade_no_computador ?? 0;
@@ -972,7 +966,7 @@
 
       materialId.addEventListener('change', () => {
         const opt = materialId.options[materialId.selectedIndex];
-        const disp = Number(opt?.dataset?.disponivel || 0);
+        const disp = Number(opt.dataset.disponivel || 0);
         infoDisponivel.textContent = disp ? `Disponível: ${disp}` : '';
 
         if (disp > 0) {
@@ -983,9 +977,9 @@
 
       materialRemovidoId.addEventListener('change', () => {
         const opt = materialRemovidoId.options[materialRemovidoId.selectedIndex];
-        const disp = Number(opt?.dataset?.disponivel || 0);
-        const uso = Number(opt?.dataset?.uso || 0);
-        const qtdNoComputador = Number(opt?.dataset?.qtdNoComputador || 0);
+        const disp = Number(opt.dataset.disponivel || 0);
+        const uso = Number(opt.dataset.uso || 0);
+        const qtdNoComputador = Number(opt.dataset.qtdNoComputador || 0);
         infoRemovido.textContent = `Na máquina: ${qtdNoComputador} | Em uso sist.: ${uso} | Disponível sist.: ${disp}`;
 
         if (qtdNoComputador > 0) {
@@ -993,58 +987,6 @@
           if (Number(qtdRemovida.value) > qtdNoComputador) qtdRemovida.value = qtdNoComputador;
         } else {
           qtdRemovida.removeAttribute('max');
-        }
-      });
-      formCadastrarRecuperado.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        if (!linhaRecuperacaoAtual) {
-          alert('Linha da recuperação não identificada.');
-          return;
-        }
-
-        const payload = {
-          tipo: document.getElementById('cadRecTipo').value,
-          material: document.getElementById('cadRecMaterial').value,
-          marca: document.getElementById('cadRecMarca').value,
-          especificacao: document.getElementById('cadRecEspecificacao').value,
-          nf: document.getElementById('cadRecNF').value,
-          quantidade_disponivel: 0,
-          quantidade_em_uso: 0,
-        };
-
-        if (!payload.tipo || !payload.material) {
-          alert('Tipo e Material são obrigatórios.');
-          return;
-        }
-
-        try {
-          await fetchJson('/materiais', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload),
-          });
-
-          bootstrap.Modal.getInstance(modalCadastrarRecuperadoEl).hide();
-
-          const selectTipo = linhaRecuperacaoAtual.querySelector('.rec-tipo');
-          const selectMaterial = linhaRecuperacaoAtual.querySelector('.rec-material');
-
-          if (selectTipo) {
-            selectTipo.value = payload.tipo;
-          }
-
-          await carregarMateriaisRecuperacaoPorTipo(payload.tipo, selectMaterial);
-
-          const opts = [...selectMaterial.options];
-          const found = opts.find(o => (o.textContent || '').includes(payload.material));
-          if (found) selectMaterial.value = found.value;
-
-          linhaRecuperacaoAtual = null;
-        } catch (err) {
-          alert(err.message || 'Erro ao cadastrar material recuperado.');
         }
       });
       form.addEventListener('submit', async (e) => {
@@ -1059,7 +1001,7 @@
           const payload = Object.fromEntries(fd.entries());
 
           if (payload.tipo === 'TROCA_PECA') {
-            if ((specsModo?.value || 'LEGADO').toUpperCase() !== 'ESTRUTURADO') {
+            if ((specsModo.value || 'LEGADO').toUpperCase() !== 'ESTRUTURADO') {
               throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de usar troca de peça.');
             }
 
@@ -1077,7 +1019,7 @@
             if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
 
             const optRemovido = materialRemovidoId.options[materialRemovidoId.selectedIndex];
-            const qtdNoComputador = Number(optRemovido?.dataset?.qtdNoComputador || 0);
+            const qtdNoComputador = Number(optRemovido.dataset.qtdNoComputador || 0);
             if (qtdNoComputador <= 0) {
               throw new Error('Selecione um componente realmente vinculado a esta máquina.');
             }
@@ -1121,13 +1063,16 @@
         e.preventDefault();
 
         const motivoField = formCondenarMaquina.querySelector('textarea[name="motivo"]');
-        const motivo = (motivoField?.value || '').trim();
+        const motivo = (motivoField.value || '').trim();
 
         if (!motivo) {
           alert('Informe o motivo da condenação.');
           return;
         }
 
+        if (recManutencaoId) {
+          recManutencaoId.value = '<%= manutencao.id %>';
+        }
         recMotivoCondenacao.value = motivo;
 
         const modalCondenar = bootstrap.Modal.getInstance(modalCondenarMaquinaEl);
@@ -1137,10 +1082,48 @@
         modalRec.show();
       });
 
+      modalRecuperacaoComponentesEl.addEventListener('show.bs.modal', async () => {
+        renderLinhaVaziaRecuperacao();
+        btnAdicionarLinhaRecuperacao.disabled = true;
+
+        if (!isEstruturado()) {
+          componentesEstruturadosCache = [];
+          renderLinhaVaziaRecuperacao('Maquina legado: nenhum componente sera movimentado. Se salvar sem adicionar linhas, apenas a condenacao da maquina sera registrada.');
+          return;
+        }
+
+        try {
+          await carregarComponentesEstruturados();
+
+          if (!componentesEstruturadosCache.length) {
+            renderLinhaVaziaRecuperacao('Esta maquina nao possui componentes estruturados vinculados para recuperacao.');
+            return;
+          }
+
+          btnAdicionarLinhaRecuperacao.disabled = false;
+        } catch (err) {
+          renderLinhaVaziaRecuperacao('Nao foi possivel carregar os componentes estruturados desta maquina.');
+          alert(err.message || 'Erro ao carregar componentes da maquina.');
+        }
+      });
+
       async function carregarTiposRecuperacao(selectTipo) {
-        const tipos = await fetchJson('/materiais-tipos');
+        if (!componentesEstruturadosCache.length) {
+          await carregarComponentesEstruturados();
+        }
+
+        const tipos = [...new Set(componentesEstruturadosCache.map((item) => item.tipo).filter(Boolean))];
 
         selectTipo.innerHTML = '<option value="" selected disabled>Selecione...</option>';
+
+        if (!tipos.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Nenhum tipo disponivel nesta maquina';
+          opt.disabled = true;
+          selectTipo.appendChild(opt);
+          return false;
+        }
 
         tipos.forEach((t) => {
           const opt = document.createElement('option');
@@ -1148,18 +1131,24 @@
           opt.textContent = t;
           selectTipo.appendChild(opt);
         });
+
+        return true;
       }
 
-      async function carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial) {
+      async function carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial, qtdInput = null) {
         selectMaterial.innerHTML = '<option value="" selected disabled>Carregando...</option>';
 
-        const list = await fetchJson(`/materiais?tipo=${encodeURIComponent(tipo)}`);
+        if (!componentesEstruturadosCache.length) {
+          await carregarComponentesEstruturados();
+        }
+
+        const list = componentesEstruturadosCache.filter((item) => item.tipo === tipo);
         selectMaterial.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
         if (!list.length) {
           const opt = document.createElement('option');
           opt.value = '';
-          opt.textContent = 'Nenhum material cadastrado nesse tipo';
+          opt.textContent = 'Esta maquina nao possui componente desse tipo';
           opt.disabled = true;
           selectMaterial.appendChild(opt);
           return;
@@ -1168,11 +1157,15 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) — Disp:${m.quantidade_disponivel ?? 0} | Uso:${m.quantidade_em_uso ?? 0}`;
-          opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
-          opt.dataset.uso = m.quantidade_em_uso ?? 0;
+          opt.textContent = `${m.material} (${m.marca || '-'}) - Na maquina: ${m.quantidade_no_computador ?? 0}`;
+          opt.dataset.qtdNoComputador = m.quantidade_no_computador ?? 0;
           selectMaterial.appendChild(opt);
         });
+
+        if (qtdInput) {
+          qtdInput.value = 1;
+          qtdInput.removeAttribute('max');
+        }
       }
 
       async function adicionarLinhaRecuperacao() {
@@ -1203,16 +1196,11 @@
           <td>
             <input type="text" class="form-control rec-motivo" placeholder="Obrigatório se defeito">
           </td>
-          <td style="width:180px;" class="text-center">
-          <div class="d-flex gap-2 justify-content-center">
-            <button type="button" class="btn btn-sm btn-outline-secondary rec-cadastrar">
-              + Registrar
-            </button>
+          <td style="width:100px;" class="text-center">
             <button type="button" class="btn btn-sm btn-outline-danger rec-remover">
               <i class="fas fa-trash"></i>
             </button>
-          </div>
-        </td>
+          </td>
         `;
 
         tbodyRecuperacao.appendChild(tr);
@@ -1221,15 +1209,31 @@
         const selectMaterial = tr.querySelector('.rec-material');
         const selectDestino = tr.querySelector('.rec-destino');
         const inputMotivo = tr.querySelector('.rec-motivo');
+        const inputQtd = tr.querySelector('.rec-qtd');
         const btnRemover = tr.querySelector('.rec-remover');
-        const btnCadastrar = tr.querySelector('.rec-cadastrar');
 
-        await carregarTiposRecuperacao(selectTipo);
+        const possuiTipos = await carregarTiposRecuperacao(selectTipo);
+        if (!possuiTipos) {
+          selectMaterial.disabled = true;
+          inputQtd.disabled = true;
+          selectDestino.disabled = true;
+          inputMotivo.disabled = true;
+        }
 
         selectTipo.addEventListener('change', async () => {
           const tipo = selectTipo.value;
           if (!tipo) return;
-          await carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial);
+          await carregarMateriaisRecuperacaoPorTipo(tipo, selectMaterial, inputQtd);
+        });
+        selectMaterial.addEventListener('change', () => {
+          const opt = selectMaterial.options[selectMaterial.selectedIndex];
+          const qtdNoComputador = Number(opt.dataset.qtdNoComputador || 0);
+          if (qtdNoComputador > 0) {
+            inputQtd.max = qtdNoComputador;
+            if (Number(inputQtd.value) > qtdNoComputador) inputQtd.value = qtdNoComputador;
+          } else {
+            inputQtd.removeAttribute('max');
+          }
         });
 
         selectDestino.addEventListener('change', () => {
@@ -1240,41 +1244,30 @@
             inputMotivo.value = '';
           }
         });
-        btnCadastrar.addEventListener('click', () => {
-          const tipo = selectTipo.value;
-
-          if (!tipo) {
-            alert('Selecione primeiro o tipo da linha.');
-            return;
-          }
-
-          linhaRecuperacaoAtual = tr;
-
-          document.getElementById('cadRecTipo').value = tipo;
-          document.getElementById('cadRecMaterial').value = '';
-          document.getElementById('cadRecMarca').value = '';
-          document.getElementById('cadRecEspecificacao').value = '';
-          document.getElementById('cadRecNF').value = '';
-
-          new bootstrap.Modal(modalCadastrarRecuperadoEl).show();
-        });
         btnRemover.addEventListener('click', () => {
           tr.remove();
 
           if (!tbodyRecuperacao.querySelector('tr')) {
-            const trVazia = document.createElement('tr');
-            trVazia.id = 'linhaVaziaRecuperacao';
-            trVazia.innerHTML = `
-              <td colspan="6" class="text-muted text-center">
-                Nenhum componente adicionado ainda.
-              </td>
-            `;
-            tbodyRecuperacao.appendChild(trVazia);
+            renderLinhaVaziaRecuperacao();
           }
         });
       }
 
       btnAdicionarLinhaRecuperacao.addEventListener('click', async () => {
+        if (!isEstruturado()) {
+          alert('Esta maquina esta em modo legado. Nenhum componente pode ser recuperado por este fluxo.');
+          return;
+        }
+
+        if (!componentesEstruturadosCache.length) {
+          await carregarComponentesEstruturados();
+        }
+
+        if (!componentesEstruturadosCache.length) {
+          alert('Esta maquina nao possui componentes estruturados disponiveis para recuperacao.');
+          return;
+        }
+
         await adicionarLinhaRecuperacao();
       });
 
@@ -1283,19 +1276,17 @@
 
         const linhas = [...tbodyRecuperacao.querySelectorAll('tr')].filter(tr => !tr.id);
 
-        if (!linhas.length) {
-          alert('Adicione pelo menos um componente para continuar.');
-          return;
-        }
-
         const componentes = [];
 
         for (const tr of linhas) {
-          const tipo = tr.querySelector('.rec-tipo')?.value || '';
-          const matId = tr.querySelector('.rec-material')?.value || '';
-          const qtd = Number(tr.querySelector('.rec-qtd')?.value || 0);
-          const destino = tr.querySelector('.rec-destino')?.value || '';
-          const motivo = (tr.querySelector('.rec-motivo')?.value || '').trim();
+          const tipo = tr.querySelector('.rec-tipo').value || '';
+          const matId = tr.querySelector('.rec-material').value || '';
+          const qtdInput = tr.querySelector('.rec-qtd');
+          const qtd = Number(qtdInput.value || 0);
+          const destino = tr.querySelector('.rec-destino').value || '';
+          const motivo = (tr.querySelector('.rec-motivo').value || '').trim();
+          const optMat = tr.querySelector('.rec-material').options[tr.querySelector('.rec-material').selectedIndex];
+          const qtdNoComputador = Number(optMat.dataset.qtdNoComputador || 0);
 
           if (!tipo) {
             alert('Selecione o tipo do componente.');
@@ -1317,6 +1308,16 @@
             return;
           }
 
+          if (!qtdNoComputador || qtdNoComputador <= 0) {
+            alert('Selecione um componente realmente presente na máquina.');
+            return;
+          }
+
+          if (qtd > qtdNoComputador) {
+            alert(`Quantidade maior que a vinculada na máquina. Vinculado: ${qtdNoComputador}.`);
+            return;
+          }
+
           if (destino === 'DEFEITO' && !motivo) {
             alert('Informe o motivo para os itens marcados como defeito.');
             return;
@@ -1331,11 +1332,29 @@
           });
         }
 
+        const totaisPorMaterial = componentes.reduce((acc, item) => {
+          const key = Number(item.materialId);
+          acc[key] = (acc[key] || 0) + Number(item.quantidade || 0);
+          return acc;
+        }, {});
+        for (const [materialId, totalSelecionado] of Object.entries(totaisPorMaterial)) {
+          const componenteBase = componentesEstruturadosCache.find((item) => Number(item.id) === Number(materialId));
+          const qtdNoComputador = Number(componenteBase.quantidade_no_computador || 0);
+          if (totalSelecionado > qtdNoComputador) {
+            alert(`A soma das quantidades para o componente ${componenteBase?.material || materialId} excede o que existe na máquina.`);
+            return;
+          }
+        }
         const payload = {
-          manutencaoId: Number(document.getElementById('recManutencaoId').value),
-          motivoCondenacao: (document.getElementById('recMotivoCondenacao').value || '').trim(),
+          manutencaoId: Number(recManutencaoId?.value || '<%= manutencao.id %>'),
+          motivoCondenacao: (recMotivoCondenacao?.value || '').trim(),
           componentes,
         };
+
+        if (!payload.manutencaoId) {
+          alert('Não foi possível identificar a manutenção atual.');
+          return;
+        }
 
         try {
           await fetchJson('/condenar-maquina-com-recuperacao', {
@@ -1374,3 +1393,4 @@
 </body>
 
 </html>
+

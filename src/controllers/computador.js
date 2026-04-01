@@ -2,6 +2,7 @@ const Computador = require('../models/Computador');
 const Empresa = require('../models/Empresa');
 const { Op, literal } = require('sequelize');
 const ComputadorEstruturadoService = require('../services/computadorEstruturadoService');
+const { validarPatrimonioUnico } = require('../services/patrimonioUnicoService');
 
 class ComputadorController {
   mapComputador(computador) {
@@ -57,11 +58,9 @@ class ComputadorController {
       if (!empresaId) {
         throw new Error('ID da empresa nao fornecido');
       }
-      if (!name) {
-        throw new Error('Numero de Patrimonio nao fornecido');
-      }
+      const patrimonioNormalizado = await validarPatrimonioUnico(name);
       const computador = await Computador.create({
-        patrimonio: name,
+        patrimonio: patrimonioNormalizado,
         specs: description,
         empresaId: empresaId,
         setor: local,
@@ -209,7 +208,11 @@ class ComputadorController {
         throw new Error('Computador nao encontrado');
       }
 
-      computador.patrimonio = computador_new.patrimonio;
+      const patrimonioNormalizado = await validarPatrimonioUnico(computador_new.patrimonio, {
+        excludeId: computador.id,
+      });
+
+      computador.patrimonio = patrimonioNormalizado;
       computador.setor = computador_new.setor;
 
       if (String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO') {
@@ -229,9 +232,9 @@ class ComputadorController {
     }
   }
 
-  async importarHwinfoCsv(computadorId, csvContent) {
+  async importarHwinfoCsv(computadorId, csvContent, options = {}) {
     const service = this.criarService();
-    return service.importarCsv(Number(computadorId), csvContent);
+    return service.importarCsv(Number(computadorId), csvContent, options);
   }
 
   async criarEstruturadoManual(payload) {
@@ -249,9 +252,9 @@ class ComputadorController {
     return service.criarComputadorEstruturadoPorCsv(payload);
   }
 
-  async importarHwinfoCsvDeArquivo(computadorId, csvPath) {
+  async importarHwinfoCsvDeArquivo(computadorId, csvPath, options = {}) {
     const service = this.criarService();
-    return service.importarCsvDeArquivo(Number(computadorId), csvPath);
+    return service.importarCsvDeArquivo(Number(computadorId), csvPath, options);
   }
 }
 

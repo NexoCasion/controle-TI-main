@@ -21,6 +21,29 @@ async function ensureComputadoresColumns() {
   }
 }
 
+async function ensurePatrimonioUniqueIndex() {
+  const duplicados = await database.query(
+    `
+      SELECT TRIM(patrimonio) AS patrimonio, COUNT(*) AS total
+      FROM computadores
+      GROUP BY TRIM(patrimonio)
+      HAVING TRIM(patrimonio) <> '' AND COUNT(*) > 1;
+    `,
+    { type: database.QueryTypes.SELECT }
+  );
+
+  if (duplicados.length) {
+    console.warn(
+      '[ensureSchema] indice unico de patrimonio nao criado porque existem patrimonios duplicados no banco.'
+    );
+    return;
+  }
+
+  await database.query(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_computadores_patrimonio_unique ON computadores(TRIM(patrimonio));'
+  );
+}
+
 async function ensureEmpresaColumns() {
   const columns = await getTableColumns('empresas');
 
@@ -76,6 +99,7 @@ async function ensureComputadorMateriaisTable() {
 
 async function ensureSchema() {
   await ensureComputadoresColumns();
+  await ensurePatrimonioUniqueIndex();
   await ensureEmpresaColumns();
   await ensureComputadorMateriaisTable();
   await seedEmpresaSiglas();
