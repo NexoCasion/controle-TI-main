@@ -1,15 +1,224 @@
+<style>
+  .app-navbar {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .app-navbar-shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .app-navbar-left,
+  .app-navbar-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .app-navbar-left {
+    min-width: 0;
+  }
+
+  .app-navbar-right {
+    margin-left: auto;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .app-navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  .app-navbar-brand img {
+    width: auto;
+    height: 44px;
+    max-width: 280px;
+    object-fit: contain;
+  }
+
+  .app-navbar-home,
+  .app-navbar-user-btn {
+    border-radius: 999px !important;
+    padding: 9px 14px !important;
+    border: 1px solid rgba(17, 24, 39, 0.14) !important;
+    background: rgba(17, 24, 39, 0.03) !important;
+    color: #111827 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.15px;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 9px;
+    box-shadow: none;
+    transition:
+      transform 0.12s ease,
+      background 0.12s ease,
+      border-color 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+
+  .app-navbar-home:hover,
+  .app-navbar-user-btn:hover,
+  .app-navbar-user.show .app-navbar-user-btn {
+    background: rgba(17, 24, 39, 0.07) !important;
+    border-color: rgba(17, 24, 39, 0.18) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .app-navbar-home i {
+    font-size: 0.92rem;
+    line-height: 1;
+  }
+
+  .app-navbar-user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--brand, #d6001c);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .app-navbar-user-name {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-navbar-menu {
+    min-width: 220px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 8px;
+    margin-top: 10px !important;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
+  }
+
+  .app-navbar-menu-item {
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .app-navbar-menu-item:hover,
+  .app-navbar-menu-item:focus {
+    background: #f4f6f9;
+    color: #111827;
+  }
+
+  .app-navbar-menu-item i {
+    width: 16px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .app-navbar-logout-form {
+    margin: 0;
+  }
+
+  .app-navbar-logout-btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+  }
+
+  .app-navbar-logout-btn i {
+    color: #b00016;
+  }
+
+  @media (max-width: 767.98px) {
+    .app-navbar-shell {
+      padding: 14px 14px !important;
+      align-items: flex-start;
+    }
+
+    .app-navbar-brand img {
+      height: 38px;
+      max-width: 210px;
+    }
+
+    .app-navbar-right {
+      width: 100%;
+      margin-left: 0;
+      justify-content: space-between;
+    }
+
+    .app-navbar-user-name {
+      max-width: 120px;
+    }
+
+    .app-navbar-menu {
+      min-width: 200px;
+    }
+  }
+</style>
+
 <header>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
-      <!-- Logo -->
-      <a class="navbar-brand" href="/">
-        <img src="logo_horizontal.png" alt="Honda Universo" height="40">
-      </a>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light app-navbar">
+    <div class="container app-navbar-shell">
+      <div class="app-navbar-left">
+        <a class="navbar-brand app-navbar-brand" href="/">
+          <img src="/logo_horizontal.png" alt="Honda Universo" height="40">
+        </a>
+      </div>
 
-      <!-- Botão Home -->
-      <a class="btn btn-outline-dark me-2" href="/">Home</a>
+      <div class="app-navbar-right">
+        <a class="btn app-navbar-home" href="/">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </a>
 
+        <% if (currentUser) { %>
+        <div class="dropdown app-navbar-user">
+          <button
+            class="btn app-navbar-user-btn dropdown-toggle"
+            type="button"
+            id="userDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <span class="app-navbar-user-avatar">
+              <%= String(currentUser.nome || '?').trim().charAt(0).toUpperCase() %>
+            </span>
+            <span class="app-navbar-user-name"><%= currentUser.nome %></span>
+          </button>
 
+          <ul class="dropdown-menu dropdown-menu-end app-navbar-menu" aria-labelledby="userDropdown">
+            <li>
+              <a class="dropdown-item app-navbar-menu-item" href="/perfil">
+                <i class="fas fa-user-circle"></i>
+                <span>Perfil</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form action="/logout" method="post" class="app-navbar-logout-form">
+                <button type="submit" class="dropdown-item app-navbar-menu-item app-navbar-logout-btn">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Sair</span>
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+        <% } %>
+      </div>
     </div>
   </nav>
 </header>

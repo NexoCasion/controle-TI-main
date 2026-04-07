@@ -264,13 +264,12 @@ class ComputadorEstruturadoService {
 
   buildParsedManual(payload = {}) {
     const modelo = String(payload.modeloComputador || '').trim();
-    const nomeComputador = String(payload.nomeComputador || '').trim();
     const processador = String(payload.processador || '').trim();
     const memoriasInformadas = this.splitManualItems(payload.memoria);
     const armazenamentosInformados = this.splitManualItems(payload.armazenamento);
 
     return {
-      nomeComputador: nomeComputador || null,
+      nomeComputador: null,
       marcaComputador: modelo || null,
       processador: processador
         ? {

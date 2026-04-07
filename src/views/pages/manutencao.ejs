@@ -9,6 +9,44 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css">
+  <style>
+    #modalAddProcedimento.modal,
+    #modalRecuperacaoComponentes.modal {
+      overflow-y: hidden;
+    }
+
+    #modalAddProcedimento .modal-dialog {
+      height: calc(100vh - 1rem);
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #modalAddProcedimento .modal-content {
+      height: 100%;
+    }
+
+    #modalAddProcedimento .modal-body {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #modalRecuperacaoComponentes .modal-dialog {
+      height: calc(100vh - 1rem);
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #modalRecuperacaoComponentes .modal-content {
+      height: 100%;
+    }
+
+    #modalRecuperacaoComponentes .modal-body {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  </style>
 </head>
 
 <body>
@@ -210,7 +248,7 @@
 
   <!-- Modal: Adicionar Procedimento -->
   <div class="modal fade" id="modalAddProcedimento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <form class="modal-content" id="formAddProcedimento">
         <div class="modal-header">
           <h5 class="modal-title">Adicionar procedimento</h5>
@@ -361,7 +399,7 @@
 
   <!-- Modal: Recuperação de Componentes -->
   <div class="modal fade" id="modalRecuperacaoComponentes" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <form class="modal-content" id="formRecuperacaoComponentes">
         <div class="modal-header">
           <h5 class="modal-title">Recuperação de Componentes</h5>
@@ -526,11 +564,16 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-light border text-start">
-            O patrimônio, setor e empresa atuais serão mantidos. O CSV será usado para montar os componentes reais da máquina.
+            O patrimônio, setor e empresa atuais serão mantidos. O CSV será usado para montar os componentes reais da máquina. Se o arquivo vier como patrimonio-setor-fonte.csv, a fonte também será identificada pelo nome.
           </div>
 
           <label for="csvLegadoExistente" class="form-label">Arquivo CSV do HWiNFO</label>
           <input type="file" class="form-control" id="csvLegadoExistente" name="csvFile" accept=".csv" required>
+          <div class="mt-3">
+            <label for="fonteLegadoExistente" class="form-label">Indique a fonte da maquina</label>
+            <input type="text" class="form-control" id="fonteLegadoExistente" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+            <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -550,10 +593,6 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label for="manualNomeComputadorExistente" class="form-label">Nome do computador</label>
-              <input type="text" class="form-control" id="manualNomeComputadorExistente" name="nomeComputador" placeholder="Ex: FELIPE-TI">
-            </div>
-            <div class="col-md-6">
               <label for="manualModeloComputadorExistente" class="form-label">Modelo</label>
               <input type="text" class="form-control" id="manualModeloComputadorExistente" name="modeloComputador" placeholder="Ex: DELL OptiPlex 7050" required>
             </div>
@@ -570,6 +609,11 @@
               <label for="manualArmazenamentoExistente" class="form-label">Armazenamento</label>
               <textarea class="form-control" id="manualArmazenamentoExistente" name="armazenamento" rows="3" placeholder="Um item por linha&#10;Ex: NVME SSD 256GB - 256 GB" required></textarea>
               <small class="text-muted">Use uma linha por unidade de armazenamento.</small>
+            </div>
+            <div class="col-12">
+              <label for="manualFonteExistente" class="form-label">Indique a fonte da maquina</label>
+              <input type="text" class="form-control" id="manualFonteExistente" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+              <small class="text-muted">Opcional. O tipo sera salvo como Fonte e o detalhe informado ficara na especificacao.</small>
             </div>
           </div>
         </div>
@@ -808,10 +852,23 @@
       }
 
       async function carregarTipos() {
-        const tipos = await fetchJson('/materiais-tipos');
+        if (!componentesEstruturadosCache.length) {
+          await carregarComponentesEstruturados();
+        }
+
+        const tipos = [...new Set(componentesEstruturadosCache.map((item) => item.tipo).filter(Boolean))];
 
         tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
         tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
+
+        if (!tipos.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'Esta máquina não possui componentes trocáveis';
+          opt.disabled = true;
+          tipoPeca.appendChild(opt);
+          return;
+        }
 
         tipos.forEach((t) => {
           const opt1 = document.createElement('option');
@@ -870,7 +927,7 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) - Disp: ${m.quantidade_disponivel}`;
+          opt.textContent = `${m.material} (${m.marca || '-'})${m.especificacao ? ` - ${m.especificacao}` : ''} - Disp: ${m.quantidade_disponivel}`;
           opt.dataset.disponivel = m.quantidade_disponivel;
           materialId.appendChild(opt);
         });

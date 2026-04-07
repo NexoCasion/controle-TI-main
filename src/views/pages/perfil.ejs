@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+
+<body>
+  <header class="headerComponent">
+    <%- include("../partials/header.ejs") %>
+  </header>
+
+  <main class="container mt-4 page-shell-sm">
+    <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <% if (success) { %>
+    <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div class="card soft-card mb-4">
+      <div class="card-body p-4">
+        <h1 class="h3 mb-4">Perfil</h1>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="mb-2"><strong>Nome:</strong> <%= user?.nome || '-' %></div>
+            <div class="mb-2"><strong>Email:</strong> <%= user?.email || '-' %></div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-2"><strong>Perfil:</strong> <%= user?.role || '-' %></div>
+            <div class="mb-0"><strong>Status:</strong> <%= user?.ativo ? 'Ativo' : 'Inativo' %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if (isAdmin) { %>
+    <div class="card soft-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h4 mb-4">Cadastrar novo usuario</h2>
+
+        <form action="/perfil/usuarios" method="post">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="novoUsuarioNome" class="form-label">Login / nome</label>
+              <input type="text" class="form-control" id="novoUsuarioNome" name="nome" required>
+            </div>
+
+            <div class="col-md-4">
+              <label for="novoUsuarioEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="novoUsuarioEmail" name="email" required>
+            </div>
+
+            <div class="col-md-4">
+              <label for="novoUsuarioPassword" class="form-label">Senha inicial</label>
+              <input type="password" class="form-control" id="novoUsuarioPassword" name="password" minlength="6" required>
+            </div>
+
+            <div class="col-md-4">
+              <label for="novoUsuarioRole" class="form-label">Perfil</label>
+              <select class="form-select" id="novoUsuarioRole" name="role">
+                <option value="tecnico" selected>Tecnico</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="novoUsuarioAtivo" class="form-label">Status</label>
+              <select class="form-select" id="novoUsuarioAtivo" name="ativo">
+                <option value="1" selected>Ativo</option>
+                <option value="0">Inativo</option>
+              </select>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">Cadastrar usuario</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card soft-card">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <h2 class="h4 mb-0">Usuarios cadastrados</h2>
+          <span class="text-muted"><%= users.length %> usuario(s)</span>
+        </div>
+
+        <% if (!users.length) { %>
+        <div class="alert alert-light border mb-0">Nenhum usuario cadastrado.</div>
+        <% } %>
+
+        <% users.forEach((item) => { %>
+        <form action="/perfil/usuarios/<%= item.id %>" method="post" class="border rounded-3 p-3 mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Login / nome</label>
+              <input type="text" class="form-control" name="nome" value="<%= item.nome %>" required>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" name="email" value="<%= item.email %>" required>
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label">Perfil</label>
+              <select class="form-select" name="role">
+                <option value="tecnico" <%= item.role === 'tecnico' ? 'selected' : '' %>>Tecnico</option>
+                <option value="admin" <%= item.role === 'admin' ? 'selected' : '' %>>Admin</option>
+              </select>
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label">Status</label>
+              <select class="form-select" name="ativo">
+                <option value="1" <%= item.ativo ? 'selected' : '' %>>Ativo</option>
+                <option value="0" <%= !item.ativo ? 'selected' : '' %>>Inativo</option>
+              </select>
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+              <label class="form-label">Nova senha</label>
+              <input type="password" class="form-control" name="password" minlength="6" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <small class="text-muted">ID <%= item.id %> • <%= item.ativo ? 'Usuario ativo' : 'Usuario inativo' %></small>
+              <button type="submit" class="btn btn-outline-dark">Salvar alteracoes</button>
+            </div>
+          </div>
+        </form>
+        <% }) %>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="card soft-card">
+      <div class="card-body p-4">
+        <h2 class="h5 mb-2">Gestao de usuarios</h2>
+        <p class="mb-0 text-muted">Somente administradores podem cadastrar ou editar usuarios.</p>
+      </div>
+    </div>
+    <% } %>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

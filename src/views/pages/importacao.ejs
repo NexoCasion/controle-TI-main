@@ -36,8 +36,8 @@
           <div class="card shadow-sm">
             <div class="card-body p-4">
               <div class="alert alert-light border text-start">
-                <strong>Padrão do arquivo:</strong> <code>patrimonio-setor.csv</code><br>
-                <small class="text-muted">Exemplo: <code>0003-TESTESETOR.csv</code>. A empresa é definida no seletor abaixo.</small>
+                <strong>Padrão do arquivo:</strong> <code>0000-SETOR.csv</code> ou <code>0000-SETOR-FONTE.csv</code><br>
+                <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code> ou <code>0003-TESTESETOR-ATX250W.csv</code>. A empresa é definida no seletor abaixo e, se a fonte vier no nome, ela será importada automaticamente.</small>
               </div>
 
               <form action="/importar-csv" method="post" enctype="multipart/form-data">
@@ -57,9 +57,15 @@
                   </div>
 
                   <div class="col-12">
+                    <label for="fonteCsvImportacao" class="form-label">Indique a fonte da maquina</label>
+                    <input type="text" class="form-control" name="fonte" id="fonteCsvImportacao" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+                    <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+                  </div>
+
+                  <div class="col-12">
                     <div class="small text-muted">
-                      O sistema vai criar o computador pelo nome do arquivo e importar processador, memória e armazenamento
-                      como materiais em uso.
+                      O sistema vai criar o computador pelo nome do arquivo e importar processador, memória, armazenamento
+                      e fonte como materiais em uso quando informados.
                     </div>
                   </div>
                 </div>

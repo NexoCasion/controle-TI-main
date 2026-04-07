@@ -73,6 +73,51 @@ class ManutencaoController {
     await material.save({ transaction });
   }
 
+  async sincronizarEmUsoMinimoPorEstrutura(material, transaction) {
+    const totalEstruturado = Number(
+      (await ComputadorMaterial.sum('quantidade', {
+        where: { material_id: Number(material.id) },
+        transaction,
+      })) || 0
+    );
+
+    const emUsoAtual = Number(material.quantidade_em_uso || 0);
+    if (emUsoAtual >= totalEstruturado) {
+      return emUsoAtual;
+    }
+
+    material.quantidade_em_uso = totalEstruturado;
+    await material.save({ transaction });
+    return totalEstruturado;
+  }
+
+  async consumirEmUsoEstruturado(material, computadorId, quantidade, transaction) {
+    const qtd = Number(quantidade || 0);
+    if (qtd <= 0) throw new Error('Quantidade inválida para retirada do em uso.');
+
+    const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
+      computadorId,
+      material.id,
+      transaction
+    );
+
+    if (quantidadeNoComputador < qtd) {
+      throw new Error(
+        `A máquina não possui esse componente em quantidade suficiente. Vinculado: ${quantidadeNoComputador}.`
+      );
+    }
+
+    const emUsoAtual = await this.sincronizarEmUsoMinimoPorEstrutura(material, transaction);
+    if (emUsoAtual < qtd) {
+      throw new Error(
+        `Inconsistência no estoque do componente removido. Em uso atual: ${emUsoAtual}, solicitado: ${qtd}.`
+      );
+    }
+
+    material.quantidade_em_uso = emUsoAtual - qtd;
+    await material.save({ transaction });
+  }
+
   async getQuantidadeEstruturadaNoComputador(computadorId, materialId, transaction) {
     const vinculos = await ComputadorMaterial.findAll({
       where: {
@@ -188,6 +233,19 @@ class ManutencaoController {
   async create(descricao, computadorId) {
     if (!computadorId) {
       throw new Error('Não foi informado um computador para registrar a manutenção!');
+    }
+
+    const manutencaoAbertaExistente = await Manutencao.findOne({
+      where: {
+        computadorId,
+        dataSaida: null,
+      },
+    });
+
+    if (manutencaoAbertaExistente) {
+      throw new Error(
+        `Este computador ja possui uma manutencao em aberto (ID ${manutencaoAbertaExistente.id}). Feche a manutencao atual antes de abrir outra.`
+      );
     }
 
     const pc = await Computador.findByPk(computadorId);
@@ -538,14 +596,6 @@ class ManutencaoController {
     }
 
     return await database.transaction(async (t) => {
-      // 4) Buscar material e validar estoque (dentro da transação)
-      const material = await Material.findByPk(materialId, { transaction: t });
-      if (!material) throw new Error('Material não encontrado.');
-
-      if (material.quantidade_disponivel < qtd) {
-        throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
-      }
-
       // 5) Definir specs_depois
       let specsDepoisFinal = specs_antes;
       if (!computadorEstruturado) {
@@ -553,8 +603,23 @@ class ManutencaoController {
       }
 
       // 6) Snapshot congelado (histórico)
+      const material = await Material.findByPk(materialId, { transaction: t });
+      if (!material) throw new Error('Material não encontrado.');
+
+      if (Number(material.quantidade_disponivel || 0) < qtd) {
+        throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
+      }
+
       const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
       if (!matRem) throw new Error('Material removido não encontrado.');
+
+      const tipoInstalado = String(material.tipo || '').trim().toUpperCase();
+      const tipoRemovido = String(matRem.tipo || '').trim().toUpperCase();
+      if (!tipoInstalado || !tipoRemovido || tipoInstalado !== tipoRemovido) {
+        throw new Error(
+          `A peça nova precisa ter o mesmo tipo da peça removida. Instalado: ${material.tipo || '-'} | Removido: ${matRem.tipo || '-'}.`
+        );
+      }
 
       const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
         computadorId,
@@ -650,7 +715,7 @@ class ManutencaoController {
       // se não tem saldo e não é recém-cadastrada, continua barrando.
 
       if (destinoRemovida === 'RECUPERAR') {
-        await this.consumirEmUsoEstrito(matRem, qtdRem, t);
+        await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -666,7 +731,7 @@ class ManutencaoController {
           { transaction: t }
         );
       } else if (destinoRemovida === 'DEFEITO') {
-        await this.consumirEmUsoEstrito(matRem, qtdRem, t);
+        await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -803,6 +868,7 @@ class ManutencaoController {
         const itensResumo = [];
         let componentesProcessados = Array.isArray(componentes) ? [...componentes] : [];
         let componentesAtuais = [];
+        let specsDepoisCondenacao = pc.specs_override || pc.specs || null;
 
         if (computadorEstruturado) {
           componentesAtuais = await this.getComponentesEstruturadosDoComputador(pc.id, null, t);
@@ -890,7 +956,7 @@ class ManutencaoController {
           }
 
           if (destino === 'RECUPERAR') {
-            await this.consumirEmUsoEstrito(mat, qtd, t);
+            await this.consumirEmUsoEstruturado(mat, pc.id, qtd, t);
             await this.removerQuantidadeEstruturadaDoComputador(pc.id, materialId, qtd, t);
             mat.quantidade_disponivel = (mat.quantidade_disponivel || 0) + qtd;
 
@@ -932,7 +998,7 @@ class ManutencaoController {
           }
 
           if (destino === 'DEFEITO') {
-            await this.consumirEmUsoEstrito(mat, qtd, t);
+            await this.consumirEmUsoEstruturado(mat, pc.id, qtd, t);
             await this.removerQuantidadeEstruturadaDoComputador(pc.id, materialId, qtd, t);
             mat.quantidade_baixada = (mat.quantidade_baixada || 0) + qtd;
             if ((mat.quantidade_em_uso || 0) < 0) {
@@ -979,7 +1045,18 @@ class ManutencaoController {
               ? 'Tudo condenado. Nenhum componente foi recuperado; todos os componentes estruturados vinculados foram baixados pelo motivo da condenacao.'
               : 'Maquina legado condenada sem movimentacao de componentes, pois os materiais nao estao estruturados no sistema.'
           );
+
+        if (computadorEstruturado) {
+          const resultadoEstruturado = await this.computadorEstruturadoService.syncSpecsEstruturadasDoComputador(
+            pc.id,
+            t
+          );
+          specsDepoisCondenacao = resultadoEstruturado.specsText || null;
+        }
+
+        itemCondenacao.specs_depois = specsDepoisCondenacao;
         await itemCondenacao.save({ transaction: t });
+
         pc.status = manutencaoId;
         pc.ativo = false;
         pc.dataDescarte = new Date();
@@ -988,9 +1065,6 @@ class ManutencaoController {
 
         manutencao.dataSaida = new Date();
         await manutencao.save({ transaction: t });
-
-        itemCondenacao.material_snapshot = itensResumo.join(' || ');
-        await itemCondenacao.save({ transaction: t });
 
         return true;
       });

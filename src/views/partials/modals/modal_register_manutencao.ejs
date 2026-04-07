@@ -47,6 +47,65 @@
             if (ev.target.id !== "modalRegisterManutencao") return;
 
             const pref = window.__prefManutencao || null;
+            let computadoresEmManutencao = new Set();
+
+            function preencherComputadores(lista) {
+              const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+
+              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+
+              if (!disponiveis.length) {
+                $('#computadorModal').append($('<option>', {
+                  value: '',
+                  text: 'Nenhum computador disponivel para nova manutencao'
+                }).prop('disabled', true));
+              } else {
+                disponiveis.forEach(function(computador) {
+                  $('#computadorModal').append($('<option>', {
+                    value: computador.id,
+                    text: `${computador.id} - ${computador.patrimonio}`
+                  }));
+                });
+              }
+
+              if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== '') {
+                const idPreferido = Number(pref.computadorId);
+                if (computadoresEmManutencao.has(idPreferido)) {
+                  alert('Este computador ja possui uma manutencao em aberto. Feche a manutencao atual antes de abrir outra.');
+                } else {
+                  $('#computadorModal').val(String(pref.computadorId));
+                }
+                window.__prefManutencao = null;
+              }
+
+              $('#computadorGroupModal').show();
+            }
+
+            function carregarComputadoresDisponiveis(empresaId) {
+              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+
+              if (empresaId === undefined || empresaId === null || empresaId === '') {
+                $('#computadorGroupModal').hide();
+                return;
+              }
+
+              $.when(
+                $.get("/computadores-by-empresa?empresaId=" + empresaId),
+                $.get("/manutencoes-open")
+              ).done(function(computadoresResp, manutencoesResp) {
+                const resultado = computadoresResp[0];
+                const manutencoesAbertas = Array.isArray(manutencoesResp[0]) ? manutencoesResp[0] : [];
+                const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
+
+                computadoresEmManutencao = new Set(
+                  manutencoesAbertas
+                    .map((manutencao) => Number(manutencao.computadorId))
+                    .filter((id) => Number.isFinite(id))
+                );
+
+                preencherComputadores(lista);
+              });
+            }
 
             $.get("/get-empresas", function(data) {
               $('#empresaModal').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
@@ -68,32 +127,7 @@
 
             $('#empresaModal').off('change').on('change', function() {
               var empresaId = $(this).val();
-
-              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-
-              if (empresaId === undefined || empresaId === null || empresaId === '') {
-                $('#computadorGroupModal').hide();
-                return;
-              }
-
-              $.get("/computadores-by-empresa?empresaId=" + empresaId, function(resultado) {
-                const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
-                $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-
-                lista.forEach(function(computador) {
-                  $('#computadorModal').append($('<option>', {
-                    value: computador.id,
-                    text: `${computador.id} - ${computador.patrimonio}`
-                  }));
-                });
-
-                if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== '') {
-                  $('#computadorModal').val(String(pref.computadorId));
-                  window.__prefManutencao = null;
-                }
-
-                $('#computadorGroupModal').show();
-              });
+              carregarComputadoresDisponiveis(empresaId);
             });
           });
         </script>

@@ -1,4 +1,5 @@
 const { Router } = require('express');
+const rateLimit = require('express-rate-limit');
 const router = Router();
 
 //imports para lidar com upload de arquivos
@@ -19,6 +20,58 @@ const MaterialController = require('./controllers/material');
 const materialController = new MaterialController();
 const DashboardController = require('./controllers/dashboard');
 const dashboardController = new DashboardController();
+const AuthController = require('./controllers/auth');
+const authController = new AuthController();
+const { ensureAuth, redirectIfAuthenticated } = require('./middlewares/auth');
+
+const loginRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: 'Muitas tentativas de login. Tente novamente em alguns minutos.',
+});
+
+router.get('/login', redirectIfAuthenticated, (req, res) => authController.renderLogin(req, res));
+
+router.post('/login', loginRateLimit, redirectIfAuthenticated, async (req, res) => {
+  return authController.login(req, res);
+});
+
+router.post('/logout', ensureAuth, async (req, res) => {
+  return authController.logout(req, res);
+});
+
+router.use(ensureAuth);
+
+router.get('/perfil', async (req, res) => {
+  return authController.perfil(req, res);
+});
+
+router.post('/perfil/usuarios', async (req, res) => {
+  try {
+    await authController.createUser(req, res);
+    return res.redirect('/perfil?success=Usuario cadastrado com sucesso.');
+  } catch (error) {
+    console.error('Erro ao cadastrar usuario:', error);
+    return res.redirect(`/perfil?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.post('/perfil/usuarios/:id', async (req, res) => {
+  try {
+    await authController.updateUser(req, res);
+    return res.redirect('/perfil?success=Usuario atualizado com sucesso.');
+  } catch (error) {
+    console.error('Erro ao atualizar usuario:', error);
+    return res.redirect(`/perfil?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.get('/home', (req, res) => {
+  return res.redirect('/');
+});
 
 router.get('/test', (req, res) => {
   const manutencoesAbertas = manutencaoController.findOpened();
@@ -452,7 +505,7 @@ router.get('/importar-csv', async (req, res) => {
 router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
   let filePath = null;
   try {
-    const { empresaId } = req.body;
+    const { empresaId, fonte } = req.body;
     const file = req.file;
     const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
@@ -464,6 +517,7 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
     const csvContent = fs.readFileSync(filePath, 'utf-8');
     const identidade = parseComputerIdentityFromFilename(file.originalname || file.filename);
     const parsed = parseHwinfoCsv(csvContent);
+    const fonteFinal = String(fonte || identidade.fonte || '').trim();
 
     if (!parsed.processador && !(parsed.memorias || []).length && !(parsed.armazenamentos || []).length) {
       return res
@@ -476,6 +530,7 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
       setor: identidade.setor,
       empresaId,
       csvContent,
+      fonte: fonteFinal,
     });
 
     return res.redirect(`/ver-pc?id=${resultado.computador.id}`);
@@ -513,16 +568,21 @@ router.post('/computadores/:id/estruturado-manual', async (req, res) => {
 router.post('/computadores/:id/importar-hwinfo-csv', upload.single('csvFile'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { csvPath } = req.body;
+    const { csvPath, fonte } = req.body;
+    const { parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
     let resultado;
 
     if (req.file?.path) {
       const csvContent = fs.readFileSync(req.file.path, 'utf-8');
-      resultado = await computadorController.importarHwinfoCsv(Number(id), csvContent);
+      const identidade = parseComputerIdentityFromFilename(req.file.originalname || req.file.filename);
+      const fonteFinal = String(fonte || identidade.fonte || '').trim();
+      resultado = await computadorController.importarHwinfoCsv(Number(id), csvContent, { fonte: fonteFinal });
       fs.unlinkSync(req.file.path);
     } else if (csvPath) {
-      resultado = await computadorController.importarHwinfoCsvDeArquivo(Number(id), csvPath);
+      const identidade = parseComputerIdentityFromFilename(csvPath);
+      const fonteFinal = String(fonte || identidade.fonte || '').trim();
+      resultado = await computadorController.importarHwinfoCsvDeArquivo(Number(id), csvPath, { fonte: fonteFinal });
     } else {
       return res.status(400).json({ error: 'Envie csvFile ou csvPath.' });
     }

@@ -295,22 +295,24 @@ function parseComputerIdentityFromFilename(filename = '') {
 
   if (parts.length < 2) {
     throw new Error(
-      'Nome do arquivo fora do padrao esperado. Use patrimonio-setor.csv, ex: 0003-TESTESETOR.csv.'
+      'Nome do arquivo fora do padrao esperado. Use patrimonio-setor.csv ou patrimonio-setor-fonte.csv.'
     );
   }
 
   const patrimonio = parts.shift();
+  const fonte = parts.length >= 2 ? parts.pop() : null;
   const setor = parts.join('-');
 
   if (!patrimonio || !setor) {
     throw new Error(
-      'Nao foi possivel identificar patrimonio e setor pelo nome do arquivo. Use patrimonio-setor.csv.'
+      'Nao foi possivel identificar patrimonio e setor pelo nome do arquivo. Use patrimonio-setor.csv ou patrimonio-setor-fonte.csv.'
     );
   }
 
   return {
     patrimonio,
     setor,
+    fonte: fonte || null,
     nomeBase: baseName,
   };
 }

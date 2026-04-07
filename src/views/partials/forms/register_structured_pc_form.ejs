@@ -44,10 +44,6 @@
     </div>
 
     <div class="col-md-6">
-      <label for="manualNomeComputador" class="form-label">Nome do computador</label>
-      <input type="text" class="form-control" name="nomeComputador" id="manualNomeComputador" placeholder="Ex: FELIPE-TI">
-    </div>
-    <div class="col-md-6">
       <label for="manualModeloComputador" class="form-label">Modelo</label>
       <input type="text" class="form-control" name="modeloComputador" id="manualModeloComputador" placeholder="Ex: DELL OptiPlex 7050" required>
     </div>
@@ -69,8 +65,14 @@
     </div>
 
     <div class="col-12">
+      <label for="manualFonte" class="form-label">Indique a fonte da maquina</label>
+      <input type="text" class="form-control" name="fonte" id="manualFonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+      <small class="text-muted">Opcional. O tipo sera salvo como Fonte e o detalhe informado ficara na especificacao.</small>
+    </div>
+
+    <div class="col-12">
       <div class="small text-muted">
-        O sistema vai criar o computador, montar as specs e registrar processador, memória e armazenamento como materiais em uso.
+        O sistema vai criar o computador, montar as specs e registrar processador, memória, armazenamento e fonte como materiais em uso quando informados.
       </div>
     </div>
   </div>

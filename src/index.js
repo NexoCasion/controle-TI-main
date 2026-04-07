@@ -1,5 +1,8 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const SQLiteStoreFactory = require('connect-sqlite3');
+const helmet = require('helmet');
 const routes = require('./routes');
 const path = require('path');
 require('express-async-errors');
@@ -14,9 +17,12 @@ require('./models/Material');
 require('./models/ManutencaoMaterial');
 require('./models/MaterialMovimento');
 require('./models/ComputadorMaterial');
+require('./models/User');
 const ensureSchema = require('./db/ensureSchema');
+const { attachCurrentUser } = require('./middlewares/auth');
 
 const app = express();
+const SQLiteStore = SQLiteStoreFactory(session);
 
 app.use((req, res, next) => {
   // Suponha que você tenha lógica para definir um alerta
@@ -25,11 +31,37 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-(app.use(routes), app.set('views', path.join(__dirname, 'views')));
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 app.use(express.static('src/public'));
+app.use(
+  session({
+    store: new SQLiteStore({
+      db: 'sessions.sqlite',
+      dir: path.join(__dirname, 'db'),
+    }),
+    name: 'controle_ti.sid',
+    secret: process.env.SESSION_SECRET || 'change-this-session-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 12,
+    },
+  })
+);
+app.use(attachCurrentUser);
+app.use(routes);
 
 //error handler (no async methods)
 app.use((err, request, response, next) => {

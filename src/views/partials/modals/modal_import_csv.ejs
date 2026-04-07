@@ -15,8 +15,8 @@
             </div>
 
             <div class="alert alert-light border text-start mb-4">
-              <strong>Padrão do arquivo:</strong> <code>patrimonio-setor.csv</code><br>
-              <small class="text-muted">Exemplo: <code>0003-TESTESETOR.csv</code>. A empresa continua vindo do campo abaixo.</small>
+              <strong>Padrão do arquivo:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
+              <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code> ou <code>0003-TESTESETOR-ATX250W.csv</code>. A empresa continua vindo do campo abaixo.</small>
             </div>
 
             <form action="/importar-csv" method="post" enctype="multipart/form-data">
@@ -36,11 +36,17 @@
                 </div>
 
                 <div class="col-12">
+                  <label for="fonteImport" class="form-label">Indique a fonte da maquina</label>
+                  <input type="text" class="form-control" name="fonte" id="fonteImport" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+                  <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+                </div>
+
+                <div class="col-12">
                   <div class="small text-muted">
                     O sistema vai:
                     1. criar o computador com patrimônio e setor pelo nome do arquivo
                     2. marcar a máquina como estruturada
-                    3. registrar CPU, memória e armazenamento como materiais em uso
+                    3. registrar CPU, memória, armazenamento e fonte como materiais em uso quando informados
                   </div>
                 </div>
               </div>
