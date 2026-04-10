@@ -34,7 +34,9 @@
               <tr>
                 <th style="cursor:pointer" onclick="ordenarEmpresas(0)">#</th>
                 <th style="cursor:pointer" onclick="ordenarEmpresas(1)">Nome</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(2)">Descrição</th>
+                <th style="cursor:pointer" onclick="ordenarEmpresas(2)">Sigla</th>
+                <th style="cursor:pointer" onclick="ordenarEmpresas(3)">Descricao</th>
+                <th>Acoes</th>
               </tr>
             </thead>
             <tbody id="tableBodyEmpresas">
@@ -42,7 +44,22 @@
               <tr>
                 <th scope="row"><%= index + 1 %></th>
                 <td><%= empresa.nome %></td>
-                <td><%= empresa.descricao || 'Sem descrição' %></td>
+                <td><%= empresa.sigla || '-' %></td>
+                <td><%= empresa.descricao || 'Sem descricao' %></td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-outline-dark btn-sm btn-edit-empresa"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEditEmpresa"
+                    data-id="<%= empresa.id %>"
+                    data-nome="<%= empresa.nome %>"
+                    data-sigla="<%= empresa.sigla || '' %>"
+                    data-descricao="<%= empresa.descricao || '' %>">
+                    <i class="fas fa-pen"></i>
+                    Editar
+                  </button>
+                </td>
               </tr>
               <% }); %>
             </tbody>
@@ -52,10 +69,31 @@
     </div>
   </main>
 
+  <div class="modal fade" id="modalEditEmpresa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-body">
+          <div class="card">
+            <div class="card-body text-center">
+              <%- include('../partials/forms/register_empresa_form', {
+                inModal: true,
+                actionUrl: '/editar-empresa',
+                title: 'Editar Empresa',
+                submitLabel: 'Salvar alteracoes',
+                empresa: {}
+              }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
   <%- include("../partials/modals/modal_register_empresa") %>
   <script>
     const tbodyEmpresas = document.getElementById("tableBodyEmpresas");
+    const modalEditEmpresa = document.getElementById("modalEditEmpresa");
 
     let ultimaColuna = null;
     let ordemAscendente = true;
@@ -82,12 +120,24 @@
           return ordemAscendente ? numA - numB : numB - numA;
         }
 
-        return ordemAscendente ?
-          valorA.localeCompare(valorB) :
-          valorB.localeCompare(valorA);
+        return ordemAscendente
+          ? valorA.localeCompare(valorB)
+          : valorB.localeCompare(valorA);
       });
 
       linhas.forEach(linha => tbodyEmpresas.appendChild(linha));
+    }
+
+    if (modalEditEmpresa) {
+      modalEditEmpresa.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+
+        modalEditEmpresa.querySelector('input[name="id"]').value = button.getAttribute('data-id') || '';
+        modalEditEmpresa.querySelector('input[name="nome"]').value = button.getAttribute('data-nome') || '';
+        modalEditEmpresa.querySelector('input[name="sigla"]').value = button.getAttribute('data-sigla') || '';
+        modalEditEmpresa.querySelector('textarea[name="descricao"]').value = button.getAttribute('data-descricao') || '';
+      });
     }
 
     window.ordenarEmpresas = ordenarEmpresas;

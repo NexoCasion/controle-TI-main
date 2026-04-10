@@ -1,5 +1,10 @@
-<% const _inModal = (typeof inModal !== 'undefined') ? inModal : false; %>
-
+<%
+  const _inModal = (typeof inModal !== 'undefined') ? inModal : false;
+  const _action = (typeof actionUrl !== 'undefined' && actionUrl) ? actionUrl : '/register-empresa';
+  const _title = (typeof title !== 'undefined' && title) ? title : 'Registrar Empresa';
+  const _submitLabel = (typeof submitLabel !== 'undefined' && submitLabel) ? submitLabel : 'Enviar';
+  const _empresa = (typeof empresa !== 'undefined' && empresa) ? empresa : {};
+%>
 
 <div class="d-flex align-items-center justify-content-start mb-4">
   <% if (_inModal) { %>
@@ -12,23 +17,48 @@
   </a>
   <% } %>
 
-  <h2 class="card-title mb-0 mx-auto">Registrar Empresa</h2>
+  <h2 class="card-title mb-0 mx-auto"><%= _title %></h2>
 </div>
 
-<form action="/register-empresa" method="post">
-  <div class="form-group">
-    <label for="name">Nome da empresa</label>
-    <input type="text" class="form-control" name="nome" placeholder="Nome da empresa">
+<form action="<%= _action %>" method="post">
+  <input type="hidden" name="id" value="<%= _empresa.id || '' %>">
+
+  <div class="form-group mb-3">
+    <label for="empresaNome">Nome da empresa</label>
+    <input
+      type="text"
+      class="form-control"
+      id="empresaNome"
+      name="nome"
+      placeholder="Nome da empresa"
+      value="<%= _empresa.nome || '' %>"
+      required>
+  </div>
+
+  <div class="form-group mb-3">
+    <label for="empresaSigla">Abreviacao / sigla</label>
+    <input
+      type="text"
+      class="form-control"
+      id="empresaSigla"
+      name="sigla"
+      placeholder="Ex: DEPTO TI, TAU, SJC"
+      value="<%= _empresa.sigla || '' %>">
   </div>
 
   <div class="form-group">
-    <label for="description"></label>
-    <textarea placeholder="Informações complementares" class="form-control" rows='10' name="descricao"></textarea>
+    <label for="empresaDescricao">Descricao</label>
+    <textarea
+      id="empresaDescricao"
+      placeholder="Informacoes complementares"
+      class="form-control"
+      rows="8"
+      name="descricao"><%= _empresa.descricao || '' %></textarea>
   </div>
 
   <hr>
 
   <div class="text-center">
-    <button type="submit" class="btn btn-primary">Enviar</button>
+    <button type="submit" class="btn btn-primary"><%= _submitLabel %></button>
   </div>
 </form>

@@ -1,138 +1,190 @@
 <div class="modal fade" id="modalRegisterManutencao" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <div class="modal-body">
-
-        <div class="card">
-          <div class="card-body text-center">
-            <div class="d-flex align-items-center justify-content-start mb-4">
-              <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
-                <i class="fas fa-arrow-left"></i>
-              </button>
-              <h2 class="card-title mb-0 mx-auto">Cadastro de Manutenção</h2>
-            </div>
-
-            <form id="manutencaoFormModal" action="/register-manutencao" method="post">
-              <div class="form-group">
-                <label for="empresaModal">Selecione a Empresa</label>
-                <select class="form-control" id="empresaModal" name="empresa">
-                  <option value="" selected disabled>Selecione a Empresa</option>
-                </select>
-              </div>
-
-              <div class="form-group" id="computadorGroupModal" style="display: none;">
-                <label for="computadorModal">Selecione o Computador</label>
-                <select class="form-control" id="computadorModal" name="computadorId" required>
-                  <option value="" selected disabled>Selecione o Computador</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="descricao">Descrição</label>
-                <textarea placeholder="Informe a queixa do usuário e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
-              </div>
-
-              <hr>
-
-              <div class="text-center">
-                <button type="submit" class="btn btn-primary">Enviar</button>
-              </div>
-            </form>
-          </div>
+      <div class="modal-header">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <h5 class="modal-title mb-0">Cadastro de Manutenção</h5>
         </div>
+      </div>
 
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script>
-          document.addEventListener("shown.bs.modal", function(ev) {
-            if (ev.target.id !== "modalRegisterManutencao") return;
+      <div class="modal-body">
+        <div class="alert alert-warning d-none" id="manutencaoModalAlert" role="alert"></div>
 
-            const pref = window.__prefManutencao || null;
-            let computadoresEmManutencao = new Set();
+        <form id="manutencaoFormModal" action="/register-manutencao" method="post">
+          <div class="mb-3">
+            <label for="empresaModal" class="form-label">Selecione a Empresa</label>
+            <select class="form-control" id="empresaModal" name="empresa">
+              <option value="" selected disabled>Selecione a Empresa</option>
+            </select>
+          </div>
 
-            function preencherComputadores(lista) {
-              const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+          <div class="mb-3 d-none" id="computadorGroupModal">
+            <label for="computadorModal" class="form-label">Selecione o Computador</label>
+            <select class="form-control" id="computadorModal" name="computadorId" required>
+              <option value="" selected disabled>Selecione o Computador</option>
+            </select>
+          </div>
 
-              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+          <div class="mb-0">
+            <label for="descricaoModal" class="form-label">Descrição</label>
+            <textarea id="descricaoModal" placeholder="Informe a queixa do usuário e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
+          </div>
+        </form>
+      </div>
 
-              if (!disponiveis.length) {
-                $('#computadorModal').append($('<option>', {
-                  value: '',
-                  text: 'Nenhum computador disponivel para nova manutencao'
-                }).prop('disabled', true));
-              } else {
-                disponiveis.forEach(function(computador) {
-                  $('#computadorModal').append($('<option>', {
-                    value: computador.id,
-                    text: `${computador.id} - ${computador.patrimonio}`
-                  }));
-                });
-              }
-
-              if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== '') {
-                const idPreferido = Number(pref.computadorId);
-                if (computadoresEmManutencao.has(idPreferido)) {
-                  alert('Este computador ja possui uma manutencao em aberto. Feche a manutencao atual antes de abrir outra.');
-                } else {
-                  $('#computadorModal').val(String(pref.computadorId));
-                }
-                window.__prefManutencao = null;
-              }
-
-              $('#computadorGroupModal').show();
-            }
-
-            function carregarComputadoresDisponiveis(empresaId) {
-              $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-
-              if (empresaId === undefined || empresaId === null || empresaId === '') {
-                $('#computadorGroupModal').hide();
-                return;
-              }
-
-              $.when(
-                $.get("/computadores-by-empresa?empresaId=" + empresaId),
-                $.get("/manutencoes-open")
-              ).done(function(computadoresResp, manutencoesResp) {
-                const resultado = computadoresResp[0];
-                const manutencoesAbertas = Array.isArray(manutencoesResp[0]) ? manutencoesResp[0] : [];
-                const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
-
-                computadoresEmManutencao = new Set(
-                  manutencoesAbertas
-                    .map((manutencao) => Number(manutencao.computadorId))
-                    .filter((id) => Number.isFinite(id))
-                );
-
-                preencherComputadores(lista);
-              });
-            }
-
-            $.get("/get-empresas", function(data) {
-              $('#empresaModal').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
-
-              data.forEach(function(empresa) {
-                $('#empresaModal').append($('<option>', {
-                  value: empresa.id,
-                  text: empresa.nome
-                }));
-              });
-
-              if (pref && pref.empresaId !== undefined && pref.empresaId !== null && pref.empresaId !== '') {
-                $('#empresaModal').val(String(pref.empresaId)).trigger('change');
-              } else {
-                $('#computadorModal').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-                $('#computadorGroupModal').hide();
-              }
-            });
-
-            $('#empresaModal').off('change').on('change', function() {
-              var empresaId = $(this).val();
-              carregarComputadoresDisponiveis(empresaId);
-            });
-          });
-        </script>
-
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" form="manutencaoFormModal" class="btn btn-primary">Enviar</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const modalEl = document.getElementById("modalRegisterManutencao");
+    const empresaSelect = document.getElementById("empresaModal");
+    const computadorSelect = document.getElementById("computadorModal");
+    const computadorGroup = document.getElementById("computadorGroupModal");
+    const alertBox = document.getElementById("manutencaoModalAlert");
+
+    if (!modalEl || !empresaSelect || !computadorSelect || !computadorGroup || !alertBox) return;
+    if (modalEl.dataset.enhanced === "true") return;
+    modalEl.dataset.enhanced = "true";
+
+    let computadoresEmManutencao = new Set();
+
+    function showAlert(message) {
+      alertBox.textContent = message;
+      alertBox.classList.remove("d-none");
+    }
+
+    function hideAlert() {
+      alertBox.textContent = "";
+      alertBox.classList.add("d-none");
+    }
+
+    function resetComputadores() {
+      computadorSelect.innerHTML = "";
+      computadorSelect.append(new Option("Selecione o Computador", "", true, true));
+      computadorSelect.options[0].disabled = true;
+    }
+
+    function resetEmpresas() {
+      empresaSelect.innerHTML = "";
+      empresaSelect.append(new Option("Selecione a Empresa", "", true, true));
+      empresaSelect.options[0].disabled = true;
+    }
+
+    function showComputadorGroup(show) {
+      computadorGroup.classList.toggle("d-none", !show);
+    }
+
+    async function getJson(url) {
+      const response = await fetch(url, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao carregar dados do formulário de manutenção.");
+      }
+
+      return response.json();
+    }
+
+    function preencherComputadores(lista, pref = null) {
+      const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+
+      resetComputadores();
+
+      if (!disponiveis.length) {
+        const option = new Option("Nenhum computador disponível para nova manutenção", "", false, false);
+        option.disabled = true;
+        computadorSelect.append(option);
+      } else {
+        disponiveis.forEach((computador) => {
+          computadorSelect.append(new Option(`${computador.id} - ${computador.patrimonio}`, String(computador.id)));
+        });
+      }
+
+      if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== "") {
+        const idPreferido = Number(pref.computadorId);
+        if (computadoresEmManutencao.has(idPreferido)) {
+          showAlert("Este computador já possui uma manutenção em aberto. Feche a manutenção atual antes de abrir outra.");
+        } else {
+          computadorSelect.value = String(pref.computadorId);
+        }
+        window.__prefManutencao = null;
+      }
+
+      showComputadorGroup(true);
+    }
+
+    async function carregarComputadoresDisponiveis(empresaId, pref = null) {
+      resetComputadores();
+
+      if (empresaId === undefined || empresaId === null || empresaId === "") {
+        showComputadorGroup(false);
+        return;
+      }
+
+      const [resultado, manutencoesAbertas] = await Promise.all([
+        getJson(`/computadores-by-empresa?empresaId=${encodeURIComponent(empresaId)}`),
+        getJson("/manutencoes-open"),
+      ]);
+
+      const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
+      const manutencoes = Array.isArray(manutencoesAbertas) ? manutencoesAbertas : [];
+
+      computadoresEmManutencao = new Set(
+        manutencoes
+          .map((manutencao) => Number(manutencao.computadorId))
+          .filter((id) => Number.isFinite(id))
+      );
+
+      preencherComputadores(lista, pref);
+    }
+
+    async function carregarEmpresas(pref = null) {
+      resetEmpresas();
+      const empresas = await getJson("/get-empresas");
+
+      (Array.isArray(empresas) ? empresas : []).forEach((empresa) => {
+        empresaSelect.append(new Option(empresa.nome, String(empresa.id)));
+      });
+
+      if (pref && pref.empresaId !== undefined && pref.empresaId !== null && pref.empresaId !== "") {
+        empresaSelect.value = String(pref.empresaId);
+        await carregarComputadoresDisponiveis(pref.empresaId, pref);
+      } else {
+        showComputadorGroup(false);
+      }
+    }
+
+    empresaSelect.addEventListener("change", async () => {
+      hideAlert();
+      try {
+        await carregarComputadoresDisponiveis(empresaSelect.value);
+      } catch (error) {
+        showAlert(error.message || "Erro ao carregar os computadores disponíveis.");
+        showComputadorGroup(false);
+      }
+    });
+
+    modalEl.addEventListener("shown.bs.modal", async () => {
+      hideAlert();
+      const pref = window.__prefManutencao || null;
+
+      try {
+        await carregarEmpresas(pref);
+      } catch (error) {
+        showAlert(error.message || "Erro ao carregar o formulário de manutenção.");
+        showComputadorGroup(false);
+      }
+    });
+  });
+</script>

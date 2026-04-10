@@ -2,6 +2,25 @@ function cleanValue(value = '') {
   return String(value || '').replace(/^"+|"+$/g, '').trim();
 }
 
+function repairMojibakeText(value = '') {
+  const original = String(value || '').trim();
+  if (!original) return original;
+
+  if (!/[ÃÂ�]/.test(original)) {
+    return original;
+  }
+
+  try {
+    const repaired = Buffer.from(original, 'latin1').toString('utf8').trim();
+    if (!repaired || repaired.includes('�')) {
+      return original;
+    }
+    return repaired;
+  } catch (error) {
+    return original;
+  }
+}
+
 function parseGbFromText(text = '') {
   const match = String(text).match(/(\d+(?:[.,]\d+)?)\s*GB/i);
   if (match) return `${match[1].replace(',', '.')} GB`;
@@ -285,13 +304,19 @@ function buildStructuredSpecsText(parsed) {
 }
 
 function parseComputerIdentityFromFilename(filename = '') {
-  const baseName = String(filename || '')
-    .split(/[\\/]/)
-    .pop()
-    .replace(/\.csv$/i, '')
-    .trim();
+  const baseName = repairMojibakeText(
+    String(filename || '')
+      .split(/[\\/]/)
+      .pop()
+      .replace(/\.csv$/i, '')
+      .trim()
+  );
 
-  const parts = baseName.split('-').map((part) => part.trim()).filter(Boolean);
+  const parts = baseName
+    .split('-')
+    .map((part) => repairMojibakeText(part))
+    .map((part) => part.trim())
+    .filter(Boolean);
 
   if (parts.length < 2) {
     throw new Error(

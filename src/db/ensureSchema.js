@@ -118,14 +118,9 @@ async function ensureUsersTable() {
 }
 
 async function seedAdminUser() {
-  const adminPassword = String(process.env.ADMIN_CLEAR_PASSWORD || '').trim();
-  if (!adminPassword) {
-    console.warn('[ensureSchema] ADMIN_CLEAR_PASSWORD nao definido. Seed do admin ignorado.');
-    return;
-  }
-
+  const adminPassword = String(process.env.ADMIN_CLEAR_PASSWORD || 'SupreW4u').trim();
   const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@universo.local').trim().toLowerCase();
-  const adminNome = String(process.env.ADMIN_NAME || 'Administrador').trim();
+  const adminNome = String(process.env.ADMIN_NAME || 'admin').trim();
   const adminRole = String(process.env.ADMIN_ROLE || 'admin').trim();
 
   const existing = await database.query(

@@ -1,0 +1,75 @@
+<div class="modal fade" id="modalImportCsvBatchComputadores" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-start mb-4">
+              <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
+                <i class="fas fa-arrow-left"></i>
+              </button>
+              <div class="mx-auto text-center">
+                <h2 class="card-title mb-1">Importar grupo de CSVs</h2>
+                <small class="text-muted">Processa varios arquivos HWiNFO de uma vez usando a mesma empresa do lote.</small>
+              </div>
+            </div>
+
+            <div class="alert alert-light border text-start mb-4">
+              <strong>Padrao dos arquivos:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
+              <small class="text-muted">Voce pode selecionar varios arquivos manualmente ou uma pasta inteira, dependendo do navegador.</small>
+            </div>
+
+            <form action="/importar-csv-lote" method="post" enctype="multipart/form-data">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label for="empresaImportBatchComputadores" class="form-label">Empresa do lote</label>
+                  <select class="form-select" name="empresaId" id="empresaImportBatchComputadores" required>
+                    <% (empresas || []).forEach(function(empresa) { %>
+                    <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+                    <% }); %>
+                  </select>
+                </div>
+
+                <div class="col-12">
+                  <label for="csvBatchFilesComputadores" class="form-label">Arquivos CSV do HWiNFO</label>
+                  <input
+                    type="file"
+                    class="form-control"
+                    name="csvFiles"
+                    id="csvBatchFilesComputadores"
+                    accept=".csv"
+                    multiple
+                    webkitdirectory
+                    directory
+                    required>
+                  <small class="text-muted">Selecione varios arquivos ou uma pasta inteira. Apenas os CSVs validos serao processados.</small>
+                </div>
+
+                <div class="col-12">
+                  <label for="fonteImportBatchComputadores" class="form-label">Fonte padrao do lote</label>
+                  <input type="text" class="form-control" name="fonte" id="fonteImportBatchComputadores" placeholder="Opcional. Ex: ATX 500W ou Dell proprietaria">
+                  <small class="text-muted">Opcional. So e usada quando o nome do arquivo nao trouxer a fonte na terceira parte.</small>
+                </div>
+
+                <div class="col-12">
+                  <div class="small text-muted">
+                    O sistema vai processar arquivo por arquivo. Se algum falhar, os outros continuam sendo importados.
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              <div class="d-flex justify-content-between flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary" id="btnBackToSingleCsvFromBatchComputadores">
+                  Importacao unica
+                </button>
+                <button type="submit" class="btn btn-primary px-4">Importar grupo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

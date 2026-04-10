@@ -3,10 +3,10 @@ const express = require('express');
 const session = require('express-session');
 const SQLiteStoreFactory = require('connect-sqlite3');
 const helmet = require('helmet');
+const crypto = require('crypto');
 const routes = require('./routes');
 const path = require('path');
 require('express-async-errors');
-require('dotenv').config();
 const database = require('./db/init');
 require('./models/Empresa');
 require('./models/Computador');
@@ -20,9 +20,23 @@ require('./models/ComputadorMaterial');
 require('./models/User');
 const ensureSchema = require('./db/ensureSchema');
 const { attachCurrentUser } = require('./middlewares/auth');
+const { ensureCsrfToken, csrfProtection } = require('./middlewares/csrf');
 
 const app = express();
 const SQLiteStore = SQLiteStoreFactory(session);
+const isProduction = process.env.NODE_ENV === 'production';
+const configuredSessionSecret = String(process.env.SESSION_SECRET || '').trim();
+
+if (!configuredSessionSecret && isProduction) {
+  throw new Error('SESSION_SECRET deve estar configurado em produção.');
+}
+
+const sessionSecret =
+  configuredSessionSecret || crypto.randomBytes(32).toString('hex');
+
+if (!configuredSessionSecret) {
+  console.warn('SESSION_SECRET não configurado. Gerando segredo efêmero para esta execução.');
+}
 
 app.use((req, res, next) => {
   // Suponha que você tenha lógica para definir um alerta
@@ -49,18 +63,21 @@ app.use(
       dir: path.join(__dirname, 'db'),
     }),
     name: 'controle_ti.sid',
-    secret: process.env.SESSION_SECRET || 'change-this-session-secret',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false,
+      secure: isProduction ? 'auto' : false,
       maxAge: 1000 * 60 * 60 * 12,
     },
   })
 );
+app.set('trust proxy', 1);
+app.use(ensureCsrfToken);
 app.use(attachCurrentUser);
+app.use(csrfProtection);
 app.use(routes);
 
 //error handler (no async methods)

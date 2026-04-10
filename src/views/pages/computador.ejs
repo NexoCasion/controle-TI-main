@@ -17,9 +17,9 @@
   </header>
 
   <% if (alert) { %>
-  <script>
-    alert('<%= alert %>');
-  </script>
+  <div class="container mt-3">
+    <div class="alert alert-warning mb-0"><%= alert %></div>
+  </div>
   <% } %>
 
   <div class="container">
@@ -28,7 +28,7 @@
     </a>
     <h1 class="mt-4 mb-4">Informações do Computador</h1>
 
-    <div class="card p-3 mb-3" style="border: 0;">
+    <div class="card p-3 mb-3 border-0">
       <h2 class="pc-title mb-1">Patrimônio: <%= computador.patrimonio %></h2>
 
       <p class="mb-1">
@@ -116,8 +116,8 @@
           <label for="csvEstruturadoPc" class="form-label">Arquivo CSV do HWiNFO</label>
           <input type="file" class="form-control" id="csvEstruturadoPc" name="csvFile" accept=".csv" required>
           <div class="mt-3">
-            <label for="fonteEstruturadoPc" class="form-label">Indique a fonte da maquina</label>
-            <input type="text" class="form-control" id="fonteEstruturadoPc" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
+            <label for="fonteEstruturadoPc" class="form-label">Indique a fonte da máquina</label>
+            <input type="text" class="form-control" id="fonteEstruturadoPc" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietária">
             <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
           </div>
         </div>
@@ -157,9 +157,9 @@
               <small class="text-muted">Use uma linha por unidade de armazenamento.</small>
             </div>
             <div class="col-12">
-              <label for="manualFontePc" class="form-label">Indique a fonte da maquina</label>
-              <input type="text" class="form-control" id="manualFontePc" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
-              <small class="text-muted">Opcional. O tipo sera salvo como Fonte e o detalhe informado ficara na especificacao.</small>
+              <label for="manualFontePc" class="form-label">Indique a fonte da máquina</label>
+              <input type="text" class="form-control" id="manualFontePc" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietária">
+              <small class="text-muted">Opcional. O tipo será salvo como Fonte e o detalhe informado ficará na especificação.</small>
             </div>
           </div>
         </div>
@@ -297,6 +297,7 @@
           const inPatrimonio = document.getElementById("editPatrimonio");
           const inSetor = document.getElementById("editSetor");
           const inSpecs = document.getElementById("editSpecs");
+          const inSpecsPanel = document.getElementById("editSpecsReadonlyPanel");
           const inSpecsModo = document.getElementById("specsModo");
           const inSpecsHelp = document.getElementById("editSpecsHelp");
 
@@ -306,11 +307,18 @@
           if (inSpecs) {
             inSpecs.value = pcCtx.specs;
             inSpecs.readOnly = pcCtx.specsModo === "ESTRUTURADO";
+            inSpecs.classList.toggle("d-none", pcCtx.specsModo === "ESTRUTURADO");
+          }
+          if (inSpecsPanel) {
+            if ((inSpecsPanel.dataset.panelMode || "text") !== "structured") {
+              inSpecsPanel.textContent = pcCtx.specs || "-";
+            }
+            inSpecsPanel.classList.toggle("d-none", pcCtx.specsModo !== "ESTRUTURADO");
           }
           if (inSpecsModo) inSpecsModo.value = pcCtx.specsModo || "LEGADO";
           if (inSpecsHelp) {
             inSpecsHelp.textContent = pcCtx.specsModo === "ESTRUTURADO" ?
-              "Este computador esta em modo estruturado. As specs sao recalculadas pelos componentes vinculados." :
+              "Este computador está em modo estruturado. As specs são recalculadas pelos componentes vinculados." :
               "Edite as specs livremente para computadores no modo legado.";
           }
 

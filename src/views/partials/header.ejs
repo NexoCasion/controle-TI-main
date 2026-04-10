@@ -1,3 +1,91 @@
+<script src="/js/theme.js"></script>
+<script>
+  if (window.__appTheme) {
+    window.__appTheme.boot();
+  }
+</script>
+
+<script>
+  (function() {
+    const csrfToken = <%- JSON.stringify(csrfToken || '') %>;
+    window.__csrfToken = csrfToken;
+
+    function injectCsrfIntoForms(root = document) {
+      if (!csrfToken || !root || typeof root.querySelectorAll !== 'function') return;
+
+      root.querySelectorAll('form').forEach((form) => {
+        if (form.dataset.csrf === 'off') return;
+
+        let input = form.querySelector('input[name="_csrf"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = '_csrf';
+          form.appendChild(input);
+        }
+
+        input.value = csrfToken;
+
+        const enctype = String(form.getAttribute('enctype') || form.enctype || '').toLowerCase();
+        if (enctype.includes('multipart/form-data')) {
+          try {
+            const actionUrl = new URL(form.getAttribute('action') || window.location.href, window.location.origin);
+            actionUrl.searchParams.set('_csrf', csrfToken);
+            form.setAttribute('action', `${actionUrl.pathname}${actionUrl.search}${actionUrl.hash}`);
+          } catch (error) {}
+        }
+      });
+    }
+
+    function patchFetch() {
+      if (!window.fetch || window.__csrfFetchPatched || !csrfToken) return;
+
+      const originalFetch = window.fetch.bind(window);
+      window.__csrfFetchPatched = true;
+
+      window.fetch = function(input, init = {}) {
+        const method = String(
+          init.method || (input instanceof Request ? input.method : 'GET') || 'GET'
+        ).toUpperCase();
+
+        if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+          return originalFetch(input, init);
+        }
+
+        let isSameOrigin = true;
+        try {
+          const requestUrl = new URL(
+            input instanceof Request ? input.url : String(input),
+            window.location.origin
+          );
+          isSameOrigin = requestUrl.origin === window.location.origin;
+        } catch (error) {}
+
+        if (!isSameOrigin) {
+          return originalFetch(input, init);
+        }
+
+        const headers = new Headers(input instanceof Request ? input.headers : undefined);
+        if (init.headers) {
+          new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+        }
+        headers.set('x-csrf-token', csrfToken);
+
+        return originalFetch(input, { ...init, headers });
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      injectCsrfIntoForms(document);
+      patchFetch();
+    });
+
+    window.addEventListener('app:forms-added', function() {
+      injectCsrfIntoForms(document);
+    });
+  })();
+</script>
+
 <style>
   .app-navbar {
     background: transparent !important;
@@ -35,20 +123,50 @@
     margin: 0;
   }
 
+  .app-navbar-brand-logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 18px;
+    background: transparent;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .app-navbar-brand-logo::before {
+    content: "";
+    position: absolute;
+    inset: 6px 10px;
+    border-radius: 999px;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(ellipse at 50% 52%, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.15) 28%, rgba(255, 255, 255, 0.06) 46%, rgba(255, 255, 255, 0) 72%),
+      radial-gradient(ellipse at 34% 50%, rgba(96, 165, 250, 0.16) 0%, rgba(96, 165, 250, 0.08) 24%, rgba(96, 165, 250, 0) 56%);
+    transition:
+      opacity var(--theme-transition-duration) var(--theme-transition-easing),
+      transform var(--theme-transition-duration) var(--theme-transition-easing);
+  }
+
   .app-navbar-brand img {
+    position: relative;
+    z-index: 1;
     width: auto;
-    height: 44px;
-    max-width: 280px;
+    height: 52px;
+    max-width: 100%;
     object-fit: contain;
   }
 
   .app-navbar-home,
-  .app-navbar-user-btn {
+  .app-navbar-user-btn,
+  .app-navbar-theme-btn {
     border-radius: 999px !important;
     padding: 9px 14px !important;
-    border: 1px solid rgba(17, 24, 39, 0.14) !important;
-    background: rgba(17, 24, 39, 0.03) !important;
-    color: #111827 !important;
+    border: 1px solid var(--navbar-chip-border, rgba(17, 24, 39, 0.14)) !important;
+    background: var(--navbar-chip-bg, rgba(17, 24, 39, 0.03)) !important;
+    color: var(--navbar-chip-text, #111827) !important;
     font-weight: 700 !important;
     letter-spacing: 0.15px;
     display: inline-flex !important;
@@ -64,15 +182,27 @@
 
   .app-navbar-home:hover,
   .app-navbar-user-btn:hover,
+  .app-navbar-theme-btn:hover,
   .app-navbar-user.show .app-navbar-user-btn {
-    background: rgba(17, 24, 39, 0.07) !important;
-    border-color: rgba(17, 24, 39, 0.18) !important;
+    background: var(--navbar-chip-bg-hover, rgba(17, 24, 39, 0.07)) !important;
+    border-color: var(--navbar-chip-border-hover, rgba(17, 24, 39, 0.18)) !important;
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-soft, 0 10px 20px rgba(0, 0, 0, 0.08));
   }
 
   .app-navbar-home i {
     font-size: 0.92rem;
+    line-height: 1;
+  }
+
+  .app-navbar-theme-btn {
+    justify-content: center;
+    min-width: 46px;
+    padding-inline: 0 !important;
+  }
+
+  .app-navbar-theme-btn i {
+    font-size: 1rem;
     line-height: 1;
   }
 
@@ -99,10 +229,11 @@
 
   .app-navbar-menu {
     min-width: 220px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--border-color, #e5e7eb);
     border-radius: 16px;
     padding: 8px;
     margin-top: 10px !important;
+    background: var(--dropdown-surface, #ffffff);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
   }
 
@@ -113,19 +244,19 @@
     align-items: center;
     gap: 10px;
     font-weight: 600;
-    color: #111827;
+    color: var(--text, #111827);
   }
 
   .app-navbar-menu-item:hover,
   .app-navbar-menu-item:focus {
-    background: #f4f6f9;
-    color: #111827;
+    background: var(--dropdown-surface-hover, #f4f6f9);
+    color: var(--text, #111827);
   }
 
   .app-navbar-menu-item i {
     width: 16px;
     text-align: center;
-    color: #6b7280;
+    color: var(--muted, #6b7280);
   }
 
   .app-navbar-logout-form {
@@ -143,6 +274,23 @@
     color: #b00016;
   }
 
+  html[data-theme='dark'] .app-navbar-brand-logo {
+    background:
+      radial-gradient(circle at 18% 22%, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0) 34%),
+      radial-gradient(circle at 82% 18%, rgba(125, 211, 252, 0.14) 0%, rgba(125, 211, 252, 0) 34%),
+      linear-gradient(135deg, color-mix(in srgb, var(--surface) 90%, #1e3a5f 10%) 0%, color-mix(in srgb, var(--surface-soft) 82%, #0f172a 18%) 52%, color-mix(in srgb, var(--surface) 88%, #1b2a41 12%) 100%);
+    border: 1px solid color-mix(in srgb, var(--border-color) 72%, #93c5fd 12%);
+    box-shadow:
+      0 18px 34px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 0 1px rgba(255, 255, 255, 0.02);
+  }
+
+  html[data-theme='dark'] .app-navbar-brand-logo::before {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+
   @media (max-width: 767.98px) {
     .app-navbar-shell {
       padding: 14px 14px !important;
@@ -150,8 +298,12 @@
     }
 
     .app-navbar-brand img {
-      height: 38px;
-      max-width: 210px;
+      height: 40px;
+      max-width: 100%;
+    }
+
+    .app-navbar-brand-logo {
+      padding: 7px 10px;
     }
 
     .app-navbar-right {
@@ -175,7 +327,9 @@
     <div class="container app-navbar-shell">
       <div class="app-navbar-left">
         <a class="navbar-brand app-navbar-brand" href="/">
-          <img src="/logo_horizontal.png" alt="Honda Universo" height="40">
+          <span class="app-navbar-brand-logo">
+            <img src="/logo_universo_motos_transparente.png" alt="Honda Universo" height="40">
+          </span>
         </a>
       </div>
 
@@ -184,6 +338,15 @@
           <i class="fas fa-home"></i>
           <span>Home</span>
         </a>
+
+        <button
+          type="button"
+          class="btn app-navbar-theme-btn"
+          id="themeToggleBtn"
+          aria-label="Alternar tema"
+          title="Alternar tema">
+          <i class="fas fa-moon"></i>
+        </button>
 
         <% if (currentUser) { %>
         <div class="dropdown app-navbar-user">
@@ -222,3 +385,33 @@
     </div>
   </nav>
 </header>
+
+<script>
+  (function() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggleBtn');
+
+    function applyButtonState() {
+      if (!btn) return;
+      const isDark = window.__appTheme && window.__appTheme.getTheme() === 'dark';
+      const icon = btn.querySelector('i');
+      if (!icon) return;
+
+      icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      btn.setAttribute('aria-label', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
+      btn.setAttribute('title', isDark ? 'Ativar tema claro' : 'Ativar tema escuro');
+    }
+
+    if (btn) {
+      btn.addEventListener('click', (ev) => {
+        if (window.__appTheme) {
+          window.__appTheme.toggleTheme(ev);
+        }
+      });
+    }
+
+    window.addEventListener('app-theme-changed', applyButtonState);
+
+    applyButtonState();
+  })();
+</script>

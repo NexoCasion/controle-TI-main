@@ -19,6 +19,7 @@
       <a href="javascript:history.back()" class="btn btn-back">
         <i class="fas fa-arrow-left"></i>
       </a>
+
       <div class="text-center align-items-center">
         <h1 class="mt-4 mb-4">Lista de Computadores</h1>
         <button type="button" id="btnAddStructuredPc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterStructuredPc">
@@ -90,11 +91,61 @@
   <%- include("../partials/modals/modal_register_manutencao") %>
   <%- include("../partials/modals/modal_transfer_pc", { empresas: empresas }) %>
   <%- include("../partials/modals/modal_import_csv_computadores", { empresas: empresas }) %>
+  <%- include("../partials/modals/modal_import_csv_batch_computadores", { empresas: empresas }) %>
   <%- include("../partials/modals/modal_register_structured_pc", {
     empresas: empresas,
     csvTargetModal: 'modalImportCsvComputadores',
     csvEmpresaTargetId: 'empresaImportComputadores'
   }) %>
+  <% if (importCsvBatchResult) { %>
+  <div class="modal fade" id="modalImportCsvBatchResultado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Resumo da importacao em lote</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body text-start">
+          <div class="alert <%= importCsvBatchResult.falhas ? 'alert-warning' : 'alert-success' %> mb-3">
+            <div>Total de arquivos: <strong><%= importCsvBatchResult.totalArquivos || 0 %></strong></div>
+            <div>Importados com sucesso: <strong><%= importCsvBatchResult.importados || 0 %></strong></div>
+            <div>Falhas: <strong><%= importCsvBatchResult.falhas || 0 %></strong></div>
+          </div>
+
+          <% if ((importCsvBatchResult.detalhes || []).length) { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Arquivo</th>
+                  <th style="width: 140px;">Status</th>
+                  <th>Mensagem</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% importCsvBatchResult.detalhes.forEach(function(item) { %>
+                <tr>
+                  <td><strong><%= item.arquivo %></strong></td>
+                  <td>
+                    <span class="badge <%= item.status === 'importado' ? 'bg-success' : 'bg-warning text-dark' %>">
+                      <%= item.status %>
+                    </span>
+                  </td>
+                  <td><%= item.mensagem || '-' %></td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -177,13 +228,18 @@
       const btnAddStructuredPc = document.getElementById("btnAddStructuredPc");
       const btnImportCsvFromStructured = document.getElementById("btnImportCsvFromStructured");
       const btnBackToStructuredFromCsvComputadores = document.getElementById("btnBackToStructuredFromCsvComputadores");
+      const btnOpenBatchCsvFromSingleComputadores = document.getElementById("btnOpenBatchCsvFromSingleComputadores");
+      const btnBackToSingleCsvFromBatchComputadores = document.getElementById("btnBackToSingleCsvFromBatchComputadores");
+      const modalImportCsvBatchResultadoEl = document.getElementById("modalImportCsvBatchResultado");
       if (btnAddStructuredPc) {
         btnAddStructuredPc.addEventListener("click", () => {
           const empresaId = selectEmpresa.value || "";
           const empresaImport = document.getElementById("empresaImportComputadores");
+          const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
           const empresaManual = document.getElementById("manualEmpresaId");
 
           if (empresaImport && empresaId) empresaImport.value = empresaId;
+          if (empresaImportBatch && empresaId) empresaImportBatch.value = empresaId;
           if (empresaManual && empresaId) empresaManual.value = empresaId;
         });
       }
@@ -237,22 +293,27 @@
 
         computadores.forEach((computador) => {
           const specsExibicao = computador.specs_override || computador.specs;
+          const patrimonio = escapeHtml(computador.patrimonio ?? "");
+          const setor = escapeHtml(computador.setor ?? "");
+          const empresaNome = escapeHtml(computador.empresa?.nome ?? "Sem empresa");
+          const specsAttr = escapeHtml((specsExibicao ?? "").toString());
+          const specsModoAttr = escapeHtml((computador.specs_modo ?? "LEGADO").toString());
           const row = `
   <tr class="editar-pcs">
-    <td>${computador.patrimonio ?? ""}</td>
+    <td>${patrimonio}</td>
     <td class="align-middle text-start"><div style="line-height: 1.35; text-align: left;">${renderSpecsCell(specsExibicao)}</div></td>
-    <td>${computador.setor ?? ""}</td>
-    <td>${computador.empresa?.nome ?? "Sem empresa"}</td>
+    <td>${setor}</td>
+    <td>${empresaNome}</td>
     <td>
       <div class="btn-group m-2 align-items-center" role="group">
         <button
           type="button"
           class="btn btn-primary btn-sm btn-edit"
           data-id="${computador.id}"
-          data-patrimonio="${(computador.patrimonio ?? "").toString().replace(/"/g, '&quot;')}"
-          data-setor="${(computador.setor ?? "").toString().replace(/"/g, '&quot;')}"
-          data-specs="${(specsExibicao ?? "").toString().replace(/"/g, '&quot;')}"
-          data-specs-modo="${(computador.specs_modo ?? "LEGADO").toString().replace(/"/g, '&quot;')}"
+          data-patrimonio="${patrimonio}"
+          data-setor="${setor}"
+          data-specs="${specsAttr}"
+          data-specs-modo="${specsModoAttr}"
           data-bs-toggle="modal"
           data-bs-target="#modalEditPc"
           data-empresa-id="${computador.empresaId ?? ''}"
@@ -363,6 +424,13 @@
         return inst;
       }
 
+      if (modalImportCsvBatchResultadoEl) {
+        const modalResultado = ensureModal("modalImportCsvBatchResultado");
+        if (modalResultado) {
+          modalResultado.show();
+        }
+      }
+
       function switchModal(fromId, toId, beforeShow) {
         const fromEl = document.getElementById(fromId);
         const fromInst = ensureModal(fromId);
@@ -405,6 +473,44 @@
             const empresaManual = document.getElementById("manualEmpresaId");
             if (empresaImport && empresaManual && empresaManual.value) {
               empresaImport.value = empresaManual.value;
+            }
+          });
+        });
+      }
+
+      if (btnOpenBatchCsvFromSingleComputadores) {
+        btnOpenBatchCsvFromSingleComputadores.addEventListener("click", () => {
+          switchModal("modalImportCsvComputadores", "modalImportCsvBatchComputadores", () => {
+            const empresaImport = document.getElementById("empresaImportComputadores");
+            const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
+            const fonteImport = document.getElementById("fonteImportComputadores");
+            const fonteImportBatch = document.getElementById("fonteImportBatchComputadores");
+
+            if (empresaImport && empresaImportBatch && empresaImport.value) {
+              empresaImportBatch.value = empresaImport.value;
+            }
+
+            if (fonteImport && fonteImportBatch && fonteImport.value) {
+              fonteImportBatch.value = fonteImport.value;
+            }
+          });
+        });
+      }
+
+      if (btnBackToSingleCsvFromBatchComputadores) {
+        btnBackToSingleCsvFromBatchComputadores.addEventListener("click", () => {
+          switchModal("modalImportCsvBatchComputadores", "modalImportCsvComputadores", () => {
+            const empresaImport = document.getElementById("empresaImportComputadores");
+            const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
+            const fonteImport = document.getElementById("fonteImportComputadores");
+            const fonteImportBatch = document.getElementById("fonteImportBatchComputadores");
+
+            if (empresaImport && empresaImportBatch && empresaImportBatch.value) {
+              empresaImport.value = empresaImportBatch.value;
+            }
+
+            if (fonteImport && fonteImportBatch && fonteImportBatch.value) {
+              fonteImport.value = fonteImportBatch.value;
             }
           });
         });

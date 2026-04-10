@@ -4,6 +4,32 @@ const MaterialMovimento = require('../models/MaterialMovimento');
 const database = require('../db/init.js');
 
 class MaterialController {
+  buildOrder(sortBy, sortDir) {
+    const allowed = new Set([
+      'material',
+      'tipo',
+      'especificacao',
+      'quantidade_disponivel',
+      'quantidade_em_uso',
+      'nf',
+    ]);
+
+    const safeSortBy = allowed.has(String(sortBy || '').trim()) ? String(sortBy).trim() : 'tipo';
+    const safeSortDir = String(sortDir || '').trim().toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    if (safeSortBy === 'tipo') {
+      return [
+        ['tipo', safeSortDir],
+        ['material', 'ASC'],
+      ];
+    }
+
+    return [
+      [safeSortBy, safeSortDir],
+      ['material', 'ASC'],
+    ];
+  }
+
   buildWhere({ tipo, somenteDisponivel, q } = {}) {
     const where = {};
 
@@ -47,31 +73,27 @@ class MaterialController {
 
   // LISTAR (com filtros opcionais)
   // filtros: tipo, somenteDisponivel (true/false), q (busca)
-  async getAll({ tipo, somenteDisponivel, q } = {}) {
+  async getAll({ tipo, somenteDisponivel, q, sortBy, sortDir } = {}) {
     const where = this.buildWhere({ tipo, somenteDisponivel, q });
+    const order = this.buildOrder(sortBy, sortDir);
 
     const list = await Material.findAll({
       where,
-      order: [
-        ['tipo', 'ASC'],
-        ['material', 'ASC'],
-      ],
+      order,
     });
 
     return list.map((m) => this.mapMaterial(m));
   }
 
-  async getPaged({ tipo, somenteDisponivel, q, page = 1, limit = 20 } = {}) {
+  async getPaged({ tipo, somenteDisponivel, q, page = 1, limit = 20, sortBy, sortDir } = {}) {
     const safePage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
     const safeLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 20;
     const where = this.buildWhere({ tipo, somenteDisponivel, q });
+    const order = this.buildOrder(sortBy, sortDir);
 
     const { count, rows } = await Material.findAndCountAll({
       where,
-      order: [
-        ['tipo', 'ASC'],
-        ['material', 'ASC'],
-      ],
+      order,
       limit: safeLimit,
       offset: (safePage - 1) * safeLimit,
     });
@@ -127,7 +149,7 @@ class MaterialController {
     const mat = await Material.findByPk(id);
     if (!mat) throw new Error('Material nao encontrado.');
 
-    const fields = ['material', 'tipo', 'marca', 'especificacao', 'quantidade_disponivel', 'nf'];
+    const fields = ['material', 'tipo', 'marca', 'especificacao', 'nf'];
 
     for (const f of fields) {
       if (payload[f] !== undefined) {

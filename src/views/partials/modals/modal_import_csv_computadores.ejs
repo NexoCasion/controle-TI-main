@@ -4,18 +4,21 @@
       <div class="modal-body">
         <div class="card border-0 shadow-sm">
           <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-start mb-4">
+            <div class="d-flex align-items-center justify-content-start mb-4 gap-2">
               <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
                 <i class="fas fa-arrow-left"></i>
               </button>
               <div class="mx-auto text-center">
                 <h2 class="card-title mb-1">Importar Computador Estruturado</h2>
-                <small class="text-muted">Processador, memória e armazenamento serão lançados como materiais em uso.</small>
+                <small class="text-muted">Processador, memoria e armazenamento serao lancados como materiais em uso.</small>
               </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnOpenBatchCsvFromSingleComputadores">
+                Importar grupo
+              </button>
             </div>
 
             <div class="alert alert-light border text-start mb-4">
-              <strong>Padrão do arquivo:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
+              <strong>Padrao do arquivo:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
               <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code> ou <code>0003-TESTESETOR-ATX250W.csv</code>. A empresa continua vindo do campo abaixo.</small>
             </div>
 
@@ -44,9 +47,9 @@
                 <div class="col-12">
                   <div class="small text-muted">
                     O sistema vai:
-                    1. criar o computador com patrimônio e setor pelo nome do arquivo
-                    2. marcar a máquina como estruturada
-                    3. registrar CPU, memória, armazenamento e fonte como materiais em uso quando informados
+                    1. criar o computador com patrimonio e setor pelo nome do arquivo
+                    2. marcar a maquina como estruturada
+                    3. registrar CPU, memoria, armazenamento e fonte como materiais em uso quando informados
                   </div>
                 </div>
               </div>

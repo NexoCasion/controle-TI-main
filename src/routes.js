@@ -23,6 +23,7 @@ const dashboardController = new DashboardController();
 const AuthController = require('./controllers/auth');
 const authController = new AuthController();
 const { ensureAuth, redirectIfAuthenticated } = require('./middlewares/auth');
+const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -32,6 +33,143 @@ const loginRateLimit = rateLimit({
   skipSuccessfulRequests: true,
   message: 'Muitas tentativas de login. Tente novamente em alguns minutos.',
 });
+
+function consumeSessionValue(req, key) {
+  const value = req.session?.[key];
+  if (req.session && Object.prototype.hasOwnProperty.call(req.session, key)) {
+    delete req.session[key];
+  }
+  return value || null;
+}
+
+async function processarImportacaoEstruturadaPorArquivo({ file, empresaId, fontePadrao = '' }) {
+  const csvContent = fs.readFileSync(file.path, 'utf-8');
+  const identidade = parseComputerIdentityFromFilename(file.originalname || file.filename);
+  const parsed = parseHwinfoCsv(csvContent);
+  const fonteFinal = String(fontePadrao || identidade.fonte || '').trim();
+
+  if (!parsed.processador && !(parsed.memorias || []).length && !(parsed.armazenamentos || []).length) {
+    throw new Error('CSV HWiNFO fora do padrao esperado para processador, memoria ou armazenamento.');
+  }
+
+  const resultado = await computadorController.criarEstruturadoPorCsv({
+    patrimonio: identidade.patrimonio,
+    setor: identidade.setor,
+    empresaId,
+    csvContent,
+    fonte: fonteFinal,
+  });
+
+  return {
+    resultado,
+    identidade,
+    fonteFinal,
+  };
+}
+
+function buildStructuredSpecsView(computador = null) {
+  if (!computador) return null;
+
+  const modo = String(
+    computador.specs_modo ||
+      computador?.dataValues?.specs_modo ||
+      'LEGADO'
+  ).toUpperCase();
+
+  if (modo !== 'ESTRUTURADO') return null;
+
+  const rawStructured =
+    computador.specs_estruturadas ||
+    computador?.dataValues?.specs_estruturadas ||
+    null;
+
+  let parsed = {};
+  if (rawStructured) {
+    try {
+      parsed =
+        typeof rawStructured === 'string'
+          ? JSON.parse(rawStructured)
+          : rawStructured;
+    } catch (error) {
+      parsed = {};
+    }
+  }
+
+  const toItemText = (item) => {
+    if (!item) return null;
+
+    const parts = [item.material, item.especificacao]
+      .map((value) => String(value || '').trim())
+      .filter(Boolean);
+
+    if (!parts.length) return null;
+
+    const label = parts.join(' - ');
+    const quantidade = Number(item.quantidade || 1);
+    return quantidade > 1 ? `${label} (${quantidade}x)` : label;
+  };
+
+  const sections = [];
+  const modelo = String(parsed.marcaComputador || parsed.nomeComputador || '').trim();
+
+  if (modelo) {
+    sections.push({
+      title: 'Modelo',
+      items: [modelo],
+    });
+  }
+
+  if (parsed.processador) {
+    const processadorText = toItemText(parsed.processador);
+    if (processadorText) {
+      sections.push({
+        title: 'Processador',
+        items: [processadorText],
+      });
+    }
+  }
+
+  const memorias = Array.isArray(parsed.memorias)
+    ? parsed.memorias.map(toItemText).filter(Boolean)
+    : [];
+  if (memorias.length) {
+    sections.push({
+      title: 'Memória',
+      items: memorias,
+    });
+  }
+
+  const armazenamentos = Array.isArray(parsed.armazenamentos)
+    ? parsed.armazenamentos.map(toItemText).filter(Boolean)
+    : [];
+  if (armazenamentos.length) {
+    sections.push({
+      title: 'Armazenamento',
+      items: armazenamentos,
+    });
+  }
+
+  const fontes = Array.isArray(parsed.fontes)
+    ? parsed.fontes.map(toItemText).filter(Boolean)
+    : [];
+  if (fontes.length) {
+    sections.push({
+      title: 'Fonte',
+      items: fontes,
+    });
+  }
+
+  if (!sections.length) return null;
+
+  return {
+    sections,
+    resumo: {
+      memorias: memorias.length,
+      armazenamentos: armazenamentos.length,
+      fontes: fontes.length,
+    },
+  };
+}
 
 router.get('/login', redirectIfAuthenticated, (req, res) => authController.renderLogin(req, res));
 
@@ -73,12 +211,6 @@ router.get('/home', (req, res) => {
   return res.redirect('/');
 });
 
-router.get('/test', (req, res) => {
-  const manutencoesAbertas = manutencaoController.findOpened();
-  console.log(typeof manutencoesAbertas);
-
-  return res.send();
-});
 router.get('/', async (req, res) => {
   try {
     const dashboard = await dashboardController.getHomeData();
@@ -96,12 +228,23 @@ router.get('/register-empresa', (req, res) => {
 
 router.post('/register-empresa', async (req, res) => {
   try {
-    const { nome, descricao } = req.body;
-    const empresa = await empresaController.create(nome, descricao);
+    const { nome, sigla, descricao } = req.body;
+    const empresa = await empresaController.create(nome, sigla, descricao);
     res.redirect('/empresas');
   } catch (error) {
     console.error('Erro ao registrar empresa:', error);
     res.status(500).send('Erro ao registrar empresa: ' + error.message);
+  }
+});
+
+router.post('/editar-empresa', async (req, res) => {
+  try {
+    const { id, nome, sigla, descricao } = req.body;
+    await empresaController.update(id, nome, sigla, descricao);
+    res.redirect('/empresas');
+  } catch (error) {
+    console.error('Erro ao editar empresa:', error);
+    res.status(500).send('Erro ao editar empresa: ' + error.message);
   }
 });
 
@@ -132,6 +275,7 @@ router.get('/editar-pc', async (req, res) => {
     empresas,
     empresa,
     setor,
+    structuredSpecsView: buildStructuredSpecsView(computador),
   });
 });
 
@@ -169,8 +313,13 @@ router.get('/computadores-by-empresa', async (req, res) => {
 router.get('/computadores', async (req, res) => {
   const computadoresList = await computadorController.getAll();
   const empresasList = await empresaController.getAll();
+  const importCsvBatchResult = consumeSessionValue(req, 'importCsvBatchResult');
 
-  res.render('pages/computadores', { computadores: computadoresList, empresas: empresasList });
+  res.render('pages/computadores', {
+    computadores: computadoresList,
+    empresas: empresasList,
+    importCsvBatchResult,
+  });
 });
 
 router.get('/register-pc', async (req, res) => {
@@ -204,6 +353,7 @@ router.get('/ver-pc', async (req, res) => {
       alert: res.locals.alert,
       computador: pc,
       empresas: empresasList,
+      structuredSpecsView: buildStructuredSpecsView(pc),
     });
   } catch (error) {
     console.error('Erro ao procurar pc:', error);
@@ -341,6 +491,7 @@ router.get('/ver-manutencao', async (req, res) => {
     return res.render('pages/manutencao', {
       manutencao,
       manutencoes,
+      structuredSpecsView: buildStructuredSpecsView(manutencao.computador),
     });
   } catch (err) {
     console.error('Erro ao abrir manutenção:', err);
@@ -420,12 +571,19 @@ router.get('/get-itens-manutencao', async (req, res) => {
 });
 
 router.get('/encerrar-manutencao', async (req, res) => {
-  const { id } = req.query;
+  return res.status(405).send('Use POST para encerrar manutenção.');
+});
 
-  manutencaoController.encerrarManutencao(id);
+router.post('/encerrar-manutencao', async (req, res) => {
+  const id = Number(req.body.id || req.query.id);
 
-  // Redirecionar o usuário de volta para a página anterior
-  const referer = req.headers.referer || '/';
+  if (!id) {
+    return res.status(400).send('ID da manutenção não informado.');
+  }
+
+  await manutencaoController.encerrarManutencao(id);
+
+  const referer = req.headers.referer || `/ver-manutencao?id=${id}`;
   return res.redirect(referer);
 });
 // CONDENAR MÁQUINA (irreversível)
@@ -474,7 +632,9 @@ router.post('/condenar-maquina-com-recuperacao', async (req, res) => {
   }
 });
 //TRANSFERENCIAS
-router.get('/transferir', async (req, res) => {});
+router.get('/transferir', async (req, res) => {
+  return res.status(405).send('Use POST para registrar transferência.');
+});
 
 router.post('/transferir', async (req, res) => {
   console.log(req.body);
@@ -507,30 +667,16 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
   try {
     const { empresaId, fonte } = req.body;
     const file = req.file;
-    const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
     if (!file) {
       return res.status(400).send('Nenhum arquivo enviado.');
     }
 
     filePath = file.path;
-    const csvContent = fs.readFileSync(filePath, 'utf-8');
-    const identidade = parseComputerIdentityFromFilename(file.originalname || file.filename);
-    const parsed = parseHwinfoCsv(csvContent);
-    const fonteFinal = String(fonte || identidade.fonte || '').trim();
-
-    if (!parsed.processador && !(parsed.memorias || []).length && !(parsed.armazenamentos || []).length) {
-      return res
-        .status(400)
-        .send('CSV HWiNFO fora do padrao esperado para processador, memoria ou armazenamento.');
-    }
-
-    const resultado = await computadorController.criarEstruturadoPorCsv({
-      patrimonio: identidade.patrimonio,
-      setor: identidade.setor,
+    const { resultado } = await processarImportacaoEstruturadaPorArquivo({
+      file,
       empresaId,
-      csvContent,
-      fonte: fonteFinal,
+      fontePadrao: fonte,
     });
 
     return res.redirect(`/ver-pc?id=${resultado.computador.id}`);
@@ -541,6 +687,90 @@ router.post('/importar-csv', upload.single('csvFile'), async (req, res) => {
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
+  }
+});
+
+router.post('/importar-csv-lote', upload.array('csvFiles', 500), async (req, res) => {
+  const files = (Array.isArray(req.files) ? req.files : []).filter((file) =>
+    String(file?.originalname || file?.filename || '').toLowerCase().endsWith('.csv')
+  );
+  const { empresaId, fonte } = req.body;
+  const resultado = {
+    totalArquivos: files.length,
+    importados: 0,
+    falhas: 0,
+    detalhes: [],
+  };
+
+  try {
+    if (!empresaId) {
+      throw new Error('Empresa obrigatoria para importacao em lote.');
+    }
+
+    if (!files.length) {
+      throw new Error('Nenhum CSV foi enviado para o lote.');
+    }
+
+    for (const file of files) {
+      const nomeArquivo = file.originalname || file.filename || 'arquivo.csv';
+
+      try {
+        const { resultado: importado, identidade } = await processarImportacaoEstruturadaPorArquivo({
+          file,
+          empresaId,
+          fontePadrao: fonte,
+        });
+
+        resultado.importados += 1;
+        resultado.detalhes.push({
+          arquivo: nomeArquivo,
+          patrimonio: identidade.patrimonio,
+          status: 'IMPORTADO',
+          computadorId: importado.computador?.id || null,
+          mensagem: 'Importado com sucesso.',
+        });
+      } catch (error) {
+        resultado.falhas += 1;
+        resultado.detalhes.push({
+          arquivo: nomeArquivo,
+          patrimonio: null,
+          status: 'ERRO',
+          computadorId: null,
+          mensagem: error.message,
+        });
+      } finally {
+        if (file.path && fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+      }
+    }
+
+    req.session.importCsvBatchResult = resultado;
+    return res.redirect('/computadores');
+  } catch (error) {
+    console.error('Erro ao importar lote de CSVs:', error);
+
+    files.forEach((file) => {
+      if (file?.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    });
+
+    req.session.importCsvBatchResult = {
+      totalArquivos: files.length,
+      importados: 0,
+      falhas: files.length,
+      detalhes: [
+        {
+          arquivo: '-',
+          patrimonio: null,
+          status: 'ERRO',
+          computadorId: null,
+          mensagem: error.message,
+        },
+      ],
+    };
+    return res.redirect('/computadores');
   }
 });
 
@@ -647,22 +877,26 @@ router.get('/materiais', async (req, res) => {
 
 router.get('/materiais-data', async (req, res) => {
   try {
-    const {
-      tipo,
-      somenteDisponivel,
-      q,
-      page = 1,
-      limit = 20,
-    } = req.query;
+      const {
+        tipo,
+        somenteDisponivel,
+        q,
+        page = 1,
+        limit = 20,
+        sortBy,
+        sortDir,
+      } = req.query;
 
     const resultado = await materialController.getPaged({
       tipo,
       somenteDisponivel:
         String(somenteDisponivel) === '1' || String(somenteDisponivel).toLowerCase() === 'true',
-      q,
-      page: Number(page),
-      limit: Number(limit),
-    });
+        q,
+        page: Number(page),
+        limit: Number(limit),
+        sortBy,
+        sortDir,
+      });
 
     return res.json(resultado);
   } catch (err) {

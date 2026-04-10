@@ -71,19 +71,18 @@
           <table class="table table-striped align-middle mb-0">
             <thead>
               <tr>
-                <th>Material</th>
-                <th>Tipo</th>
-                <th>Marca</th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('material')" data-sort-col="material">Material <span class="sort-indicator"></span></th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('tipo')" data-sort-col="tipo">Tipo <span class="sort-indicator"></span></th>
                 <th>Especificação</th>
                 <th>Disponível</th>
-                <th>Em uso</th>
-                <th>NF</th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('quantidade_em_uso')" data-sort-col="quantidade_em_uso">Em uso <span class="sort-indicator"></span></th>
+                <th scope="col" style="cursor:pointer" onclick="ordenarPor('nf')" data-sort-col="nf">NF <span class="sort-indicator"></span></th>
                 <th style="width: 170px;" class="text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tbodyMateriais">
               <tr>
-                <td colspan="9" class="text-muted p-3">Carregando...</td>
+                <td colspan="7" class="text-muted p-3">Carregando...</td>
               </tr>
             </tbody>
           </table>
@@ -149,7 +148,7 @@
             <div class="col-12">
               <label class="form-label">Qtd disponível</label>
               <input class="form-control" type="number" name="quantidade_disponivel" min="0" value="0" required>
-              <small class="text-muted">Qtd em uso é ajustada no Editar ou automaticamente por procedimentos.</small>
+              <small class="text-muted">Qtd em uso é ajustada automaticamente por procedimentos e recuperações.</small>
             </div>
           </div>
 
@@ -296,7 +295,8 @@
           <div class="row g-2">
             <div class="col-6">
               <label class="form-label">Qtd disponível</label>
-              <input class="form-control" type="number" name="quantidade_disponivel" id="editQtdDisp" min="0" required>
+              <input class="form-control" type="number" id="editQtdDisp" min="0" readonly>
+              <small class="text-muted">Controlado automaticamente por entradas, baixas e recuperações.</small>
             </div>
             <div class="col-6">
               <label class="form-label">Qtd em uso</label>
@@ -341,6 +341,10 @@
       totalPages: 1,
       limit: 20,
     };
+    let currentOrder = {
+      coluna: 'tipo',
+      asc: true,
+    };
 
     function debounce(fn, wait = 300) {
       let t;
@@ -348,6 +352,15 @@
         clearTimeout(t);
         t = setTimeout(() => fn(...args), wait);
       };
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
     }
 
     const carregarMateriaisDebounced = debounce(() => carregarMateriais(1), 300);
@@ -425,7 +438,7 @@
     }
 
     async function carregarMateriais(page = 1) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Carregando...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-muted p-3">Carregando...</td></tr>';
 
       const params = new URLSearchParams();
       if (filtroTipo.value) params.set('tipo', filtroTipo.value);
@@ -433,6 +446,8 @@
       if (q.value && q.value.trim()) params.set('q', q.value.trim());
       params.set('page', String(page));
       params.set('limit', String(pageSizeSelect.value || 20));
+      params.set('sortBy', currentOrder.coluna || 'tipo');
+      params.set('sortDir', currentOrder.asc ? 'ASC' : 'DESC');
 
       const resultado = await fetchJson('/materiais-data?' + params.toString());
       const list = Array.isArray(resultado.rows) ? resultado.rows : [];
@@ -444,23 +459,27 @@
       };
 
       if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-muted p-3">Nenhum material encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted p-3">Nenhum material encontrado.</td></tr>';
         atualizarContadores(currentMeta.total, 0);
         renderizarPaginacao();
+        atualizarSetasOrdenacao();
         return;
       }
 
       tbody.innerHTML = '';
       list.forEach((m) => {
         const tr = document.createElement('tr');
+        const materialLabel = escapeHtml(m.material || '-');
+        const tipoLabel = escapeHtml(m.tipo || '-');
+        const especificacaoLabel = escapeHtml(m.especificacao || '-');
+        const nfLabel = escapeHtml(m.nf || '-');
         tr.innerHTML = `
-        <td>${m.material || '-'}</td>
-        <td>${m.tipo || '-'}</td>
-        <td>${m.marca || '-'}</td>
-        <td>${m.especificacao || '-'}</td>
+        <td>${materialLabel}</td>
+        <td>${tipoLabel}</td>
+        <td>${especificacaoLabel}</td>
         <td><strong>${m.quantidade_disponivel ?? 0}</strong></td>
         <td>${m.quantidade_em_uso ?? 0}</td>
-        <td>${m.nf || '-'}</td>
+        <td>${nfLabel}</td>
         <td>
         <div class="btn-group m-2 align-items-center" role="group">
           <button class="btn btn-primary btn-sm btn-edit" data-action="edit">
@@ -478,6 +497,34 @@
 
       atualizarContadores(currentMeta.total, list.length);
       renderizarPaginacao();
+      atualizarSetasOrdenacao();
+    }
+
+    function ordenarTabela(coluna) {
+      if (currentOrder.coluna === coluna) {
+        currentOrder.asc = !currentOrder.asc;
+      } else {
+        currentOrder.coluna = coluna;
+        currentOrder.asc = true;
+      }
+
+      carregarMateriais(1);
+    }
+
+    function atualizarSetasOrdenacao() {
+      const ths = document.querySelectorAll('th[data-sort-col]');
+      ths.forEach((th) => {
+        const span = th.querySelector('.sort-indicator');
+        if (!span) return;
+
+        span.innerHTML = '';
+        const col = th.getAttribute('data-sort-col');
+        if (col === currentOrder.coluna) {
+          span.innerHTML = currentOrder.asc
+            ? '<i class="fas fa-sort-up" style="margin-left:6px;"></i>'
+            : '<i class="fas fa-sort-down" style="margin-left:6px;"></i>';
+        }
+      });
     }
 
     // criar
@@ -666,7 +713,6 @@
           tipo: document.getElementById('editTipo').value,
           marca: document.getElementById('editMarca').value,
           especificacao: document.getElementById('editEspecificacao').value,
-          quantidade_disponivel: Number(document.getElementById('editQtdDisp').value || 0),
           nf: document.getElementById('editNF').value,
         };
 
@@ -696,12 +742,38 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
+      const sortableHeaders = [
+        { index: 0, sortBy: 'material' },
+        { index: 1, sortBy: 'tipo' },
+        { index: 2, sortBy: 'especificacao' },
+        { index: 3, sortBy: 'quantidade_disponivel' },
+        { index: 4, sortBy: 'quantidade_em_uso' },
+        { index: 5, sortBy: 'nf' },
+      ];
       const btnNovoTipo = document.getElementById('btnNovoTipo');
       const novoTipoBox = document.getElementById('novoTipoBox');
       const novoTipoInput = document.getElementById('novoTipoInput');
       const btnSalvarNovoTipo = document.getElementById('btnSalvarNovoTipo');
       const btnCancelarNovoTipo = document.getElementById('btnCancelarNovoTipo');
       const addTipoSelect = document.getElementById('addTipoSelect');
+      const ths = document.querySelectorAll('table thead th');
+
+      sortableHeaders.forEach(({ index, sortBy }) => {
+        const th = ths[index];
+        if (!th) return;
+
+        th.style.cursor = 'pointer';
+        th.dataset.sortCol = sortBy;
+
+        if (!th.querySelector('.sort-indicator')) {
+          const span = document.createElement('span');
+          span.className = 'sort-indicator';
+          th.appendChild(document.createTextNode(' '));
+          th.appendChild(span);
+        }
+
+        th.onclick = () => ordenarTabela(sortBy);
+      });
 
       btnNovoTipo?.addEventListener('click', () => {
         novoTipoBox.style.display = 'block';
@@ -732,6 +804,8 @@
       await carregarTipos();
       await carregarMateriais(1);
     });
+    window.ordenarTabela = ordenarTabela;
+    window.ordenarPor = ordenarTabela;
     q.addEventListener('input', () => carregarMateriaisDebounced());
     filtroTipo.addEventListener('change', () => carregarMateriaisDebounced());
     somenteDisponivel.addEventListener('change', () => carregarMateriaisDebounced());

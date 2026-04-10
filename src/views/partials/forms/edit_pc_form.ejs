@@ -5,10 +5,15 @@
   const patrimonioId = _ids.patrimonioId || 'patrimonio';
   const setorId = _ids.setorId || 'setor';
   const specsId = _ids.specsId || 'specs';
+  const specsPanelId = _ids.specsPanelId || `${specsId}ReadonlyPanel`;
   const specsModoId = _ids.specsModoId || 'specsModo';
   const _actionUrl = (typeof actionUrl !== 'undefined') ? actionUrl : (typeof id !== 'undefined' ? `/editar-pc?id=${id}` : '#');
   const _specsModo = (typeof specsModo !== 'undefined' && specsModo) ? specsModo : 'LEGADO';
   const _specsReadonly = String(_specsModo).toUpperCase() === 'ESTRUTURADO';
+  const _structuredSpecsView =
+    (typeof structuredSpecsView !== 'undefined' && structuredSpecsView && structuredSpecsView.sections)
+      ? structuredSpecsView
+      : null;
 %>
 
 <div class="d-flex align-items-center justify-content-start mb-4">
@@ -32,7 +37,7 @@
   <input type="hidden" name="specs_modo" id="<%= specsModoId %>" value="<%= _specsModo %>">
 
   <div class="form-group">
-    <label for="<%= patrimonioId %>">Numero de patrimonio do Computador</label>
+    <label for="<%= patrimonioId %>">Número de patrimônio do Computador</label>
     <input type="text" class="form-control" id="<%= patrimonioId %>" name="patrimonio" value="<%= (typeof patrimonio !== 'undefined' && patrimonio !== null) ? patrimonio : '' %>">
   </div>
 
@@ -42,11 +47,48 @@
   </div>
 
   <div class="form-group">
-    <label for="<%= specsId %>">Descricao</label>
-    <textarea class="form-control" id="<%= specsId %>" name="specs" rows="10" <%= _specsReadonly ? 'readonly' : '' %>><%= (typeof specs !== 'undefined' && specs !== null) ? specs : '' %></textarea>
+    <label for="<%= specsId %>">Descrição</label>
+    <textarea style="background-color: var(--input-bg);"
+      class="form-control <%= _specsReadonly ? 'd-none' : '' %>"
+      id="<%= specsId %>"
+      name="specs"
+      rows="8"
+      <%= _specsReadonly ? 'readonly' : '' %>><%= (typeof specs !== 'undefined' && specs !== null) ? specs : '' %></textarea>
+    <% if (_structuredSpecsView && _specsReadonly) { %>
+    <div
+      class="specs-clean-shell text-start <%= _specsReadonly ? '' : 'd-none' %>"
+      id="<%= specsPanelId %>"
+      data-panel-mode="structured">
+      <div class="specs-clean-toolbar">
+        <div>
+          <div class="specs-clean-title">Componentes da máquina</div>
+          <small class="text-muted">Visualização automática dos materiais vinculados ao computador.</small>
+        </div>
+        <span class="specs-clean-badge">Estruturado</span>
+      </div>
+
+      <div class="specs-clean-grid mt-3">
+        <% _structuredSpecsView.sections.forEach((section) => { %>
+        <div class="specs-clean-block">
+          <div class="specs-clean-label"><%= section.title %></div>
+          <ul class="specs-clean-items">
+            <% section.items.forEach((item) => { %>
+            <li class="specs-clean-item"><%= item %></li>
+            <% }) %>
+          </ul>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+    <% } else { %>
+    <div
+      class="specs-detail-panel text-start <%= _specsReadonly ? '' : 'd-none' %>"
+      id="<%= specsPanelId %>"
+      data-panel-mode="text"><%= (typeof specs !== 'undefined' && specs !== null) ? specs : '-' %></div>
+    <% } %>
     <small class="text-muted d-block mt-2" id="<%= specsId %>Help">
       <% if (_specsReadonly) { %>
-      Este computador esta em modo estruturado. As specs sao recalculadas pelos componentes vinculados.
+      Este computador está em modo estruturado. As specs são recalculadas pelos componentes vinculados.
       <% } else { %>
       Edite as specs livremente para computadores no modo legado.
       <% } %>
@@ -63,11 +105,12 @@
 <hr>
 
 <div class="d-flex gap-2 justify-content-center flex-wrap">
-  <button type="button" class="btn btn-secondary" id="btnAddManutencaoFromEdit">
-    Adicionar Manutencao
+  <button type="button" class="btn btn-outline-secondary btn-sm btn-verpcs" id="btnAddManutencaoFromEdit">
+    
+    Adicionar Manutenção
   </button>
 
-  <button type="button" class="btn btn-warning" id="btnTransferirFromEdit">
+  <button type="button" class="btn btn-outline-secondary btn-sm btn-verpcs" id="btnTransferirFromEdit">
     Transferir Unidade
   </button>
 </div>

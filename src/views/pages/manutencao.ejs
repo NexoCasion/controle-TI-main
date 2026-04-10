@@ -55,9 +55,9 @@
   </header>
 
   <% if (alert) { %>
-  <script>
-    alert('<%= alert %>');
-  </script>
+  <div class="container mt-3">
+    <div class="alert alert-warning mb-0"><%= alert %></div>
+  </div>
   <% } %>
 
   <div class="container maintenance-page">
@@ -67,7 +67,7 @@
 
     <h1 class="mt-4 mb-4 text-center">Informações da Manutenção</h1>
 
-    <div class="card p-3 mb-4" style="border:0;">
+    <div class="card p-3 mb-4 border-0">
       <div class="row g-3 justify-content-center text-start">
         <div class="maint-titlebar mb-3">
           <h2 class="pc-title mb-0">
@@ -139,10 +139,35 @@
         </div>
 
         <div class="col-12">
-          <div class="meta-label text-center">Specs</div>
-          <div class="text-muted text-center">
+          <div class="meta-label text-center">Configuração da máquina</div>
+          <% if (structuredSpecsView && structuredSpecsView.sections && structuredSpecsView.sections.length) { %>
+          <div class="specs-clean-shell mt-2 text-start">
+            <div class="specs-clean-toolbar">
+              <div>
+                <div class="specs-clean-title">Componentes vinculados</div>
+                <small class="text-muted">Separação automática dos materiais da máquina estruturada.</small>
+              </div>
+              <span class="specs-clean-badge">Estruturado</span>
+            </div>
+
+            <div class="specs-clean-grid mt-3">
+              <% structuredSpecsView.sections.forEach((section) => { %>
+              <div class="specs-clean-block">
+                <div class="specs-clean-label"><%= section.title %></div>
+                <ul class="specs-clean-items">
+                  <% section.items.forEach((item) => { %>
+                  <li class="specs-clean-item"><%= item %></li>
+                  <% }) %>
+                </ul>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+          <% } else { %>
+          <div class="specs-legacy-box mt-2 text-start">
             <%= (manutencao?.computador?.specs_override ? manutencao.computador.specs_override : (manutencao?.computador?.specs || '-')) %>
           </div>
+          <% } %>
         </div>
       </div>
     </div>
@@ -174,9 +199,12 @@
 
     <% if (!manutencao.dataSaida) { %>
     <div class="maintenance-actions mb-3 align-items-center justify-content-center">
-      <a class="btn btn-secondary btn-sm" href="/encerrar-manutencao?id=<%= manutencao.id %>" onclick="return confirm('Tem certeza que deseja FECHAR esta manutenção?');">
-        <i class="fas fa-check"></i> Fechar manutenção
-      </a>
+      <form action="/encerrar-manutencao" method="post" class="d-inline-block m-0" onsubmit="return confirm('Tem certeza que deseja FECHAR esta manutenção?');">
+        <input type="hidden" name="id" value="<%= manutencao.id %>">
+        <button type="submit" class="btn btn-secondary btn-sm">
+          <i class="fas fa-check"></i> Fechar manutenção
+        </button>
+      </form>
 
       <button
         type="button"
@@ -285,7 +313,7 @@
             </div>
 
             <div class="col-12" id="blocoTrocaPeca" style="display:none;">
-              <div class="card p-3" style="border:1px solid #eee;">
+              <div class="card p-3 border">
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Tipo de peça</label>
@@ -506,17 +534,17 @@
 
           <div class="mb-3">
             <label class="form-label"><strong>Resumo da troca</strong></label>
-            <textarea class="form-control" id="detSnap" rows="5" readonly></textarea>
+            <div class="specs-detail-panel specs-detail-panel-compact" id="detSnap"></div>
           </div>
 
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Specs antes</label>
-              <textarea class="form-control" id="detAntes" rows="3" readonly></textarea>
+              <div class="specs-detail-panel" id="detAntes"></div>
             </div>
             <div class="col-12">
               <label class="form-label">Specs depois</label>
-              <textarea class="form-control" id="detDepois" rows="3" readonly></textarea>
+              <div class="specs-detail-panel" id="detDepois"></div>
             </div>
           </div>
         </div>
@@ -1440,10 +1468,10 @@
 
         document.getElementById('detTipo').textContent = btn.getAttribute('data-tipo') || '-';
         document.getElementById('detDesc').textContent = btn.getAttribute('data-desc') || '-';
-        document.getElementById('detSnap').value =
+        document.getElementById('detSnap').textContent =
           (btn.getAttribute('data-snap') || '-').replaceAll(' || ', '\n\n');
-        document.getElementById('detAntes').value = btn.getAttribute('data-antes') || '';
-        document.getElementById('detDepois').value = btn.getAttribute('data-depois') || '';
+        document.getElementById('detAntes').textContent = btn.getAttribute('data-antes') || '-';
+        document.getElementById('detDepois').textContent = btn.getAttribute('data-depois') || '-';
       });
     }
   </script>
