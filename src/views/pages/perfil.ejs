@@ -41,6 +41,128 @@
       </div>
     </div>
 
+    <div class="card soft-card mb-4">
+      <div class="card-body p-4">
+        <h2 class="h4 mb-4">Preferencias</h2>
+
+        <form action="/perfil/preferencias" method="post">
+          <div class="row g-4">
+            <div class="col-lg-6">
+              <label for="addComputerDefaultModal" class="form-label">Ao clicar em "Adicionar Computador"</label>
+              <select class="form-select" id="addComputerDefaultModal" name="addComputerDefaultModal">
+                <option value="structured" <%= user?.add_computer_default_modal === 'structured' ? 'selected' : '' %>>Abrir cadastro manual</option>
+                <option value="single" <%= user?.add_computer_default_modal === 'single' ? 'selected' : '' %>>Abrir importacao unica</option>
+                <option value="batch" <%= user?.add_computer_default_modal === 'batch' ? 'selected' : '' %>>Abrir importar grupo</option>
+              </select>
+              <small class="text-muted">Define qual modal abre primeiro na tela de computadores.</small>
+            </div>
+
+            <div class="col-12">
+              <hr class="my-0">
+            </div>
+
+            <div class="col-12">
+              <h3 class="h5 mb-3">Home</h3>
+              <p class="text-muted mb-0">Essas mesmas configuracoes continuam editaveis no filtro da home e agora tambem ficam salvas aqui no perfil.</p>
+            </div>
+
+            <div class="col-md-6">
+              <div class="home-filter-card h-100">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Empresas com Mais Manutencoes</h6>
+                  <div class="home-filter-actions">
+                    <button type="button" class="btn btn-link btn-sm p-0" data-profile-filter-check-all="ranking">Marcar todas</button>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-profile-filter-clear-all="ranking">Limpar</button>
+                  </div>
+                </div>
+                <div class="home-filter-list">
+                  <% (empresasFiltro || []).forEach(function(empresa) { %>
+                  <label class="home-filter-option">
+                    <input
+                      class="form-check-input me-2"
+                      type="checkbox"
+                      value="<%= empresa.id %>"
+                      name="homeRankingEmpresaIds"
+                      data-profile-filter-chart="ranking"
+                      <%= (homeDashboardPreferences?.ranking || []).includes(Number(empresa.id)) ? 'checked' : '' %>>
+                    <span><%= empresa.nome %></span>
+                    <small><%= empresa.nomeCompleto %></small>
+                  </label>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="home-filter-card h-100">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Maquinas Ativas por Empresa</h6>
+                  <div class="home-filter-actions">
+                    <button type="button" class="btn btn-link btn-sm p-0" data-profile-filter-check-all="maquinas">Marcar todas</button>
+                    <button type="button" class="btn btn-link btn-sm p-0" data-profile-filter-clear-all="maquinas">Limpar</button>
+                  </div>
+                </div>
+                <div class="home-filter-list">
+                  <% (empresasFiltro || []).forEach(function(empresa) { %>
+                  <label class="home-filter-option">
+                    <input
+                      class="form-check-input me-2"
+                      type="checkbox"
+                      value="<%= empresa.id %>"
+                      name="homeMaquinasEmpresaIds"
+                      data-profile-filter-chart="maquinas"
+                      <%= (homeDashboardPreferences?.maquinas || []).includes(Number(empresa.id)) ? 'checked' : '' %>>
+                    <span><%= empresa.nome %></span>
+                    <small><%= empresa.nomeCompleto %></small>
+                  </label>
+                  <% }) %>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Ordem dos graficos da home</h6>
+                </div>
+                <p class="text-muted mb-3">A ordem salva aqui e a mesma usada no carrossel da home.</p>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label" for="perfilHomeChartOrderFirst">Primeiro grafico</label>
+                    <select class="form-select" id="perfilHomeChartOrderFirst" name="homeChartOrderFirst">
+                      <option value="ranking" <%= (homeDashboardPreferences?.order || [])[0] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
+                      <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[0] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
+                      <option value="materiais" <%= (homeDashboardPreferences?.order || [])[0] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="perfilHomeChartOrderSecond">Segundo grafico</label>
+                    <select class="form-select" id="perfilHomeChartOrderSecond" name="homeChartOrderSecond">
+                      <option value="ranking" <%= (homeDashboardPreferences?.order || [])[1] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
+                      <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[1] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
+                      <option value="materiais" <%= (homeDashboardPreferences?.order || [])[1] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="perfilHomeChartOrderThird">Terceiro grafico</label>
+                    <select class="form-select" id="perfilHomeChartOrderThird" name="homeChartOrderThird">
+                      <option value="ranking" <%= (homeDashboardPreferences?.order || [])[2] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
+                      <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[2] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
+                      <option value="materiais" <%= (homeDashboardPreferences?.order || [])[2] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">Salvar preferencias</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <% if (isAdmin) { %>
     <div class="card soft-card mb-4">
       <div class="card-body p-4">
@@ -152,6 +274,27 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('[data-profile-filter-check-all]').forEach((btn) => {
+        btn.addEventListener('click', function() {
+          const chartKey = this.getAttribute('data-profile-filter-check-all');
+          document.querySelectorAll(`input[data-profile-filter-chart="${chartKey}"]`).forEach((input) => {
+            input.checked = true;
+          });
+        });
+      });
+
+      document.querySelectorAll('[data-profile-filter-clear-all]').forEach((btn) => {
+        btn.addEventListener('click', function() {
+          const chartKey = this.getAttribute('data-profile-filter-clear-all');
+          document.querySelectorAll(`input[data-profile-filter-chart="${chartKey}"]`).forEach((input) => {
+            input.checked = false;
+          });
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>

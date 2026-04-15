@@ -18,6 +18,11 @@ const Empresa = database.define(
       type: Sequelize.STRING,
       allowNull: true,
     },
+    ordem_exibicao: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
 
     descricao: {
       type: Sequelize.STRING,

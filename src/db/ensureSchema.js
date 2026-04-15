@@ -51,6 +51,42 @@ async function ensureEmpresaColumns() {
   if (!columns.includes('sigla')) {
     await database.query('ALTER TABLE empresas ADD COLUMN sigla VARCHAR(50);');
   }
+
+  if (!columns.includes('ordem_exibicao')) {
+    await database.query('ALTER TABLE empresas ADD COLUMN ordem_exibicao INTEGER NOT NULL DEFAULT 0;');
+  }
+}
+
+async function normalizeEmpresaDisplayOrder() {
+  const empresas = await database.query(
+    `
+      SELECT id, nome, ordem_exibicao
+      FROM empresas
+      ORDER BY
+        CASE
+          WHEN ordem_exibicao IS NULL OR ordem_exibicao <= 0 THEN 1
+          ELSE 0
+        END ASC,
+        ordem_exibicao ASC,
+        TRIM(nome) ASC,
+        id ASC;
+    `,
+    { type: database.QueryTypes.SELECT }
+  );
+
+  for (let index = 0; index < empresas.length; index += 1) {
+    const empresa = empresas[index];
+    const novaOrdem = index + 1;
+
+    if (Number(empresa.ordem_exibicao || 0) !== novaOrdem) {
+      await database.query(
+        'UPDATE empresas SET ordem_exibicao = ? WHERE id = ?;',
+        {
+          replacements: [novaOrdem, empresa.id],
+        }
+      );
+    }
+  }
 }
 
 async function seedEmpresaSiglas() {
@@ -106,11 +142,25 @@ async function ensureUsersTable() {
       email VARCHAR(255) NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       role VARCHAR(50) NOT NULL DEFAULT 'tecnico',
+      add_computer_default_modal VARCHAR(30) NOT NULL DEFAULT 'structured',
+      home_dashboard_preferences TEXT,
       ativo TINYINT(1) NOT NULL DEFAULT 1,
       createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  const columns = await getTableColumns('users');
+
+  if (!columns.includes('add_computer_default_modal')) {
+    await database.query(
+      "ALTER TABLE users ADD COLUMN add_computer_default_modal VARCHAR(30) NOT NULL DEFAULT 'structured';"
+    );
+  }
+
+  if (!columns.includes('home_dashboard_preferences')) {
+    await database.query('ALTER TABLE users ADD COLUMN home_dashboard_preferences TEXT;');
+  }
 
   await database.query(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(LOWER(TRIM(email)));'
@@ -140,6 +190,8 @@ async function seedAdminUser() {
         SET nome = ?,
             password_hash = ?,
             role = ?,
+            add_computer_default_modal = COALESCE(NULLIF(TRIM(add_computer_default_modal), ''), 'structured'),
+            home_dashboard_preferences = COALESCE(home_dashboard_preferences, NULL),
             ativo = 1,
             updatedAt = CURRENT_TIMESTAMP
         WHERE id = ?;
@@ -166,6 +218,7 @@ async function ensureSchema() {
   await ensureComputadoresColumns();
   await ensurePatrimonioUniqueIndex();
   await ensureEmpresaColumns();
+  await normalizeEmpresaDisplayOrder();
   await ensureComputadorMateriaisTable();
   await ensureUsersTable();
   await seedEmpresaSiglas();

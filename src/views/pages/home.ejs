@@ -117,6 +117,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
+          <div class="alert alert-danger d-none mb-3" id="homeChartPreferenceError"></div>
           <div class="alert alert-light border mb-3">
             Escolha quais lojas devem aparecer em cada gráfico de empresas. O gráfico de materiais continua global.
           </div>
@@ -134,7 +135,7 @@
                 <div class="home-filter-list">
                   <% (empresasFiltro || []).forEach(function(empresa) { %>
                   <label class="home-filter-option">
-                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="ranking" <%= empresa.isDeptoTi ? '' : 'checked' %>>
+                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="ranking" <%= (homeDashboardPreferences?.ranking || []).includes(Number(empresa.id)) ? 'checked' : '' %>>
                     <span><%= empresa.nome %></span>
                     <small><%= empresa.nomeCompleto %></small>
                   </label>
@@ -155,7 +156,7 @@
                 <div class="home-filter-list">
                   <% (empresasFiltro || []).forEach(function(empresa) { %>
                   <label class="home-filter-option">
-                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="maquinas" checked>
+                    <input class="form-check-input me-2" type="checkbox" value="<%= empresa.id %>" data-filter-chart="maquinas" <%= (homeDashboardPreferences?.maquinas || []).includes(Number(empresa.id)) ? 'checked' : '' %>>
                     <span><%= empresa.nome %></span>
                     <small><%= empresa.nomeCompleto %></small>
                   </label>
@@ -163,11 +164,47 @@
                 </div>
               </div>
             </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Ordem dos gráficos</h6>
+                </div>
+                <p class="text-muted mb-3">Defina qual gráfico aparece primeiro, segundo e terceiro no carrossel.</p>
+                <div class="alert alert-warning d-none mb-3" id="homeChartOrderAlert"></div>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label" for="homeChartOrderFirst">Primeiro gráfico</label>
+                    <select class="form-select" id="homeChartOrderFirst">
+                      <option value="ranking">Empresas com Mais Manutenções</option>
+                      <option value="maquinas">Máquinas Ativas por Empresa</option>
+                      <option value="materiais">Materiais Disponíveis por Tipo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="homeChartOrderSecond">Segundo gráfico</label>
+                    <select class="form-select" id="homeChartOrderSecond">
+                      <option value="ranking">Empresas com Mais Manutenções</option>
+                      <option value="maquinas">Máquinas Ativas por Empresa</option>
+                      <option value="materiais">Materiais Disponíveis por Tipo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label" for="homeChartOrderThird">Terceiro gráfico</label>
+                    <select class="form-select" id="homeChartOrderThird">
+                      <option value="ranking">Empresas com Mais Manutenções</option>
+                      <option value="maquinas">Máquinas Ativas por Empresa</option>
+                      <option value="materiais">Materiais Disponíveis por Tipo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" id="btnResetHomeChartFilters">Restaurar padrão</button>
-          <button type="button" class="btn btn-primary" id="btnApplyHomeChartFilters" data-bs-dismiss="modal">Aplicar</button>
+          <button type="button" class="btn btn-primary" id="btnApplyHomeChartFilters">Aplicar</button>
         </div>
       </div>
     </div>
@@ -181,6 +218,7 @@
       const rankingEmpresas = <%- JSON.stringify(rankingEmpresas || []) %>;
       const maquinasPorEmpresa = <%- JSON.stringify(maquinasPorEmpresa || []) %>;
       const materiaisDisponiveisPorTipo = <%- JSON.stringify(materiaisDisponiveisPorTipo || []) %>;
+      const homeDashboardPreferences = <%- JSON.stringify(homeDashboardPreferences || {}) %>;
 
       const ctx = document.getElementById('rankingEmpresasChart');
       const titleEl = document.getElementById('homeChartTitle');
@@ -192,7 +230,21 @@
       const btnApplyFilters = document.getElementById('btnApplyHomeChartFilters');
       const btnResetFilters = document.getElementById('btnResetHomeChartFilters');
       const modalFiltersEl = document.getElementById('modalHomeChartFilters');
+      const orderAlertEl = document.getElementById('homeChartOrderAlert');
+      const preferenceErrorEl = document.getElementById('homeChartPreferenceError');
+      const orderSelects = [
+        document.getElementById('homeChartOrderFirst'),
+        document.getElementById('homeChartOrderSecond'),
+        document.getElementById('homeChartOrderThird'),
+      ];
       if (!ctx) return;
+
+      const defaultChartOrder = ['ranking', 'maquinas', 'materiais'];
+      const chartOptionLabels = {
+        ranking: 'Empresas com Mais Manutenções',
+        maquinas: 'Máquinas Ativas por Empresa',
+        materiais: 'Materiais Disponíveis por Tipo',
+      };
 
       function getModalInstance(modalEl) {
         if (!modalEl || typeof bootstrap === 'undefined' || !bootstrap.Modal) return null;
@@ -239,38 +291,167 @@
           .map((empresa) => Number(empresa.id));
       }
 
+      function normalizeEmpresaIds(ids, fallback) {
+        const allIdsSet = new Set(getAllEmpresaIds());
+        const input = Array.isArray(ids) ? ids : [ids];
+        const unique = [];
+
+        input
+          .map((item) => Number(item))
+          .filter((id) => Number.isFinite(id) && allIdsSet.has(id))
+          .forEach((id) => {
+            if (!unique.includes(id)) unique.push(id);
+          });
+
+        return unique.length ? unique : [...fallback];
+      }
+
       const filtros = {
-        ranking: getDefaultRankingIds(),
-        maquinas: getAllEmpresaIds(),
+        ranking: normalizeEmpresaIds(homeDashboardPreferences.ranking, getDefaultRankingIds()),
+        maquinas: normalizeEmpresaIds(homeDashboardPreferences.maquinas, getAllEmpresaIds()),
       };
+
+      function hideOrderAlert() {
+        if (!orderAlertEl) return;
+        orderAlertEl.textContent = '';
+        orderAlertEl.classList.add('d-none');
+      }
+
+      function showOrderAlert(message) {
+        if (!orderAlertEl) return;
+        orderAlertEl.textContent = message;
+        orderAlertEl.classList.remove('d-none');
+      }
+
+      function normalizeChartOrder(order) {
+        const list = Array.isArray(order) ? order.map((item) => String(item || '').trim()) : [];
+        const valid = list.filter((item) => defaultChartOrder.includes(item));
+        const unique = [];
+
+        valid.forEach((item) => {
+          if (!unique.includes(item)) unique.push(item);
+        });
+
+        defaultChartOrder.forEach((item) => {
+          if (!unique.includes(item)) unique.push(item);
+        });
+
+        return unique.slice(0, defaultChartOrder.length);
+      }
+
+      function hidePreferenceError() {
+        if (!preferenceErrorEl) return;
+        preferenceErrorEl.textContent = '';
+        preferenceErrorEl.classList.add('d-none');
+      }
+
+      function showPreferenceError(message) {
+        if (!preferenceErrorEl) return;
+        preferenceErrorEl.textContent = message;
+        preferenceErrorEl.classList.remove('d-none');
+      }
+
+      function buildPreferencePayload(base = {}) {
+        return {
+          ranking: normalizeEmpresaIds(base.ranking, getDefaultRankingIds()),
+          maquinas: normalizeEmpresaIds(base.maquinas, getAllEmpresaIds()),
+          order: normalizeChartOrder(base.order),
+        };
+      }
+
+      async function saveHomeDashboardPreferences(preferences) {
+        const response = await fetch('/perfil/preferencias/home-dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            homeRankingEmpresaIds: preferences.ranking,
+            homeMaquinasEmpresaIds: preferences.maquinas,
+            homeChartOrderFirst: preferences.order[0],
+            homeChartOrderSecond: preferences.order[1],
+            homeChartOrderThird: preferences.order[2],
+          }),
+        });
+
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch (error) {
+          payload = null;
+        }
+
+        if (!response.ok || !payload?.ok) {
+          throw new Error(payload?.error || 'Nao foi possivel salvar as preferencias da home.');
+        }
+      }
+
+      function setOrderSelectValues(order) {
+        const normalized = normalizeChartOrder(order);
+        orderSelects.forEach((select, index) => {
+          if (select) select.value = normalized[index];
+        });
+      }
+
+      function getSelectedChartOrder() {
+        return orderSelects.map((select) => (select ? select.value : ''));
+      }
+
+      function validateSelectedChartOrder() {
+        const selected = getSelectedChartOrder();
+        const normalized = normalizeChartOrder(selected);
+        const allValid = selected.every((item) => defaultChartOrder.includes(item));
+        const uniqueCount = new Set(selected).size;
+
+        if (!allValid || uniqueCount !== defaultChartOrder.length) {
+          return {
+            ok: false,
+            message: 'Escolha três gráficos diferentes para definir a ordem.',
+          };
+        }
+
+        return {
+          ok: true,
+          order: normalized,
+        };
+      }
+
+      let chartOrder = normalizeChartOrder(homeDashboardPreferences.order);
 
       function buildChartConfigs() {
         const rankingFiltrado = filtrarEmpresas(rankingEmpresas, filtros.ranking);
         const maquinasFiltradas = filtrarEmpresas(maquinasPorEmpresa, filtros.maquinas);
 
-        return [
-          {
+        const configsById = {
+          ranking: {
+            id: 'ranking',
             titulo: 'Empresas com Mais Manutenções',
             legenda: 'Manutenções',
             labels: rankingFiltrado.map((item) => labelQuebrada(item.nome)),
             tooltipLabels: rankingFiltrado.map((item) => item.nomeCompleto || item.nome),
             data: rankingFiltrado.map((item) => Number(item.total || 0)),
           },
-          {
+          maquinas: {
+            id: 'maquinas',
             titulo: 'Máquinas Ativas por Empresa',
             legenda: 'Máquinas ativas',
             labels: maquinasFiltradas.map((item) => labelQuebrada(item.nome)),
             tooltipLabels: maquinasFiltradas.map((item) => item.nomeCompleto || item.nome),
             data: maquinasFiltradas.map((item) => Number(item.total || 0)),
           },
-          {
+          materiais: {
+            id: 'materiais',
             titulo: 'Materiais Disponíveis por Tipo',
             legenda: 'Disponíveis',
             labels: materiaisDisponiveisPorTipo.map((item) => labelQuebrada(item.tipo)),
             tooltipLabels: materiaisDisponiveisPorTipo.map((item) => item.tipo),
             data: materiaisDisponiveisPorTipo.map((item) => Number(item.total || 0)),
           },
-        ];
+        };
+
+        return normalizeChartOrder(chartOrder)
+          .map((id) => configsById[id])
+          .filter(Boolean);
       }
 
       const colors = [
@@ -345,10 +526,11 @@
 
       function applyChart(index) {
         chartConfigs = buildChartConfigs();
-        const config = chartConfigs[index];
-        currentIndex = index;
+        const safeIndex = Math.min(Math.max(index, 0), Math.max(chartConfigs.length - 1, 0));
+        const config = chartConfigs[safeIndex];
+        currentIndex = safeIndex;
         if (titleEl) titleEl.textContent = config.titulo;
-        if (captionEl) captionEl.textContent = `${index + 1} de ${chartConfigs.length}`;
+        if (captionEl) captionEl.textContent = `${safeIndex + 1} de ${chartConfigs.length}`;
         chart.data.labels = config.labels.length ? config.labels : ['Sem dados'];
         chart.data.datasets[0].label = config.legenda;
         chart.data.datasets[0].data = config.data.length ? config.data : [0];
@@ -399,8 +581,11 @@
 
       if (btnOpenFilters) {
         btnOpenFilters.addEventListener('click', function() {
+          hideOrderAlert();
+          hidePreferenceError();
           setCheckedIds('ranking', filtros.ranking);
           setCheckedIds('maquinas', filtros.maquinas);
+          setOrderSelectValues(chartOrder);
 
           const modal = getModalInstance(modalFiltersEl);
           if (modal) modal.show();
@@ -408,25 +593,75 @@
       }
 
       if (btnApplyFilters) {
-        btnApplyFilters.addEventListener('click', function() {
+        btnApplyFilters.addEventListener('click', async function() {
+          const orderState = validateSelectedChartOrder();
+          if (!orderState.ok) {
+            showOrderAlert(orderState.message);
+            return;
+          }
+
+          hideOrderAlert();
+          hidePreferenceError();
           const rankingIds = getCheckedIds('ranking');
           const maquinasIds = getCheckedIds('maquinas');
+          const currentChartId = chartConfigs[currentIndex]?.id || chartOrder[0];
 
-          filtros.ranking = rankingIds.length ? rankingIds : getDefaultRankingIds();
-          filtros.maquinas = maquinasIds.length ? maquinasIds : getAllEmpresaIds();
+          const nextPreferences = buildPreferencePayload({
+            ranking: rankingIds,
+            maquinas: maquinasIds,
+            order: orderState.order,
+          });
 
-          rotateTo(currentIndex);
+          try {
+            await saveHomeDashboardPreferences(nextPreferences);
+          } catch (error) {
+            showPreferenceError(error.message || 'Nao foi possivel salvar as preferencias da home.');
+            return;
+          }
+
+          filtros.ranking = [...nextPreferences.ranking];
+          filtros.maquinas = [...nextPreferences.maquinas];
+          chartOrder = [...nextPreferences.order];
+
+          chartConfigs = buildChartConfigs();
+          const nextIndex = Math.max(chartConfigs.findIndex((config) => config.id === currentChartId), 0);
+          rotateTo(nextIndex);
+
+          const modal = getModalInstance(modalFiltersEl);
+          if (modal) modal.hide();
         });
       }
 
       if (btnResetFilters) {
-        btnResetFilters.addEventListener('click', function() {
-          const ids = getAllEmpresaIds();
-          const rankingDefault = getDefaultRankingIds();
-          filtros.ranking = [...rankingDefault];
-          filtros.maquinas = [...ids];
-          setCheckedIds('ranking', rankingDefault);
-          setCheckedIds('maquinas', ids);
+        btnResetFilters.addEventListener('click', async function() {
+          const nextPreferences = buildPreferencePayload({
+            ranking: getDefaultRankingIds(),
+            maquinas: getAllEmpresaIds(),
+            order: defaultChartOrder,
+          });
+          const currentChartId = chartConfigs[currentIndex]?.id || chartOrder[0];
+
+          hideOrderAlert();
+          hidePreferenceError();
+
+          try {
+            await saveHomeDashboardPreferences(nextPreferences);
+          } catch (error) {
+            showPreferenceError(error.message || 'Nao foi possivel salvar as preferencias da home.');
+            return;
+          }
+
+          filtros.ranking = [...nextPreferences.ranking];
+          filtros.maquinas = [...nextPreferences.maquinas];
+          chartOrder = [...nextPreferences.order];
+          setCheckedIds('ranking', nextPreferences.ranking);
+          setCheckedIds('maquinas', nextPreferences.maquinas);
+          setOrderSelectValues(chartOrder);
+          hideOrderAlert();
+
+          chartConfigs = buildChartConfigs();
+          const nextIndex = Math.max(chartConfigs.findIndex((config) => config.id === currentChartId), 0);
+          rotateTo(nextIndex);
         });
       }
 

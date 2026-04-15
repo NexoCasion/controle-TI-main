@@ -8,6 +8,49 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .empresa-move-col {
+      width: 22px;
+      min-width: 22px;
+      padding-left: 4px !important;
+      padding-right: 2px !important;
+    }
+
+    .empresa-row {
+      user-select: none;
+    }
+
+    .empresa-row.drag-ready {
+      outline: 1px dashed rgba(47, 128, 237, 0.35);
+      outline-offset: -1px;
+    }
+
+    .empresa-drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 32px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #9aa4b2;
+      opacity: 0.75;
+      cursor: grab;
+      box-shadow: none !important;
+    }
+
+    .empresa-drag-handle:hover,
+    .empresa-drag-handle:focus {
+      color: #5b6777;
+      opacity: 1;
+      background: transparent;
+    }
+
+    .empresa-drag-handle:active {
+      cursor: grabbing;
+    }
+  </style>
 </head>
 
 <body>
@@ -28,25 +71,36 @@
           Inserir Empresa
         </button>
 
+        <div class="alert alert-info d-none text-start" id="empresaOrderAlert" role="alert"></div>
+
         <div class="table-responsive">
           <table class="table">
             <thead>
               <tr>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(0)">#</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(1)">Nome</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(2)">Sigla</th>
-                <th style="cursor:pointer" onclick="ordenarEmpresas(3)">Descricao</th>
+                <th class="empresa-move-col"></th>
+                <th>#</th>
+                <th>Ordem</th>
+                <th>Nome</th>
+                <th>Sigla</th>
+                <th>Descricao</th>
                 <th>Acoes</th>
               </tr>
             </thead>
             <tbody id="tableBodyEmpresas">
               <% empresas.forEach(function(empresa, index) { %>
-              <tr>
+              <tr class="empresa-row" data-id="<%= empresa.id %>" draggable="true">
+                <td class="empresa-move-col text-center align-middle">
+                  <button type="button" class="empresa-drag-handle" title="Arrastar para reordenar" aria-label="Arrastar para reordenar">
+                    <i class="fas fa-grip-vertical"></i>
+                  </button>
+                </td>
                 <th scope="row"><%= index + 1 %></th>
+                <td><%= empresa.ordem_exibicao || index + 1 %></td>
                 <td><%= empresa.nome %></td>
                 <td><%= empresa.sigla || '-' %></td>
                 <td><%= empresa.descricao || 'Sem descricao' %></td>
                 <td>
+                  <div class="d-flex flex-wrap gap-1 justify-content-center">
                   <button
                     type="button"
                     class="btn btn-outline-dark btn-sm btn-edit-empresa"
@@ -59,6 +113,7 @@
                     <i class="fas fa-pen"></i>
                     Editar
                   </button>
+                  </div>
                 </td>
               </tr>
               <% }); %>
@@ -94,38 +149,158 @@
   <script>
     const tbodyEmpresas = document.getElementById("tableBodyEmpresas");
     const modalEditEmpresa = document.getElementById("modalEditEmpresa");
+    const empresaOrderAlert = document.getElementById("empresaOrderAlert");
+    let draggingRow = null;
+    let originalOrderIds = [];
+    let savingOrder = false;
+    let dropCompleted = false;
 
-    let ultimaColuna = null;
-    let ordemAscendente = true;
+    function showOrderAlert(message, type = "info") {
+      if (!empresaOrderAlert) return;
+      empresaOrderAlert.className = `alert alert-${type} text-start`;
+      empresaOrderAlert.textContent = message;
+      empresaOrderAlert.classList.remove("d-none");
+    }
 
-    function ordenarEmpresas(colunaIndex) {
-      const linhas = Array.from(tbodyEmpresas.querySelectorAll("tr"));
+    function hideOrderAlert() {
+      if (!empresaOrderAlert) return;
+      empresaOrderAlert.classList.add("d-none");
+      empresaOrderAlert.textContent = "";
+    }
 
-      if (ultimaColuna === colunaIndex) {
-        ordemAscendente = !ordemAscendente;
-      } else {
-        ordemAscendente = true;
-      }
+    function getCurrentOrderIds() {
+      return Array.from(tbodyEmpresas.querySelectorAll(".empresa-row"))
+        .map((row) => Number(row.getAttribute("data-id")))
+        .filter((id) => Number.isFinite(id));
+    }
 
-      ultimaColuna = colunaIndex;
+    function updateEmpresaRowNumbers() {
+      Array.from(tbodyEmpresas.querySelectorAll(".empresa-row")).forEach((row, index) => {
+        if (row.cells[0]) row.cells[0].textContent = String(index + 1);
+        if (row.cells[2]) row.cells[2].textContent = String(index + 1);
+      });
+    }
 
-      linhas.sort((a, b) => {
-        const valorA = a.cells[colunaIndex].innerText.trim().toLowerCase();
-        const valorB = b.cells[colunaIndex].innerText.trim().toLowerCase();
-
-        const numA = parseFloat(valorA);
-        const numB = parseFloat(valorB);
-
-        if (!isNaN(numA) && !isNaN(numB)) {
-          return ordemAscendente ? numA - numB : numB - numA;
-        }
-
-        return ordemAscendente
-          ? valorA.localeCompare(valorB)
-          : valorB.localeCompare(valorA);
+    async function persistEmpresaOrder() {
+      const orderedIds = getCurrentOrderIds();
+      const response = await fetch("/empresas/ordem", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderedIds }),
       });
 
-      linhas.forEach(linha => tbodyEmpresas.appendChild(linha));
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || "Nao foi possivel salvar a ordem das empresas.");
+      }
+    }
+
+    function restoreEmpresaOrder(ids) {
+      if (!Array.isArray(ids) || !ids.length) return;
+
+      const rowsById = new Map(
+        Array.from(tbodyEmpresas.querySelectorAll(".empresa-row")).map((row) => [
+          Number(row.getAttribute("data-id")),
+          row,
+        ])
+      );
+
+      ids.forEach((id) => {
+        const row = rowsById.get(Number(id));
+        if (row) tbodyEmpresas.appendChild(row);
+      });
+
+      updateEmpresaRowNumbers();
+    }
+
+    function bindEmpresaDragAndDrop() {
+      if (!tbodyEmpresas) return;
+
+      async function handleOrderDrop() {
+        const nextOrderIds = getCurrentOrderIds();
+        updateEmpresaRowNumbers();
+
+        if (JSON.stringify(originalOrderIds) === JSON.stringify(nextOrderIds)) {
+          return;
+        }
+
+        savingOrder = true;
+        showOrderAlert("Salvando nova ordem das empresas...", "info");
+
+        try {
+          await persistEmpresaOrder();
+          showOrderAlert("Ordem das empresas salva com sucesso.", "success");
+          originalOrderIds = [...nextOrderIds];
+        } catch (error) {
+          restoreEmpresaOrder(originalOrderIds);
+          showOrderAlert(error.message || "Erro ao salvar a ordem das empresas.", "danger");
+        } finally {
+          savingOrder = false;
+        }
+      }
+
+      tbodyEmpresas.querySelectorAll(".empresa-row").forEach((row) => {
+        row.addEventListener("dragstart", function(event) {
+          if (savingOrder) {
+            event.preventDefault();
+            return;
+          }
+
+          draggingRow = row;
+          originalOrderIds = getCurrentOrderIds();
+          dropCompleted = false;
+          row.classList.add("table-active");
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", row.getAttribute("data-id") || "");
+          }
+          hideOrderAlert();
+        });
+
+        row.addEventListener("dragend", function() {
+          row.classList.remove("table-active");
+          if (!dropCompleted && !savingOrder) {
+            restoreEmpresaOrder(originalOrderIds);
+          }
+          draggingRow = null;
+        });
+
+        row.addEventListener("dragover", function(event) {
+          if (!draggingRow || draggingRow === row || savingOrder) return;
+          event.preventDefault();
+          const rect = row.getBoundingClientRect();
+          const offset = event.clientY - rect.top;
+          const shouldInsertAfter = offset > rect.height / 2;
+
+          if (shouldInsertAfter) {
+            tbodyEmpresas.insertBefore(draggingRow, row.nextSibling);
+          } else {
+            tbodyEmpresas.insertBefore(draggingRow, row);
+          }
+        });
+
+        row.addEventListener("drop", async function(event) {
+          if (!draggingRow || savingOrder) return;
+          event.preventDefault();
+          dropCompleted = true;
+          await handleOrderDrop();
+        });
+      });
+
+      tbodyEmpresas.addEventListener("dragover", function(event) {
+        if (!draggingRow || savingOrder) return;
+        event.preventDefault();
+      });
+
+      tbodyEmpresas.addEventListener("drop", async function(event) {
+        if (!draggingRow || savingOrder) return;
+        event.preventDefault();
+        dropCompleted = true;
+        await handleOrderDrop();
+      });
     }
 
     if (modalEditEmpresa) {
@@ -140,7 +315,8 @@
       });
     }
 
-    window.ordenarEmpresas = ordenarEmpresas;
+    updateEmpresaRowNumbers();
+    bindEmpresaDragAndDrop();
   </script>
 </body>
 

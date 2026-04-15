@@ -1,0 +1,925 @@
+
+MYHONDA08
+
+"Nome do computador:","MYHONDA08"
+"Nome da marca do computador:","DELL OptiPlex 3050"
+"Nome do usuário atual:","My Honda 08"
+
+Processador(es) central
+
+"Número de pacotes do processador (físico):","1"
+"Número de núcleos de processador:","4"
+"Número de processadores lógicos:","4"
+
+Intel Core i5-6500
+
+"Nome do processador:","Intel Core i5-6500"
+"Freqüência do processador original:","3200.0 MHz"
+"Original Processor Frequency [MHz]:","3200"
+"CPU HFM (Base):","3200.0 MHz = 32 x 100.0 MHz"
+"CPU Turbo Max:","3600.0 MHz = 36 x 100.0 MHz [Unlocked]"
+"Limites de relação turbo:","36x (1c), 35x (2c), 34x (3c), 33x (4c)"
+
+Placa-mãe
+
+"Nome da marca do computador:","DELL OptiPlex 3050"
+"Modelo de placa-mãe:","DELL 08NPPY"
+"Chipset da placa-mãe:","Intel B250 (Kaby Lake)"
+"Slots da placa-mãe:","1xPCI Express x1, 1xPCI Express x4, 1xPCI Express x16"
+"Versão PCI Express suportada:","v2.0"
+"Versão USB suportada:","v3.0"
+"Fabricante da BIOS:","American Megatrends"
+"Data BIOS (mm/dd/yyyy):","07/09/2024"
+"Versão do BIOS:","1.31.0"
+"UEFI BIOS:","Capaz"
+"Chip Super-IO / LPC:","Nuvoton NCT67xx"
+"Chip TPM (Trusted Platform Module):","Not Found"
+
+Dispositivos ACPI
+
+
+Legacy device
+
+"Nome do dispositivo:","Legacy device"
+"Localização da memória:","FF000000 - FFFFFFFF"
+"Localização da memória:","FF000000 - FFFFFFFF"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Porta de E/S:","1854 - 1857"
+"Porta de E/S:","1854 - 1857"
+
+Programmable interrupt controller
+
+"Nome do dispositivo:","Programmable interrupt controller"
+"Porta de E/S:","0020 - 0021"
+"Porta de E/S:","0030 - 0031"
+"Porta de E/S:","00A0 - 00A1"
+"Porta de E/S:","00B0 - 00B1"
+"IRQ:","1114369"
+"IRQ:","1114369"
+"IRQ:","1114369"
+"IRQ:","1114369"
+"Porta de E/S:","0020 - 0021"
+"Porta de E/S:","0024 - 0025"
+"Porta de E/S:","0028 - 0029"
+"Porta de E/S:","002C - 002D"
+"Porta de E/S:","0030 - 0031"
+"Porta de E/S:","0034 - 0035"
+"Porta de E/S:","0038 - 0039"
+"Porta de E/S:","003C - 003D"
+"Porta de E/S:","00A0 - 00A1"
+"Porta de E/S:","00A4 - 00A5"
+"Porta de E/S:","00A8 - 00A9"
+"Porta de E/S:","00AC - 00AD"
+"Porta de E/S:","00B0 - 00B1"
+"Porta de E/S:","00B4 - 00B5"
+"Porta de E/S:","00B8 - 00B9"
+"Porta de E/S:","00BC - 00BD"
+"Porta de E/S:","04D0 - 04D1"
+
+System timer
+
+"Nome do dispositivo:","System timer"
+"Porta de E/S:","0040 - 0043"
+"DMA:","0"
+"Porta de E/S:","0040 - 0043"
+"Porta de E/S:","0050 - 0053"
+"IRQ:","0"
+
+High precision event timer
+
+"Nome do dispositivo:","High precision event timer"
+"Localização da memória:","FED00000 - FED003FF"
+"Localização da memória:","FED00000 - FED003FF"
+
+Porta de comunicação
+
+"Nome do dispositivo:","Porta de comunicação"
+"Porta de E/S:","03F8 - 03FF"
+"Porta de E/S:","03F8 - 03FF"
+"IRQ:","4"
+"Porta de E/S:","03F8 - 03FF"
+"IRQ:","4"
+"IRQ:","5"
+"IRQ:","7"
+"IRQ:","9"
+"IRQ:","10"
+"IRQ:","11"
+"IRQ:","12"
+"Porta de E/S:","02F8 - 02FF"
+"IRQ:","3"
+"IRQ:","4"
+"IRQ:","5"
+"IRQ:","7"
+"IRQ:","9"
+"IRQ:","10"
+"IRQ:","11"
+"IRQ:","12"
+"Porta de E/S:","03E8 - 03EF"
+"IRQ:","4"
+"IRQ:","5"
+"IRQ:","7"
+"IRQ:","9"
+"IRQ:","10"
+"IRQ:","11"
+"IRQ:","12"
+"Porta de E/S:","02E8 - 02EF"
+"IRQ:","3"
+"IRQ:","4"
+"IRQ:","5"
+"IRQ:","7"
+"IRQ:","9"
+"IRQ:","10"
+"IRQ:","11"
+"IRQ:","12"
+
+PCI Express Root Complex
+
+"Nome do dispositivo:","PCI Express Root Complex"
+"Porta de E/S:","0000 - FFFFFFFF"
+"Localização da memória:","000A0000 - 000BFFFF"
+"Porta de E/S:","0000 - 0CF7"
+"Porta de E/S:","0D00 - FFFF"
+"Localização da memória:","000A0000 - 000BFFFF"
+"Localização da memória:","E0000000 - F7FFFFFF"
+"Localização da memória:","FD000000"
+
+System CMOS/real time clock
+
+"Nome do dispositivo:","System CMOS/real time clock"
+"Porta de E/S:","0070 - 0077"
+"Porta de E/S:","0070 - 0077"
+"IRQ:","8"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Porta de E/S:","0A00 - 0A3F"
+"Porta de E/S:","0A00 - 0A3F"
+"Porta de E/S:","0A40 - 0A7F"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Localização da memória:","FED10000 - FED17FFF"
+"Localização da memória:","FED20000 - FED3FFFF"
+"Localização da memória:","FED10000 - FED17FFF"
+"Localização da memória:","FED18000 - FED18FFF"
+"Localização da memória:","FED19000"
+"Localização da memória:","F8000000"
+"Localização da memória:","FED20000"
+"Localização da memória:","FED90000"
+"Localização da memória:","FED45000"
+"Localização da memória:","FF000000"
+"Localização da memória:","FEE00000 - FEEFFFFF"
+"Localização da memória:","F7FE0000 - F7FFFFFF"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Porta de E/S:","002E - 002F"
+"Porta de E/S:","0065"
+"Porta de E/S:","0000 - 006F"
+"Porta de E/S:","0092"
+"Porta de E/S:","FFFF"
+"IRQ:","1114369"
+"IRQ:","1114369"
+"Porta de E/S:","002E - 002F"
+"Porta de E/S:","004E - 004F"
+"Porta de E/S:","0061"
+"Porta de E/S:","0063"
+"Porta de E/S:","0065"
+"Porta de E/S:","0067"
+"Porta de E/S:","0070"
+"Porta de E/S:","0080"
+"Porta de E/S:","0092"
+"Porta de E/S:","00B2 - 00B3"
+"Porta de E/S:","0680 - 069F"
+"Porta de E/S:","FFFF"
+"Porta de E/S:","FFFF"
+"Porta de E/S:","FFFF"
+"Porta de E/S:","1800 - 18FE"
+"Porta de E/S:","164E - 164F"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Localização da memória:","FDAF0000 - FDAFFFFF"
+"Localização da memória:","FDAF0000 - FDAFFFFF"
+"Localização da memória:","FDAE0000 - FDAEFFFF"
+"Localização da memória:","FDAC0000"
+"IRQ:","14"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Porta de E/S:","FF00 - FFFE"
+"Porta de E/S:","FF00 - FFFE"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Porta de E/S:","0800 - 087F"
+"Porta de E/S:","0800 - 087F"
+
+Motherboard resources
+
+"Nome do dispositivo:","Motherboard resources"
+"Localização da memória:","FD000000 - FDABFFFF"
+"Localização da memória:","FE036000 - FE03BFFF"
+"Localização da memória:","FD000000 - FDABFFFF"
+"Localização da memória:","FDAD0000 - FDADFFFF"
+"Localização da memória:","FDB00000"
+"Localização da memória:","FE000000"
+"Localização da memória:","FE036000"
+"Localização da memória:","FE03D000"
+"Localização da memória:","FE410000"
+
+Numeric data processor
+
+"Nome do dispositivo:","Numeric data processor"
+"Porta de E/S:","00F0"
+"Porta de E/S:","00F0"
+"IRQ:","13"
+
+SMBIOS DMI
+
+
+BIOS
+
+"Fabricante da BIOS:","Dell Inc."
+"Versão do BIOS:","1.31.0"
+"Data de lançamento do BIOS (mm/dd/yyyy):","07/09/2024"
+"Segmento de inicialização do BIOS:","F000"
+"Tamanho do BIOS:","16384 KBytes"
+"Versão do BIOS do sistema:","1.31"
+"ISA Support:","Não presente"
+"MCA Support:","Não presente"
+"EISA Support:","Não presente"
+"PCI Support:","Presente"
+"PC Card (PCMCIA) Support:","Não presente"
+"Plug-and-Play Support:","Presente"
+"APM Support:","Não presente"
+"Flash BIOS:","Presente"
+"BIOS Shadow:","Presente"
+"VL-VESA Support:","Não presente"
+"ESCD Support:","Não presente"
+"Boot from CD:","Presente"
+"Selectable Boot:","Presente"
+"BIOS ROM Socketed:","Não presente"
+"Boot from PC Card:","Não presente"
+"EDD Support:","Presente"
+"NEC PC-98 Support:","Não presente"
+"ACPI Support:","Presente"
+"USB Legacy Support:","Presente"
+"AGP Support:","Não presente"
+"I2O Boot Support:","Não presente"
+"LS-120 Boot Support:","Não presente"
+"ATAPI ZIP Drive Boot Support:","Não presente"
+"IEE1394 Boot Support:","Não presente"
+"Smart Battery Support:","Não presente"
+"BIOS Boot Specification Support:","Presente"
+"Function key-initiated Network Service Boot Support:","Presente"
+"Targeted Content Distribution Support:","Presente"
+"UEFI Specification Support:","Presente"
+"Virtual Machine:","Não presente"
+
+Sistema
+
+"Fabricante do sistema:","Dell Inc."
+"Nome do produto:","OptiPlex 3050"
+"Versão do produto:",""
+"Número de série do produto:","JN1KJ82"
+"UUID:","{4C4C4544-004E-3110-804B-CAC04F4A3832}"
+"SKU Number:","07A3"
+"Family:","OptiPlex"
+
+Placa-mãe
+
+"Fabricante da placa-mãe:","Dell Inc."
+"Nome da placa-mãe:","08NPPY"
+"Versão da placa-mãe:","A00"
+"Número de série da placa-mãe:","/JN1KJ82/BR1081985H01IP/"
+"Ativo Tag:",""
+"Localização no chassi do:",""
+
+Gabinete do sistema
+
+"Fabricante:","Dell Inc."
+"Tipo de caixa:","Desktop"
+"Versão:",""
+"Número de série:","JN1KJ82"
+"Número da etiqueta do ativo:",""
+
+Strings de texto OEM
+
+
+
+
+
+
+
+
+
+
+Opções de configuração do sistema
+
+
+
+System Event Log
+
+
+Controle de energia do sistema
+
+
+Informações de inicialização do sistema
+
+"Status de inicialização:","Não ocorreu nenhum erro"
+
+Cache L1
+
+"Designação de soquete:","L1 Cache"
+"Estado do cache:","Habilitado"
+"Localização do cache:","Interno"
+"Tipo de cache:","L1 Unified"
+"Esquema de cache:","Write-Back"
+"Tipo de SRAM com suporte:","Synchronous"
+"Tipo de SRAM atual:","Synchronous"
+"Velocidade do cache:","Unknown"
+"Tipo de correção de erro:","Parity"
+"Tamanho máximo do cache:","256 KBytes"
+"Tamanho do cache instalado:","256 KBytes"
+"Associatividade do cache:","8-way Set-Associative"
+
+Cache L2
+
+"Designação de soquete:","L2 Cache"
+"Estado do cache:","Habilitado"
+"Localização do cache:","Interno"
+"Tipo de cache:","L2 Unified"
+"Esquema de cache:","Write-Back"
+"Tipo de SRAM com suporte:","Synchronous"
+"Tipo de SRAM atual:","Synchronous"
+"Velocidade do cache:","Unknown"
+"Tipo de correção de erro:","Single-bit ECC"
+"Tamanho máximo do cache:","1024 KBytes"
+"Tamanho do cache instalado:","1024 KBytes"
+"Associatividade do cache:","4-way Set-Associative"
+
+Cache L3
+
+"Designação de soquete:","L3 Cache"
+"Estado do cache:","Habilitado"
+"Localização do cache:","Interno"
+"Tipo de cache:","L3 Unified"
+"Esquema de cache:","Write-Back"
+"Tipo de SRAM com suporte:","Synchronous"
+"Tipo de SRAM atual:","Synchronous"
+"Velocidade do cache:","Unknown"
+"Tipo de correção de erro:","Multi-bit ECC"
+"Tamanho máximo do cache:","6144 KBytes"
+"Tamanho do cache instalado:","6144 KBytes"
+"Associatividade do cache:","12-way Set-Associative"
+
+Processador
+
+"Fabricante do processador:","Intel(R) Corporation"
+"Versão do processador:","Intel(R) Core(TM) i5-6500 CPU @ 3.20GHz"
+"Freqüência externa:","100 MHz"
+"Frequência máxima suportada:","4200 MHz"
+"Frequência atual:","3200 MHz"
+"Soquete de CPU:","Preenchida"
+"Status da CPU:","Habilitado"
+"Tipo de processador:","Processador central"
+"Tensão do processador:","1.1 V"
+"Atualização do processador:","Unknown (1)"
+"Designação de soquete:","U3E1"
+
+Dispositivo de resfriamento
+
+"Modelo:","Chip Fan"
+"Descrição:","CPU Fan"
+"Status:","OK"
+"Nominal Speed:","6000 RPM"
+
+Sonda de temperatura
+
+"Descrição:","CPU Thermal Probe"
+"Location:","Processor"
+"Status:","OK"
+"Maximum Value:","127.0 °C"
+"Minimum Value:","OK"
+"Nominal Value:","OK"
+"Resolution:","OK"
+"Tolerance:","OK"
+"Accuracy:","Unknown"
+
+Intel AMT
+
+"Suporte Intel AMT:","Não suportado"
+
+Intel vPro
+
+"Intel ME Version:","v11.8, Build 4551, Hotfix 95"
+"CPU VMX Support:","Suportado"
+"CPU VMX Status:","Habilitado"
+"CPU TXT Support:","Suportado"
+"CPU TXT Status:","Desativado"
+"Intel ME Status:","Habilitado"
+"Suporte Intel AMT:","Não suportado"
+"Intel Standard Manageability:","Não suportado"
+"Small Business Advantage:","Não suportado"
+"KVM Support:","Não suportado"
+"Local Wakeup Timer Support:","Não suportado"
+"BIOS VT-d Support:","Suportado"
+"BIOS TXT Support:","Suportado"
+"BIOS VT-x Support:","Suportado"
+
+Informação da versão do firmware
+
+"Reference Code - CPU","1.9.0.0"
+"uCode Version","0.0.0.242"
+"TXT ACM version","0.5.0.0"
+
+Informação da versão do firmware
+
+"Reference Code - ME 11.0","1.9.0.0"
+"MEBx version","0.0.0.0"
+"ME Firmware Version","11.8.95.4551, Corporate SKU"
+
+Informação da versão do firmware
+
+"Reference Code - SKL PCH","1.9.0.0"
+"PCH-CRID Status","Disabled"
+"PCH-CRID Original Value","0x0"
+"PCH-CRID New Value","0x0"
+"OPROM - RST - RAID","15.9.0.0"
+"SKL PCH H Bx Hsio Version","62.0.0.0"
+"SKL PCH H Dx Hsio Version","52.0.0.0"
+"KBL PCH H Ax Hsio Version","11.0.0.0"
+"SKL PCH LP Bx Hsio Version","62.0.0.0"
+"SKL PCH LP Cx Hsio Version","52.0.0.0"
+
+Informação da versão do firmware
+
+"Reference Code - SA - System Agent","1.9.0.0"
+"Reference Code - MRC","2.0.0.6"
+"SA - PCIe Version","1.9.0.0"
+"SA-CRID Status","Disabled"
+"SA-CRID Original Value","0x7"
+"SA-CRID New Value","0x7"
+"OPROM - VBIOS","Build: 770"
+
+Informação da versão do firmware
+
+"Lan Phy Version","0.0.0.0"
+"Sensor Firmware Version",""
+"Debug Mode Status","Disabled"
+"Performance Mode Status","Disabled"
+"Debug Use USB(Disabled:Serial)","Disabled"
+"ICC Overclocking Version","0.0.0.0"
+"UNDI Version",""
+"EC FW Version","0.0"
+"GOP Version",""
+"BIOS Guard Version",""
+"Base EC FW Version",""
+"EC-EC Protocol Version",""
+"Royal Park Version","1.3.3.1, BP1.3.3.0_RP01"
+"Platform Version","0.7.3.0"
+
+Group Associations
+
+
+Idioma da BIOS
+
+
+
+
+Group Associations
+
+
+Dispositivos de memória
+
+
+Matriz de memória física
+
+"Localização da matriz:","System board"
+"Uso da matriz:","System memory"
+"Método de detecção de erros:","Nenhum"
+"Capacidade de memória:","32 GBytes"
+"Dispositivos de memória:","2"
+
+Dispositivo de memória
+
+"Largura Total:","64 bits"
+"Largura dos dados:","64 bits"
+"Tamanho do dispositivo:","4096 MBytes"
+"Fator de forma do dispositivo:","DIMM"
+"Localizador de dispositivos:","DIMM1"
+"Localizador de bancos:",""
+"Tipo de dispositivo:","DDR4"
+"Detalhe do tipo de dispositivo:","Synchronous"
+"Velocidade da memória:","2400 MT/s"
+"Configured Memory Speed:","2133 MT/s"
+"Fabricante:","859B0000802C"
+"Número de série:","E3A42E2D"
+"Número da peça:","CT4G4DFS824A.M8FG   "
+"Ativo Tag:","00205000"
+
+Dispositivo de memória
+
+"Largura Total:","64 bits"
+"Largura dos dados:","64 bits"
+"Tamanho do dispositivo:","4096 MBytes"
+"Fator de forma do dispositivo:","DIMM"
+"Localizador de dispositivos:","DIMM2"
+"Localizador de bancos:",""
+"Tipo de dispositivo:","DDR4"
+"Detalhe do tipo de dispositivo:","Synchronous"
+"Velocidade da memória:","2667 MT/s"
+"Configured Memory Speed:","2133 MT/s"
+"Fabricante:","859B0000802C"
+"Número de série:","E33D37C2"
+"Número da peça:","CT4G4DFS8266.M8FF   "
+"Ativo Tag:","00200400"
+
+Endereço mapeado da matriz de memória
+
+"Endereço inicial:","00000000"
+"Endereço final:","007FFFFF"
+"Largura da partição:","2"
+
+Endereço mapeado do dispositivo de memória
+
+"Endereço inicial:","00000000"
+"Endereço final:","003FFFFF"
+"Partition Row Position:","1"
+"Interleave Position:","2"
+"Interleave Data Depth:","1"
+
+Endereço mapeado do dispositivo de memória
+
+"Endereço inicial:","00400000"
+"Endereço final:","007FFFFF"
+"Partition Row Position:","1"
+"Interleave Position:","2"
+"Interleave Data Depth:","1"
+
+Conectores de porta
+
+
+Network Port
+
+"Tipo de porta:","Network Port"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","LAN"
+"Tipo de conector externo:","RJ-45"
+
+Video Port
+
+"Tipo de porta:","Video Port"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","HDMI"
+"Tipo de conector externo:","Desconhecido"
+
+Video Port
+
+"Tipo de porta:","Video Port"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","DisplayPort 1"
+"Tipo de conector externo:","Desconhecido"
+
+Audio Port
+
+"Tipo de porta:","Audio Port"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Line-out"
+"Tipo de conector externo:","Mini-jack (headphones)"
+
+Audio Port
+
+"Tipo de porta:","Audio Port"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Line-in/Mic"
+"Tipo de conector externo:","Mini-jack (headphones)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Rear USB 2.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Rear USB 2.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Rear USB 3.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:",""
+"Tipo de conector interno:","Nenhum"
+"Referência externa:","Rear USB 3.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+SATA
+
+"Tipo de porta:","SATA"
+"Referência interna:","SATA0"
+"Tipo de conector interno:","SAS/SATA Plug Receptacle"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+SATA
+
+"Tipo de porta:","SATA"
+"Referência interna:","SATA1"
+"Tipo de conector interno:","SAS/SATA Plug Receptacle"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+Conector de porta
+
+"Tipo de porta:","Desconhecido"
+"Referência interna:","FAN_CPU"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+Conector de porta
+
+"Tipo de porta:","Desconhecido"
+"Referência interna:","INTRUDER"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+Conector de porta
+
+"Tipo de porta:","Desconhecido"
+"Referência interna:","INT_SPKR"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+Conector de porta
+
+"Tipo de porta:","Desconhecido"
+"Referência interna:","THRM_2"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:",""
+"Tipo de conector externo:","Nenhum"
+
+Audio Port
+
+"Tipo de porta:","Audio Port"
+"Referência interna:","FRONTPANEL"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Microphone"
+"Tipo de conector externo:","Mini-jack (headphones)"
+
+Audio Port
+
+"Tipo de porta:","Audio Port"
+"Referência interna:","FRONTPANEL"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Headphone"
+"Tipo de conector externo:","Mini-jack (headphones)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:","FRONTPANEL"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Front USB 2.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:","FRONTPANEL"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Front USB 2.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:","USB3_FRONT"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Front USB 3.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+USB
+
+"Tipo de porta:","USB"
+"Referência interna:","USB3_FRONT"
+"Tipo de conector interno:","Desconhecido"
+"Referência externa:","Front USB 3.0"
+"Tipo de conector externo:","Access Bus (USB)"
+
+Slots do sistema
+
+
+SLOT1
+
+"Designação de slot:","SLOT1"
+"Tipo de slot:","PCI Express Gen2 x4"
+"Uso de slot:","Vazio"
+"Largura do barramento de dados do slot:","1x / x1"
+"Comprimento do slot:","Baixo"
+
+SLOT2
+
+"Designação de slot:","SLOT2"
+"Tipo de slot:","PCI Express Gen3"
+"Uso de slot:","Vazio"
+"Largura do barramento de dados do slot:","16x / x16"
+"Comprimento do slot:","Grandes"
+
+SLOT3
+
+"Designação de slot:","SLOT3"
+"Tipo de slot:","M.2 Socket 3 (Mechanical Key M)"
+"Uso de slot:","Vazio"
+"Largura do barramento de dados do slot:","2x / x2"
+"Comprimento do slot:","Desconhecido"
+
+Intel ME
+
+"ME Current Working State:","Normal"
+"Manufacturing Mode:","Not Active"
+"ME Current Operation Mode:","Normal"
+"Boot Guard Status:","Habilitado"
+"Boot Guard Verified Boot Policy:","Habilitado"
+"Boot Guard Measured Boot Policy:","Habilitado"
+"Intel ME Version:","11.8, Build 4551, Hot Fix 95"
+"Intel ME Recovery Image Version:","11.8, Build 4551, Hot Fix 95"
+"Intel ME FITC Version:","11.8, Build 3425, Hot Fix 50"
+"Intel AMT Version:","11.8.95, Build 4551"
+"Intel AMT Applications Version:","11.8.95"
+"Flash Version:","11.8.95"
+"Netstack Version:","11.8.95"
+"Recovery Version:","11.8.95, Build 4551"
+"Versão do BIOS:","Not available"
+"Full Network Manageability:","Não capaz"
+"Standard Network Manageability:","Não capaz"
+"Manageability (AMT):","Não capaz"
+"Small Business Advantage:","Não capaz"
+"Intel Integrated Touch:","Não capaz"
+"Capability Licensing Service:","Capaz"
+"Intel Sensor Hub (ISH):","Não capaz"
+"Protected Audio Video Path (PAVP):","Capaz"
+"IPV6:","Não capaz"
+"KVM Remote Control:","Não capaz"
+"Outbreak Containment Heuristic (OCH):","Não capaz"
+"Dynamic Application Loader (DAL):","Capaz"
+"Cipher Transport Layer (TLS):","Não capaz"
+"Wireless LAN (WLAN):","Não capaz"
+"Platform Trust Technology (PTT):","Capaz"
+"Near Field Communication (NFC):","Não capaz"
+"Full Network Manageability:","Desativado"
+"Standard Network Manageability:","Desativado"
+"Manageability (AMT):","Desativado"
+"Small Business Advantage:","Desativado"
+"Intel Integrated Touch:","Desativado"
+"Capability Licensing Service:","Habilitado"
+"Intel Sensor Hub (ISH):","Desativado"
+"Protected Audio Video Path (PAVP):","Habilitado"
+"IPV6:","Desativado"
+"KVM Remote Control:","Desativado"
+"Outbreak Containment Heuristic (OCH):","Desativado"
+"Dynamic Application Loader (DAL):","Habilitado"
+"Cipher Transport Layer (TLS):","Desativado"
+"Wireless LAN (WLAN):","Desativado"
+"Platform Trust Technology (PTT):","Desativado"
+"Near Field Communication (NFC):","Desativado"
+"Platform Target Usage Type:","Desktop"
+"SKU:","Regular SKU"
+"ME Firmware Image Type:","Corporate SKU Firmware"
+"Platform Manageability Application:","None"
+"Host ME Region Flash Protection Override (HMRFPO) Status:","Locked"
+
+Intel ICC
+
+"Clock Usage:","BCLK/DMI/PEG/PCIe/SATA/USB3"
+"Current Frequency:","100.000 MHz"
+"User Frequency:","100.000 MHz"
+"Minimum Frequency:","99.500 MHz"
+"Maximum Frequency:","100.000 MHz"
+"SSC Mode:","Down, 0.47%"
+"Spread Supported:","Down"
+"Change Allowed:","Não suportado"
+"Halt Allowed:","Não suportado"
+"Clock Source:","PCIe"
+"Clock Usage:","Not Used"
+"Current Frequency:","100.000 MHz"
+"User Frequency:","100.000 MHz"
+"Minimum Frequency:","99.500 MHz"
+"Maximum Frequency:","100.000 MHz"
+"SSC Mode:","Down, 0.47%"
+"Spread Supported:","Down"
+"Change Allowed:","Não suportado"
+"Halt Allowed:","Não suportado"
+"Clock Source:","PCIe"
+
+Memória
+
+"Tamanho total da memória:","8 GBytes"
+"Total Memory Size [MB]:","8192"
+"Frequência máxima de memória suportada:","1066.7 MHz"
+"Frequência de memória atual:","1063.8 MHz"
+"Tempo Atual (tCAS-tRCD-tRP-tRAS):","16-16-16-35"
+"Canais de memória suportados:","2"
+"Canais de memória ativos:","2"
+"Taxa de comando (CR):","2T"
+"Read to Read Delay (tRDRD_SG/TrdrdScL) Same Bank Group:","6T"
+"Read to Read Delay (tRDRD_DG/TrdrdScDlr) Different Bank Group:","4T"
+"Read to Read Delay (tRDRD_SD) Same DIMM:","6T"
+"Read to Read Delay (tRDRD_DD) Different DIMM:","7T"
+"Write to Write Delay (tWRWR_SG/TwrwrScL) Same Bank Group:","6T"
+"Write to Write Delay (tWRWR_DG/TwrwrScDlr) Different Bank Group:","4T"
+"Write to Write Delay (tWRWR_SD) Same DIMM:","7T"
+"Write to Write Delay (tWRWR_DD) Different DIMM:","7T"
+"Read to Write Delay (tRDWR_SG/TrdwrScL) Same Bank Group:","10T"
+"Read to Write Delay (tRDWR_DG/TrdwrScDlr) Different Bank Group:","10T"
+"Read to Write Delay (tRDWR_SD) Same DIMM:","11T"
+"Read to Write Delay (tRDWR_DD) Different DIMM:","12T"
+"Write to Read Delay (tWRRD_SG/TwrrdScL) Same Bank Group:","27T"
+"Write to Read Delay (tWRRD_DG/TwrrdScDlr) Different Bank Group:","22T"
+"Write to Read Delay (tWRRD_SD) Same DIMM:","5T"
+"Write to Read Delay (tWRRD_DD) Different DIMM:","5T"
+"Read to Precharge Delay (tRTP):","8T"
+"Write to Precharge Delay (tWTP):","28T"
+"Write Recovery Time (tWR):","17T"
+"RAS# to RAS# Delay (tRRD_L):","6T"
+"RAS# to RAS# Delay (tRRD_S):","4T"
+"Row Cycle Time (tRC):","51T"
+"Refresh Cycle Time (tRFC):","278T"
+"Four Activate Window (tFAW):","23T"
+
+Fileira: 1 [DIMM1] - 4 GB PC4-19200 DDR4 SDRAM Crucial Technology CT4G4DFS824A.M8FG
+
+
+Fileira: 3 [DIMM2] - 4 GB PC4-21300 DDR4 SDRAM Crucial Technology CT4G4DFS8266.M8FF
+
+
+Unidades de disco
+
+
+Unidades (S)ATA/ATAPI
+
+
+ST1000LX015-1U7172
+
+"Controlador de disco:","Serial ATA 6Gb/s @ 6Gb/s <-> USB"
+"Controlador de host:","Dispositivo de Armazenamento em Massa UAS (USB Attached SCSI)"
+"Modelo de unidade:","Seagate ST1000LX015-1U7172"
+"Revisão do firmware da unidade:","SDM1"
+"Número de série da unidade:","WDEAZQX8"
+"Nome mundial (WWN):","5000C500A9A42A10"
+"Capacidade de unidade:","953,869 MBytes (1000 GB)"
+"Drive Capacity [MB]:","953869"
+"Taxa de rotação de mídia:","5400 RPM"
+"Fator de forma nominal:","2.5"""
+"Versão principal do ATA suportada:","ATA/ATAPI-5, ATA/ATAPI-6, ATA/ATAPI-7, ATA8-ACS, ACS-2, ACS-3"
+"Versão secundária do ATA suportada:","ACS-3 Revision 3b"
+"Versão de transporte ATA suportada:","SATA 3.1"
+"Drive Letter(s):","D:"
+"Numero de cilindros:","16383"
+"Número de cabeças:","16"
+"Setores por trilha:","63"
+"Número de setores:","16514064"
+"Total de setores LBA de 48 bits:","1953525168"
+"Tamanho do setor lógico:","512 Bytes"
+"Tamanho do buffer/cache:","N/A"
+"Setores por interrupção:","Total: 16, Active: 16"
+"Máx. Modo de transferência PIO:","4"
+"Multiword DMA Mode:","Total: 2, Active: 2"
+"Singleword DMA Mode:","Total: -, Active: -"
+"Ultra-DMA Mode:","Total: 6 (ATA-133), Inactive"
+"Max. Multiword DMA Transfer Rate:","16.7 MBytes/s"
+"Max. PIO with IORDY Transfer Rate:","16.7 MBytes/s"
+"Max. PIO w/o IORDY Transfer Rate:","16.7 MBytes/s"
+"Native Command Queuing:","Suportado, Máx. Profundidade: 32"
+"Coman

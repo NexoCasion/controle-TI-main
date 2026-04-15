@@ -2,17 +2,15 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-body">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-4">
-            <%- include('../forms/register_structured_pc_form', {
-              inModal: true,
-              empresas: empresas,
-              actionUrl: '/computadores/estruturado-manual',
-              csvTargetModal: (typeof csvTargetModal !== 'undefined') ? csvTargetModal : 'modalImportCsv',
-              csvEmpresaTargetId: (typeof csvEmpresaTargetId !== 'undefined') ? csvEmpresaTargetId : 'empresaImport',
-              structuredModalId: 'modalRegisterStructuredPc'
-            }) %>
-          </div>
+        <div class="modal-form-shell text-center">
+          <%- include('../forms/register_structured_pc_form', {
+            inModal: true,
+            empresas: empresas,
+            actionUrl: '/computadores/estruturado-manual',
+            csvTargetModal: (typeof csvTargetModal !== 'undefined') ? csvTargetModal : 'modalImportCsv',
+            csvEmpresaTargetId: (typeof csvEmpresaTargetId !== 'undefined') ? csvEmpresaTargetId : 'empresaImport',
+            structuredModalId: 'modalRegisterStructuredPc'
+          }) %>
         </div>
       </div>
     </div>

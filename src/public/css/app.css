@@ -2414,3 +2414,64 @@ html[data-theme='dark'] #modalEditPc #btnTransferirFromEdit:focus-visible {
   color: #ffffff !important;
   box-shadow: 0 0 0 0.2rem rgba(75, 95, 122, 0.22) !important;
 }
+
+/* =========================
+   CAMADA FINAL DE CONSISTENCIA PARA MODAIS
+   ========================= */
+
+.modal .modal-content {
+  background: var(--surface) !important;
+}
+
+.modal .modal-header,
+.modal .modal-footer {
+  background: color-mix(in srgb, var(--surface) 92%, var(--surface-soft) 8%) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme='dark'] .modal .modal-header,
+html[data-theme='dark'] .modal .modal-footer {
+  background: color-mix(in srgb, var(--surface) 88%, #0f172a 12%) !important;
+}
+
+.modal .modal-body {
+  background: transparent !important;
+}
+
+.modal-form-shell {
+  width: 100%;
+  text-align: center;
+}
+
+.modal-form-shell > .d-flex:first-child,
+.modal-form-shell > .alert:first-child {
+  margin-top: 0.15rem;
+}
+
+.modal-form-shell .form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.modal-form-shell .row {
+  text-align: left;
+}
+
+.modal-form-shell .card-title,
+.modal-form-shell .modal-title {
+  color: var(--text) !important;
+}
+
+.modal-form-shell hr {
+  border-color: var(--border-color);
+  opacity: 1;
+}
+
+.modal-form-shell .btn-importcsv {
+  min-height: 44px;
+}
+
+html[data-theme='dark'] .modal-form-shell .text-muted,
+html[data-theme='dark'] .modal-form-shell small.text-muted {
+  color: var(--muted) !important;
+}

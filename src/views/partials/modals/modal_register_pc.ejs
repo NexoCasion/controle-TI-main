@@ -2,10 +2,8 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-body">
-        <div class="card">
-          <div class="card-body text-center">
-            <%- include('../forms/register_computer_form', { empresas: empresas, inModal: true, showImport: true }) %>
-          </div>
+        <div class="modal-form-shell text-center">
+          <%- include('../forms/register_computer_form', { empresas: empresas, inModal: true, showImport: true }) %>
         </div>
       </div>
     </div>

@@ -1,8 +1,12 @@
 const bcrypt = require('bcrypt');
 const { Op, fn, col, where } = require('sequelize');
 const User = require('../models/User');
+const Empresa = require('../models/Empresa');
+const EmpresaController = require('./empresa');
 
 const ROLES_PERMITIDOS = ['admin', 'tecnico'];
+const ADD_COMPUTER_DEFAULT_MODALS = ['structured', 'single', 'batch'];
+const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais'];
 
 class AuthController {
   renderLogin(req, res) {
@@ -52,6 +56,7 @@ class AuthController {
       id: user.id,
       nome: user.nome,
       role: user.role,
+      addComputerDefaultModal: this.normalizeAddComputerDefaultModal(user.add_computer_default_modal),
     };
 
     const returnTo = String(req.session.returnTo || '').trim();
@@ -71,6 +76,7 @@ class AuthController {
   async perfil(req, res) {
     const userId = req.session?.user?.id;
     const user = userId ? await User.findByPk(userId) : null;
+    const empresasFiltro = await this.getEmpresasFiltro();
     const isAdmin = req.session?.user?.role === 'admin';
     const users = isAdmin
       ? await User.findAll({
@@ -84,6 +90,11 @@ class AuthController {
     return res.render('pages/perfil', {
       user,
       users,
+      empresasFiltro,
+      homeDashboardPreferences: this.normalizeHomeDashboardPreferences(
+        user?.home_dashboard_preferences,
+        empresasFiltro
+      ),
       isAdmin,
       error: String(req.query.error || '').trim(),
       success: String(req.query.success || '').trim(),
@@ -116,6 +127,8 @@ class AuthController {
       email,
       password_hash: passwordHash,
       role,
+      add_computer_default_modal: 'structured',
+      home_dashboard_preferences: null,
       ativo,
     });
   }
@@ -166,7 +179,57 @@ class AuthController {
     if (Number(req.session?.user?.id) === Number(user.id)) {
       req.session.user.nome = user.nome;
       req.session.user.role = user.role;
+      req.session.user.addComputerDefaultModal = this.normalizeAddComputerDefaultModal(
+        user.add_computer_default_modal
+      );
     }
+  }
+
+  async updatePreferences(req, res) {
+    const userId = Number(req.session?.user?.id);
+    if (!userId) {
+      throw new Error('Usuario logado nao encontrado.');
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario nao encontrado.');
+    }
+
+    const empresasFiltro = await this.getEmpresasFiltro();
+    user.add_computer_default_modal = this.normalizeAddComputerDefaultModal(
+      req.body.addComputerDefaultModal
+    );
+    user.home_dashboard_preferences = this.serializeHomeDashboardPreferences(
+      this.extractHomeDashboardPreferences(req.body),
+      empresasFiltro
+    );
+
+    await user.save();
+
+    if (req.session?.user) {
+      req.session.user.addComputerDefaultModal = user.add_computer_default_modal;
+    }
+  }
+
+  async updateHomeDashboardPreferences(req, res) {
+    const userId = Number(req.session?.user?.id);
+    if (!userId) {
+      throw new Error('Usuario logado nao encontrado.');
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('Usuario nao encontrado.');
+    }
+
+    const empresasFiltro = await this.getEmpresasFiltro();
+    user.home_dashboard_preferences = this.serializeHomeDashboardPreferences(
+      this.extractHomeDashboardPreferences(req.body),
+      empresasFiltro
+    );
+
+    await user.save();
   }
 
   ensureAdmin(req) {
@@ -181,6 +244,105 @@ class AuthController {
       throw new Error('Perfil de usuario invalido.');
     }
     return normalized;
+  }
+
+  normalizeAddComputerDefaultModal(value) {
+    const normalized = String(value || 'structured').trim().toLowerCase();
+    return ADD_COMPUTER_DEFAULT_MODALS.includes(normalized) ? normalized : 'structured';
+  }
+
+  normalizeChartOrder(order) {
+    const list = Array.isArray(order) ? order.map((item) => String(item || '').trim()) : [];
+    const valid = list.filter((item) => HOME_DASHBOARD_CHART_IDS.includes(item));
+    const unique = [];
+
+    valid.forEach((item) => {
+      if (!unique.includes(item)) unique.push(item);
+    });
+
+    HOME_DASHBOARD_CHART_IDS.forEach((item) => {
+      if (!unique.includes(item)) unique.push(item);
+    });
+
+    return unique.slice(0, HOME_DASHBOARD_CHART_IDS.length);
+  }
+
+  normalizeHomeDashboardPreferences(value, empresasFiltro = []) {
+    let parsed = value;
+
+    if (typeof parsed === 'string') {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch (error) {
+        parsed = {};
+      }
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      parsed = {};
+    }
+
+    const empresas = Array.isArray(empresasFiltro) ? empresasFiltro : [];
+    const allEmpresaIds = empresas
+      .map((empresa) => Number(empresa.id))
+      .filter((id) => Number.isFinite(id));
+    const allEmpresaIdsSet = new Set(allEmpresaIds);
+    const defaultRankingIds = empresas
+      .filter((empresa) => !empresa.isDeptoTi)
+      .map((empresa) => Number(empresa.id))
+      .filter((id) => Number.isFinite(id));
+
+    const normalizeEmpresaIds = (ids, fallback) => {
+      const input = Array.isArray(ids) ? ids : [ids];
+      const unique = [];
+
+      input
+        .map((item) => Number(item))
+        .filter((id) => Number.isFinite(id) && allEmpresaIdsSet.has(id))
+        .forEach((id) => {
+          if (!unique.includes(id)) unique.push(id);
+        });
+
+      return unique.length ? unique : [...fallback];
+    };
+
+    return {
+      ranking: normalizeEmpresaIds(parsed.ranking, defaultRankingIds),
+      maquinas: normalizeEmpresaIds(parsed.maquinas, allEmpresaIds),
+      order: this.normalizeChartOrder(parsed.order),
+    };
+  }
+
+  serializeHomeDashboardPreferences(value, empresasFiltro = []) {
+    return JSON.stringify(this.normalizeHomeDashboardPreferences(value, empresasFiltro));
+  }
+
+  extractHomeDashboardPreferences(body = {}) {
+    return {
+      ranking: body.homeRankingEmpresaIds,
+      maquinas: body.homeMaquinasEmpresaIds,
+      order: [
+        body.homeChartOrderFirst,
+        body.homeChartOrderSecond,
+        body.homeChartOrderThird,
+      ],
+    };
+  }
+
+  async getEmpresasFiltro() {
+    const empresas = await Empresa.findAll({
+      attributes: ['id', 'nome', 'sigla'],
+      order: EmpresaController.getOrderClause(),
+    });
+
+    return (empresas || []).map((empresa) => ({
+      id: Number(empresa.id),
+      nomeCompleto: empresa.nome || 'Sem empresa',
+      nome: empresa.sigla || empresa.nome || 'Sem empresa',
+      isDeptoTi:
+        String(empresa.sigla || '').trim().toUpperCase() === 'DEPTO TI' ||
+        String(empresa.nome || '').trim().toUpperCase().includes('DEPARTAMENTO DE TI'),
+    }));
   }
 
   async ensureUniqueUserFields({ nome, email, excludeId = null }) {

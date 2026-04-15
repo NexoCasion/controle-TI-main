@@ -22,7 +22,7 @@
 
       <div class="text-center align-items-center">
         <h1 class="mt-4 mb-4">Lista de Computadores</h1>
-        <button type="button" id="btnAddStructuredPc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2" data-bs-toggle="modal" data-bs-target="#modalRegisterStructuredPc">
+        <button type="button" id="btnAddStructuredPc" style="font-size: .75rem;" class="btn btn-secondary btn-lg btn-block mb-2">
           Adicionar Computador
         </button>
 
@@ -156,6 +156,7 @@
       const totalComputadoresEl = document.getElementById("totalComputadores");
       const pageInfoEl = document.getElementById("pageInfo");
       const paginationControls = document.getElementById("paginationControls");
+      const addComputerDefaultModal = <%- JSON.stringify(addComputerDefaultModal || "structured") %>;
 
       if (!selectEmpresa || !searchInput || !pageSizeSelect || !tableBody) {
         console.error("IDs não encontrados. Verifique selectEmpresa/searchInput/pageSizeSelect/tableBody no HTML.");
@@ -185,6 +186,23 @@
         if (pageInfoEl) {
           pageInfoEl.textContent = `Página ${currentMeta.page} de ${currentMeta.totalPages}`;
         }
+      }
+
+      function getTargetModalFromPreference(value) {
+        if (value === "batch") return "modalImportCsvBatchComputadores";
+        if (value === "single") return "modalImportCsvComputadores";
+        return "modalRegisterStructuredPc";
+      }
+
+      function sincronizarEmpresaModalComputadores() {
+        const empresaId = selectEmpresa.value || "";
+        const empresaImport = document.getElementById("empresaImportComputadores");
+        const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
+        const empresaManual = document.getElementById("manualEmpresaId");
+
+        if (empresaImport && empresaId) empresaImport.value = empresaId;
+        if (empresaImportBatch && empresaId) empresaImportBatch.value = empresaId;
+        if (empresaManual && empresaId) empresaManual.value = empresaId;
       }
 
       function criarBotaoPagina(label, page, disabled = false, active = false) {
@@ -231,16 +249,11 @@
       const btnOpenBatchCsvFromSingleComputadores = document.getElementById("btnOpenBatchCsvFromSingleComputadores");
       const btnBackToSingleCsvFromBatchComputadores = document.getElementById("btnBackToSingleCsvFromBatchComputadores");
       const modalImportCsvBatchResultadoEl = document.getElementById("modalImportCsvBatchResultado");
+
       if (btnAddStructuredPc) {
         btnAddStructuredPc.addEventListener("click", () => {
-          const empresaId = selectEmpresa.value || "";
-          const empresaImport = document.getElementById("empresaImportComputadores");
-          const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
-          const empresaManual = document.getElementById("manualEmpresaId");
-
-          if (empresaImport && empresaId) empresaImport.value = empresaId;
-          if (empresaImportBatch && empresaId) empresaImportBatch.value = empresaId;
-          if (empresaManual && empresaId) empresaManual.value = empresaId;
+          sincronizarEmpresaModalComputadores();
+          openModal(getTargetModalFromPreference(addComputerDefaultModal));
         });
       }
 

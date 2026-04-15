@@ -25,6 +25,15 @@ const User = database.define('users', {
     allowNull: false,
     defaultValue: 'tecnico',
   },
+  add_computer_default_modal: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    defaultValue: 'structured',
+  },
+  home_dashboard_preferences: {
+    type: Sequelize.TEXT,
+    allowNull: true,
+  },
   ativo: {
     type: Sequelize.BOOLEAN,
     allowNull: false,

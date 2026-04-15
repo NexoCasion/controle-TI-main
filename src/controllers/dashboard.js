@@ -5,6 +5,7 @@ const Computador = require('../models/Computador');
 const Empresa = require('../models/Empresa');
 const Manutencao = require('../models/Manutencao');
 const Material = require('../models/Material');
+const EmpresaController = require('./empresa');
 
 class DashboardController {
   async getHomeData() {
@@ -26,7 +27,7 @@ class DashboardController {
       Empresa.count(),
       Empresa.findAll({
         attributes: ['id', 'nome', 'sigla'],
-        order: [['nome', 'ASC']],
+        order: EmpresaController.getOrderClause(),
       }),
       Manutencao.findAll({
         attributes: [[fn('COUNT', col('manutencoes.id')), 'total']],

@@ -23,6 +23,7 @@ const dashboardController = new DashboardController();
 const AuthController = require('./controllers/auth');
 const authController = new AuthController();
 const { ensureAuth, redirectIfAuthenticated } = require('./middlewares/auth');
+const User = require('./models/User');
 const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
 
 const loginRateLimit = rateLimit({
@@ -207,6 +208,26 @@ router.post('/perfil/usuarios/:id', async (req, res) => {
   }
 });
 
+router.post('/perfil/preferencias', async (req, res) => {
+  try {
+    await authController.updatePreferences(req, res);
+    return res.redirect('/perfil?success=Preferencias atualizadas com sucesso.');
+  } catch (error) {
+    console.error('Erro ao atualizar preferencias do usuario:', error);
+    return res.redirect(`/perfil?error=${encodeURIComponent(error.message)}`);
+  }
+});
+
+router.post('/perfil/preferencias/home-dashboard', async (req, res) => {
+  try {
+    await authController.updateHomeDashboardPreferences(req, res);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao atualizar preferencias da home:', error);
+    return res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
 router.get('/home', (req, res) => {
   return res.redirect('/');
 });
@@ -214,7 +235,16 @@ router.get('/home', (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const dashboard = await dashboardController.getHomeData();
-    res.render('pages/home.ejs', dashboard);
+    const currentUser = req.session?.user?.id ? await User.findByPk(req.session.user.id) : null;
+    const homeDashboardPreferences = authController.normalizeHomeDashboardPreferences(
+      currentUser?.home_dashboard_preferences,
+      dashboard.empresasFiltro
+    );
+
+    res.render('pages/home.ejs', {
+      ...dashboard,
+      homeDashboardPreferences,
+    });
   } catch (error) {
     console.error('Erro ao carregar home:', error);
     res.status(500).send('Erro ao carregar home: ' + error.message);
@@ -245,6 +275,26 @@ router.post('/editar-empresa', async (req, res) => {
   } catch (error) {
     console.error('Erro ao editar empresa:', error);
     res.status(500).send('Erro ao editar empresa: ' + error.message);
+  }
+});
+
+router.post('/empresas/ordem', async (req, res) => {
+  try {
+    await empresaController.saveDisplayOrder(req.body.orderedIds);
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao salvar ordenacao das empresas:', error);
+    return res.status(400).json({ ok: false, error: error.message });
+  }
+});
+
+router.post('/empresas/:id/ordem', async (req, res) => {
+  try {
+    await empresaController.moveDisplayOrder(req.params.id, req.body.direction);
+    res.redirect('/empresas');
+  } catch (error) {
+    console.error('Erro ao reordenar empresa:', error);
+    res.status(500).send('Erro ao reordenar empresa: ' + error.message);
   }
 });
 
@@ -314,11 +364,16 @@ router.get('/computadores', async (req, res) => {
   const computadoresList = await computadorController.getAll();
   const empresasList = await empresaController.getAll();
   const importCsvBatchResult = consumeSessionValue(req, 'importCsvBatchResult');
+  const currentUser = req.session?.user?.id ? await User.findByPk(req.session.user.id) : null;
+  const addComputerDefaultModal = authController.normalizeAddComputerDefaultModal(
+    currentUser?.add_computer_default_modal || req.session?.user?.addComputerDefaultModal
+  );
 
   res.render('pages/computadores', {
     computadores: computadoresList,
     empresas: empresasList,
     importCsvBatchResult,
+    addComputerDefaultModal,
   });
 });
 
