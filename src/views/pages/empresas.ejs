@@ -151,6 +151,7 @@
     const modalEditEmpresa = document.getElementById("modalEditEmpresa");
     const empresaOrderAlert = document.getElementById("empresaOrderAlert");
     let draggingRow = null;
+    let dragArmedRow = null;
     let originalOrderIds = [];
     let savingOrder = false;
     let dropCompleted = false;
@@ -176,7 +177,7 @@
 
     function updateEmpresaRowNumbers() {
       Array.from(tbodyEmpresas.querySelectorAll(".empresa-row")).forEach((row, index) => {
-        if (row.cells[0]) row.cells[0].textContent = String(index + 1);
+        if (row.cells[1]) row.cells[1].textContent = String(index + 1);
         if (row.cells[2]) row.cells[2].textContent = String(index + 1);
       });
     }
@@ -243,9 +244,21 @@
       }
 
       tbodyEmpresas.querySelectorAll(".empresa-row").forEach((row) => {
+        const handle = row.querySelector(".empresa-drag-handle");
+
+        if (handle) {
+          handle.addEventListener("pointerdown", function() {
+            if (savingOrder) return;
+            dragArmedRow = row;
+            row.classList.add("drag-ready");
+          });
+        }
+
         row.addEventListener("dragstart", function(event) {
-          if (savingOrder) {
+          if (savingOrder || dragArmedRow !== row) {
             event.preventDefault();
+            row.classList.remove("drag-ready");
+            dragArmedRow = null;
             return;
           }
 
@@ -262,10 +275,12 @@
 
         row.addEventListener("dragend", function() {
           row.classList.remove("table-active");
+          row.classList.remove("drag-ready");
           if (!dropCompleted && !savingOrder) {
             restoreEmpresaOrder(originalOrderIds);
           }
           draggingRow = null;
+          dragArmedRow = null;
         });
 
         row.addEventListener("dragover", function(event) {
@@ -300,6 +315,14 @@
         event.preventDefault();
         dropCompleted = true;
         await handleOrderDrop();
+      });
+
+      document.addEventListener("pointerup", function() {
+        if (draggingRow) return;
+        tbodyEmpresas.querySelectorAll(".empresa-row.drag-ready").forEach((row) => {
+          row.classList.remove("drag-ready");
+        });
+        dragArmedRow = null;
       });
     }
 
