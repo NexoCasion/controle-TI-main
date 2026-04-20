@@ -1,8 +1,9 @@
 const bcrypt = require('bcrypt');
-const { Op, fn, col, where } = require('sequelize');
+const { Op } = require('sequelize');
 const User = require('../models/User');
 const Empresa = require('../models/Empresa');
 const EmpresaController = require('./empresa');
+const { hashLookupValue } = require('../services/userSecurity');
 
 const ROLES_PERMITIDOS = ['admin', 'tecnico'];
 const ADD_COMPUTER_DEFAULT_MODALS = ['structured', 'single', 'batch'];
@@ -19,6 +20,7 @@ class AuthController {
   async login(req, res) {
     const login = String(req.body.login || req.body.email || '').trim().toLowerCase();
     const senha = String(req.body.password || '');
+    const loginHash = hashLookupValue(login);
 
     if (!login || !senha) {
       return res.status(400).render('pages/login', {
@@ -30,8 +32,8 @@ class AuthController {
     const user = await User.findOne({
       where: {
         [Op.or]: [
-          { email: { [Op.like]: login } },
-          { nome: { [Op.like]: login } },
+          { email_hash: loginHash },
+          { nome_hash: loginHash },
         ],
         ativo: true,
       },
@@ -346,10 +348,12 @@ class AuthController {
   }
 
   async ensureUniqueUserFields({ nome, email, excludeId = null }) {
+    const nomeHash = hashLookupValue(nome);
+    const emailHash = hashLookupValue(email);
     const whereClause = {
       [Op.or]: [
-        where(fn('LOWER', fn('TRIM', col('nome'))), String(nome).trim().toLowerCase()),
-        where(fn('LOWER', fn('TRIM', col('email'))), String(email).trim().toLowerCase()),
+        { nome_hash: nomeHash },
+        { email_hash: emailHash },
       ],
     };
 
@@ -360,7 +364,7 @@ class AuthController {
     const existing = await User.findOne({ where: whereClause });
     if (!existing) return;
 
-    if (String(existing.nome || '').trim().toLowerCase() === String(nome).trim().toLowerCase()) {
+    if (String(existing.nome_hash || '') === nomeHash) {
       throw new Error('Ja existe um usuario com esse login/nome.');
     }
 

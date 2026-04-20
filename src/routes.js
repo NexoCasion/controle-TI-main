@@ -332,7 +332,6 @@ router.get('/editar-pc', async (req, res) => {
 router.post('/editar-pc', async (req, res) => {
   const { id } = req.query;
   const { patrimonio, specs, setor } = req.body;
-  console.log('local rota editar' + setor);
   const computador = await computadorController.update({ id, patrimonio, specs, setor });
   return res.redirect(`/ver-pc?id=${id}`);
 });
@@ -388,7 +387,6 @@ router.post('/register-pc', async (req, res) => {
   try {
     const pc = await computadorController.create(patrimonio, specs, empresaId, setor); // E aqui
     res.locals.alert = `Computador cadastrado com ID: ${pc.id}`;
-    console.log(res.locals.alert);
     res.redirect(`/ver-pc?id=${pc.id}`);
   } catch (error) {
     console.error('Erro ao registrar pc:', error);
@@ -398,7 +396,6 @@ router.post('/register-pc', async (req, res) => {
 
 router.get('/ver-pc', async (req, res) => {
   try {
-    console.log(res.locals.alert);
     const { id } = req.query;
 
     const pc = await computadorController.getById(id);
@@ -692,8 +689,6 @@ router.get('/transferir', async (req, res) => {
 });
 
 router.post('/transferir', async (req, res) => {
-  console.log(req.body);
-
   const { computador, emp_origem, emp_destino, observacao } = req.body;
 
   try {

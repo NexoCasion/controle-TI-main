@@ -1,5 +1,12 @@
 const bcrypt = require('bcrypt');
 const database = require('./init');
+const {
+  decryptUserField,
+  encryptUserField,
+  hashLookupValue,
+  isEncryptedValue,
+  normalizeLookupValue,
+} = require('../services/userSecurity');
 
 async function getTableColumns(tableName) {
   const rows = await database.query(`PRAGMA table_info(${tableName});`, {
@@ -140,6 +147,8 @@ async function ensureUsersTable() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome VARCHAR(255) NOT NULL,
       email VARCHAR(255) NOT NULL,
+      nome_hash VARCHAR(64),
+      email_hash VARCHAR(64),
       password_hash VARCHAR(255) NOT NULL,
       role VARCHAR(50) NOT NULL DEFAULT 'tecnico',
       add_computer_default_modal VARCHAR(30) NOT NULL DEFAULT 'structured',
@@ -162,55 +171,133 @@ async function ensureUsersTable() {
     await database.query('ALTER TABLE users ADD COLUMN home_dashboard_preferences TEXT;');
   }
 
+  if (!columns.includes('nome_hash')) {
+    await database.query('ALTER TABLE users ADD COLUMN nome_hash VARCHAR(64);');
+  }
+
+  if (!columns.includes('email_hash')) {
+    await database.query('ALTER TABLE users ADD COLUMN email_hash VARCHAR(64);');
+  }
+
   await database.query(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(LOWER(TRIM(email)));'
+    'DROP INDEX IF EXISTS idx_users_email_unique;'
+  );
+
+  await database.query(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_nome_hash_unique ON users(nome_hash);'
+  );
+
+  await database.query(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_hash_unique ON users(email_hash);'
   );
 }
 
-async function seedAdminUser() {
-  const adminPassword = String(process.env.ADMIN_CLEAR_PASSWORD || 'SupreW4u').trim();
-  const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@universo.local').trim().toLowerCase();
-  const adminNome = String(process.env.ADMIN_NAME || 'admin').trim();
-  const adminRole = String(process.env.ADMIN_ROLE || 'admin').trim();
-
-  const existing = await database.query(
-    'SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) LIMIT 1;',
+async function protectUsersData() {
+  const users = await database.query(
+    'SELECT id, nome, email, nome_hash, email_hash FROM users ORDER BY id ASC;',
     {
-      replacements: [adminEmail],
       type: database.QueryTypes.SELECT,
     }
   );
 
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  for (const user of users) {
+    const plainNome = String(decryptUserField(user.nome) || '').trim();
+    const plainEmail = normalizeLookupValue(decryptUserField(user.email));
+    const nomeHash = hashLookupValue(plainNome);
+    const emailHash = hashLookupValue(plainEmail);
+    const encryptedNome =
+      isEncryptedValue(user.nome) && String(user.nome_hash || '') === nomeHash
+        ? user.nome
+        : encryptUserField(plainNome);
+    const encryptedEmail =
+      isEncryptedValue(user.email) && String(user.email_hash || '') === emailHash
+        ? user.email
+        : encryptUserField(plainEmail);
 
-  if (existing.length) {
     await database.query(
       `
         UPDATE users
         SET nome = ?,
-            password_hash = ?,
-            role = ?,
-            add_computer_default_modal = COALESCE(NULLIF(TRIM(add_computer_default_modal), ''), 'structured'),
-            home_dashboard_preferences = COALESCE(home_dashboard_preferences, NULL),
-            ativo = 1,
+            email = ?,
+            nome_hash = ?,
+            email_hash = ?,
             updatedAt = CURRENT_TIMESTAMP
         WHERE id = ?;
       `,
       {
-        replacements: [adminNome, passwordHash, adminRole, existing[0].id],
+        replacements: [encryptedNome, encryptedEmail, nomeHash, emailHash, user.id],
       }
     );
+  }
+}
+
+async function seedAdminUser() {
+  const adminPassword = String(process.env.ADMIN_CLEAR_PASSWORD || '').trim();
+  const adminPasswordHash = String(process.env.ADMIN_PASSWORD_HASH || '').trim();
+  const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@universo.local').trim().toLowerCase();
+  const adminNome = String(process.env.ADMIN_NAME || 'admin').trim();
+  const adminRole = String(process.env.ADMIN_ROLE || 'admin').trim();
+
+  const existingAdmin = await database.query(
+    "SELECT id FROM users WHERE role = 'admin' AND ativo = 1 LIMIT 1;",
+    {
+      type: database.QueryTypes.SELECT,
+    }
+  );
+
+  if (existingAdmin.length) {
     return;
+  }
+
+  const passwordHash = adminPasswordHash || (adminPassword ? await bcrypt.hash(adminPassword, 10) : '');
+
+  if (!passwordHash) {
+    throw new Error(
+      'Nenhum usuario admin ativo foi encontrado. Configure ADMIN_CLEAR_PASSWORD ou ADMIN_PASSWORD_HASH para criar o primeiro administrador.'
+    );
   }
 
   await database.query(
     `
-      INSERT INTO users (nome, email, password_hash, role, ativo, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+      INSERT INTO users (
+        nome,
+        email,
+        nome_hash,
+        email_hash,
+        password_hash,
+        role,
+        ativo,
+        createdAt,
+        updatedAt
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
     `,
     {
-      replacements: [adminNome, adminEmail, passwordHash, adminRole],
+      replacements: [
+        encryptUserField(adminNome),
+        encryptUserField(adminEmail),
+        hashLookupValue(adminNome),
+        hashLookupValue(adminEmail),
+        passwordHash,
+        adminRole,
+      ],
     }
+  );
+}
+
+async function ensureSessionsTable() {
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      sid VARCHAR(255) PRIMARY KEY,
+      sess TEXT NOT NULL,
+      expires_at DATETIME,
+      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await database.query(
+    'CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);'
   );
 }
 
@@ -221,6 +308,8 @@ async function ensureSchema() {
   await normalizeEmpresaDisplayOrder();
   await ensureComputadorMateriaisTable();
   await ensureUsersTable();
+  await ensureSessionsTable();
+  await protectUsersData();
   await seedEmpresaSiglas();
   await seedAdminUser();
 }

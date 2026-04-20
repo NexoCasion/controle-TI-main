@@ -281,7 +281,6 @@ class ManutencaoController {
         dataSaida: manutencao.dataValues.dataSaida,
       }));
 
-      console.log(manutencoesJSON);
       return manutencoesJSON;
     } catch (err) {
       throw new Error(`Erro ao buscar manutenções abertas: ${err.message}`);
@@ -518,7 +517,6 @@ class ManutencaoController {
         pcName: manutencao.computador.patrimonio,
         setor: manutencao.computador.setor, // ✅
       }));
-      console.log(manutencaoJSON);
       return manutencaoJSON;
     } catch (error) {
       throw new Error('Erro ao buscar computadores: ' + error.message);

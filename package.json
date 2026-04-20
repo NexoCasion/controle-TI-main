@@ -8,26 +8,21 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write \"src/**/*.js\"",
     "format:check": "prettier --check \"src/**/*.js\""
-
   },
   "author": "chico",
   "license": "ISC",
   "dependencies": {
-    "-": "^0.0.1",
-    "bcrypt": "^5.1.1",
-    "connect-sqlite3": "^0.9.16",
+    "bcrypt": "^6.0.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
-    "g": "^2.0.1",
     "helmet": "^8.1.0",
     "multer": "^2.0.2",
     "sequelize": "^6.37.3",
-    "sqlite3": "^5.1.7",
-    "stringfy": "^0.0.12"
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",

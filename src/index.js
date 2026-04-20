@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const SQLiteStoreFactory = require('connect-sqlite3');
 const helmet = require('helmet');
 const crypto = require('crypto');
 const routes = require('./routes');
@@ -21,9 +20,10 @@ require('./models/User');
 const ensureSchema = require('./db/ensureSchema');
 const { attachCurrentUser } = require('./middlewares/auth');
 const { ensureCsrfToken, csrfProtection } = require('./middlewares/csrf');
+const SequelizeSessionStore = require('./services/sequelizeSessionStore');
 
 const app = express();
-const SQLiteStore = SQLiteStoreFactory(session);
+const sessionStore = new SequelizeSessionStore();
 const isProduction = process.env.NODE_ENV === 'production';
 const configuredSessionSecret = String(process.env.SESSION_SECRET || '').trim();
 
@@ -55,13 +55,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.set('sessionStore', sessionStore);
 app.use(express.static('src/public'));
 app.use(
   session({
-    store: new SQLiteStore({
-      db: 'sessions.sqlite',
-      dir: path.join(__dirname, 'db'),
-    }),
+    store: sessionStore,
     name: 'controle_ti.sid',
     secret: sessionSecret,
     resave: false,
@@ -82,8 +80,7 @@ app.use(routes);
 
 //error handler (no async methods)
 app.use((err, request, response, next) => {
-  console.log('####  Error handler received ############################');
-  console.log(err);
+  console.error('Erro nao tratado:', err);
   response.sendStatus(500);
 });
 
@@ -92,6 +89,7 @@ const PORT = process.env.PORT || 3000;
 (async () => {
   try {
     await ensureSchema();
+    await sessionStore.clearExpired();
     //     // ✅ Limpa tabelas de backup que podem sobrar quando o Sequelize crasha no SQLite
     // await database.query("DROP TABLE IF EXISTS empresas_backup;");
     // await database.query("DROP TABLE IF EXISTS computadores_backup;");
@@ -107,7 +105,6 @@ const PORT = process.env.PORT || 3000;
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🔥 Server running at http://localhost:${PORT}`);
-      console.log('Senha admin carregada?', !!process.env.ADMIN_CLEAR_PASSWORD);
     });
   } catch (err) {
     console.error('Erro ao sincronizar o banco:', err);
