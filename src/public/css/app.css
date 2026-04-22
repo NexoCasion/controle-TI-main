@@ -2099,9 +2099,36 @@ html[data-theme='dark'] .login-brand-logo-wrap::before {
   color: var(--text) !important;
 }
 
+.modal .import-download-alert {
+  background: linear-gradient(135deg, rgba(214, 0, 28, 0.08), rgba(214, 0, 28, 0.02)) !important;
+  border: 1px solid rgba(214, 0, 28, 0.18) !important;
+  color: var(--text) !important;
+  box-shadow: 0 10px 24px rgba(214, 0, 28, 0.08);
+}
+
+.modal .import-download-alert strong {
+  color: var(--text) !important;
+}
+
+.modal .import-download-alert small {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted) 28%) !important;
+}
+
 html[data-theme='dark'] .modal .alert-light {
   background: rgba(51, 65, 85, 0.52) !important;
   border-color: rgba(148, 163, 184, 0.22) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='dark'] .modal .import-download-alert {
+  background: linear-gradient(135deg, rgba(225, 29, 54, 0.18), rgba(30, 41, 59, 0.72)) !important;
+  border-color: rgba(244, 63, 94, 0.28) !important;
+  color: var(--text) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme='dark'] .modal .import-download-alert strong,
+html[data-theme='dark'] .modal .import-download-alert small {
   color: var(--text) !important;
 }
 
