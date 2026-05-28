@@ -1,3 +1,19 @@
+<%
+  const _maintenanceDescriptionTemplates =
+    Array.isArray(maintenanceDescriptionTemplates)
+      ? maintenanceDescriptionTemplates
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+      : [
+          'Limpeza preventiva',
+          'Erro de funcionamento',
+          'Lentidao ou travamento',
+          'Maquina sem ligar',
+          'Formatacao ou reinstalacao do sistema',
+          'Sem acesso a rede ou internet',
+        ];
+%>
+
 <div class="modal fade" id="modalRegisterManutencao" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -30,6 +46,19 @@
             <small class="text-muted d-block mt-2" id="computadorResumoModal">Selecione uma empresa para carregar as máquinas.</small>
           </div>
 
+          <div class="mb-3">
+            <label for="descricaoPresetModal" class="form-label">Descri&ccedil;&atilde;o pronta</label>
+            <select class="form-control" id="descricaoPresetModal">
+              <option value="" selected>Selecionar sugest&atilde;o...</option>
+              <% _maintenanceDescriptionTemplates.forEach(function(item) { %>
+              <option value="<%= item %>"><%= item %></option>
+              <% }) %>
+            </select>
+            <small class="text-muted d-block mt-2">
+              Ao selecionar uma op&ccedil;&atilde;o, o campo descri&ccedil;&atilde;o abaixo ser&aacute; preenchido e poder&aacute; ser ajustado.
+            </small>
+          </div>
+
           <div class="mb-0">
             <label for="descricaoModal" class="form-label">Descrição</label>
             <textarea id="descricaoModal" placeholder="Informe a queixa do usuário e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
@@ -54,8 +83,10 @@
     const computadorResumo = document.getElementById("computadorResumoModal");
     const computadorGroup = document.getElementById("computadorGroupModal");
     const alertBox = document.getElementById("manutencaoModalAlert");
+    const descricaoPresetSelect = document.getElementById("descricaoPresetModal");
+    const descricaoTextarea = document.getElementById("descricaoModal");
 
-    if (!modalEl || !empresaSelect || !computadorSelect || !computadorFiltro || !computadorResumo || !computadorGroup || !alertBox) return;
+    if (!modalEl || !empresaSelect || !computadorSelect || !computadorFiltro || !computadorResumo || !computadorGroup || !alertBox || !descricaoPresetSelect || !descricaoTextarea) return;
     if (modalEl.dataset.enhanced === "true") return;
     modalEl.dataset.enhanced = "true";
 
@@ -87,6 +118,15 @@
 
     function showComputadorGroup(show) {
       computadorGroup.classList.toggle("d-none", !show);
+    }
+
+    function aplicarDescricaoPreset() {
+      const valor = String(descricaoPresetSelect.value || "").trim();
+      if (!valor) return;
+
+      descricaoTextarea.value = valor;
+      descricaoTextarea.focus();
+      descricaoTextarea.setSelectionRange(descricaoTextarea.value.length, descricaoTextarea.value.length);
     }
 
     function formatarTextoComputador(computador) {
@@ -224,6 +264,8 @@
     computadorFiltro.addEventListener("input", () => {
       preencherComputadores(computadoresDisponiveis);
     });
+
+    descricaoPresetSelect.addEventListener("change", aplicarDescricaoPreset);
 
     modalEl.addEventListener("shown.bs.modal", async () => {
       hideAlert();

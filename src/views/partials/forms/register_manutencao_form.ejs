@@ -1,4 +1,19 @@
 <% const _inModal = (typeof inModal !== 'undefined') ? inModal : false; %>
+<%
+  const _maintenanceDescriptionTemplates =
+    Array.isArray(maintenanceDescriptionTemplates)
+      ? maintenanceDescriptionTemplates
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+      : [
+          'Limpeza preventiva',
+          'Erro de funcionamento',
+          'Lentidao ou travamento',
+          'Maquina sem ligar',
+          'Formatacao ou reinstalacao do sistema',
+          'Sem acesso a rede ou internet',
+        ];
+%>
 
 <div class="d-flex align-items-center justify-content-start mb-4">
   <% if (_inModal) { %>
@@ -29,6 +44,19 @@
       <option value="" selected disabled>Selecione o Computador</option>
     </select>
     <small class="text-muted d-block mt-2" id="computadorResumo">Carregando computadores...</small>
+  </div>
+
+  <div class="form-group">
+    <label for="descricaoPreset">Descri&ccedil;&atilde;o pronta</label>
+    <select class="form-control" id="descricaoPreset">
+      <option value="" selected>Selecionar sugest&atilde;o...</option>
+      <% _maintenanceDescriptionTemplates.forEach(function(item) { %>
+      <option value="<%= item %>"><%= item %></option>
+      <% }) %>
+    </select>
+    <small class="text-muted d-block mt-2">
+      Ao selecionar uma op&ccedil;&atilde;o, o campo descri&ccedil;&atilde;o abaixo ser&aacute; preenchido e poder&aacute; ser ajustado.
+    </small>
   </div>
 
   <div class="form-group">

@@ -8,6 +8,16 @@ const { hashLookupValue } = require('../services/userSecurity');
 const ROLES_PERMITIDOS = ['admin', 'tecnico'];
 const ADD_COMPUTER_DEFAULT_MODALS = ['structured', 'single', 'batch'];
 const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais'];
+const HOME_RANKING_IGNORED_TERM_LIMIT = 30;
+const MAINTENANCE_DESCRIPTION_TEMPLATE_LIMIT = 30;
+const DEFAULT_MAINTENANCE_DESCRIPTION_TEMPLATES = [
+  'Limpeza preventiva',
+  'Erro de funcionamento',
+  'Lentidao ou travamento',
+  'Maquina sem ligar',
+  'Formatacao ou reinstalacao do sistema',
+  'Sem acesso a rede ou internet',
+];
 
 class AuthController {
   renderLogin(req, res) {
@@ -269,6 +279,53 @@ class AuthController {
     return unique.slice(0, HOME_DASHBOARD_CHART_IDS.length);
   }
 
+  normalizeIgnoredDescriptionTerms(value) {
+    const rawItems = Array.isArray(value)
+      ? value
+      : String(value || '')
+          .split(/\r?\n|,|;/)
+          .map((item) => item.trim());
+
+    const unique = [];
+
+    rawItems
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter(Boolean)
+      .forEach((item) => {
+        if (!unique.includes(item)) unique.push(item);
+      });
+
+    return unique.slice(0, HOME_RANKING_IGNORED_TERM_LIMIT);
+  }
+
+  normalizeMaintenanceDescriptionTemplates(value, options = {}) {
+    const fallbackToDefault = options.fallbackToDefault !== false;
+    const rawItems = Array.isArray(value)
+      ? value
+      : String(value || '')
+          .split(/\r?\n|,|;/)
+          .map((item) => item.trim());
+
+    const unique = [];
+    const dedupeKeys = new Set();
+
+    rawItems
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .forEach((item) => {
+        const dedupeKey = item.toLowerCase();
+        if (dedupeKeys.has(dedupeKey)) return;
+        dedupeKeys.add(dedupeKey);
+        unique.push(item);
+      });
+
+    if (unique.length) {
+      return unique.slice(0, MAINTENANCE_DESCRIPTION_TEMPLATE_LIMIT);
+    }
+
+    return fallbackToDefault ? [...DEFAULT_MAINTENANCE_DESCRIPTION_TEMPLATES] : [];
+  }
+
   normalizeHomeDashboardPreferences(value, empresasFiltro = []) {
     let parsed = value;
 
@@ -283,6 +340,11 @@ class AuthController {
     if (!parsed || typeof parsed !== 'object') {
       parsed = {};
     }
+
+    const hasMaintenanceDescriptionTemplates = Object.prototype.hasOwnProperty.call(
+      parsed,
+      'maintenanceDescriptionTemplates'
+    );
 
     const empresas = Array.isArray(empresasFiltro) ? empresasFiltro : [];
     const allEmpresaIds = empresas
@@ -312,6 +374,13 @@ class AuthController {
       ranking: normalizeEmpresaIds(parsed.ranking, defaultRankingIds),
       maquinas: normalizeEmpresaIds(parsed.maquinas, allEmpresaIds),
       order: this.normalizeChartOrder(parsed.order),
+      rankingIgnoredDescriptions: this.normalizeIgnoredDescriptionTerms(
+        parsed.rankingIgnoredDescriptions
+      ),
+      maintenanceDescriptionTemplates: this.normalizeMaintenanceDescriptionTemplates(
+        hasMaintenanceDescriptionTemplates ? parsed.maintenanceDescriptionTemplates : null,
+        { fallbackToDefault: !hasMaintenanceDescriptionTemplates }
+      ),
     };
   }
 
@@ -323,6 +392,8 @@ class AuthController {
     return {
       ranking: body.homeRankingEmpresaIds,
       maquinas: body.homeMaquinasEmpresaIds,
+      rankingIgnoredDescriptions: body.homeRankingIgnoredDescriptions,
+      maintenanceDescriptionTemplates: body.homeMaintenanceDescriptionTemplates,
       order: [
         body.homeChartOrderFirst,
         body.homeChartOrderSecond,

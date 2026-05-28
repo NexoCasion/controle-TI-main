@@ -123,6 +123,40 @@
             <div class="col-12">
               <div class="home-filter-card">
                 <div class="home-filter-head">
+                  <h6 class="mb-0">Ignorar descricoes no ranking de manutencoes</h6>
+                </div>
+                <p class="text-muted mb-3">
+                  Uma linha por termo. O grafico principal da home ignora manutencoes cuja descricao contenha esses textos.
+                </p>
+                <textarea
+                  class="form-control"
+                  id="perfilHomeRankingIgnoredDescriptions"
+                  name="homeRankingIgnoredDescriptions"
+                  rows="4"
+                  placeholder="Um termo por linha&#10;teste&#10;erro"><%= (homeDashboardPreferences?.rankingIgnoredDescriptions || []).join('\n') %></textarea>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Templates de descricao da manutencao</h6>
+                </div>
+                <p class="text-muted mb-3">
+                  Uma linha por template. Essas opcoes aparecem no campo "Descricao pronta" ao abrir uma manutencao.
+                </p>
+                <textarea
+                  class="form-control"
+                  id="perfilHomeMaintenanceDescriptionTemplates"
+                  name="homeMaintenanceDescriptionTemplates"
+                  rows="6"
+                  placeholder="Um template por linha&#10;Limpeza preventiva&#10;Erro de funcionamento"><%= (homeDashboardPreferences?.maintenanceDescriptionTemplates || []).join('\n') %></textarea>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
                   <h6 class="mb-0">Ordem dos graficos da home</h6>
                 </div>
                 <p class="text-muted mb-3">A ordem salva aqui e a mesma usada no carrossel da home.</p>

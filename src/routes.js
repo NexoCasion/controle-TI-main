@@ -43,6 +43,16 @@ function consumeSessionValue(req, key) {
   return value || null;
 }
 
+async function getCurrentMaintenanceDescriptionTemplates(req) {
+  const currentUser = req.session?.user?.id ? await User.findByPk(req.session.user.id) : null;
+  const preferences = authController.normalizeHomeDashboardPreferences(
+    currentUser?.home_dashboard_preferences,
+    []
+  );
+
+  return preferences.maintenanceDescriptionTemplates || [];
+}
+
 async function processarImportacaoEstruturadaPorArquivo({ file, empresaId, fontePadrao = '' }) {
   const csvContent = fs.readFileSync(file.path, 'utf-8');
   const identidade = parseComputerIdentityFromFilename(file.originalname || file.filename);
@@ -234,8 +244,10 @@ router.get('/home', (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const dashboard = await dashboardController.getHomeData();
     const currentUser = req.session?.user?.id ? await User.findByPk(req.session.user.id) : null;
+    const dashboard = await dashboardController.getHomeData(
+      currentUser?.home_dashboard_preferences
+    );
     const homeDashboardPreferences = authController.normalizeHomeDashboardPreferences(
       currentUser?.home_dashboard_preferences,
       dashboard.empresasFiltro
@@ -364,6 +376,7 @@ router.get('/computadores', async (req, res) => {
   const empresasList = await empresaController.getAll();
   const importCsvBatchResult = consumeSessionValue(req, 'importCsvBatchResult');
   const currentUser = req.session?.user?.id ? await User.findByPk(req.session.user.id) : null;
+  const maintenanceDescriptionTemplates = await getCurrentMaintenanceDescriptionTemplates(req);
   const addComputerDefaultModal = authController.normalizeAddComputerDefaultModal(
     currentUser?.add_computer_default_modal || req.session?.user?.addComputerDefaultModal
   );
@@ -373,6 +386,7 @@ router.get('/computadores', async (req, res) => {
     empresas: empresasList,
     importCsvBatchResult,
     addComputerDefaultModal,
+    maintenanceDescriptionTemplates,
   });
 });
 
@@ -405,6 +419,7 @@ router.get('/ver-pc', async (req, res) => {
       alert: res.locals.alert,
       computador: pc,
       empresas: empresasList,
+      maintenanceDescriptionTemplates: await getCurrentMaintenanceDescriptionTemplates(req),
       structuredSpecsView: buildStructuredSpecsView(pc),
     });
   } catch (error) {
@@ -464,8 +479,13 @@ router.get('/manutencoes-by-computador', async (req, res) => {
 router.get('/manutencoes', async (req, res) => {
   const manutencaoList = await manutencaoController.findAll();
   const empresasList = await empresaController.getAll();
+  const maintenanceDescriptionTemplates = await getCurrentMaintenanceDescriptionTemplates(req);
 
-  return res.render('pages/manutencoes', { empresas: empresasList, manutencoes: manutencaoList });
+  return res.render('pages/manutencoes', {
+    empresas: empresasList,
+    manutencoes: manutencaoList,
+    maintenanceDescriptionTemplates,
+  });
 });
 
 router.get('/manutencoes-data', async (req, res) => {
@@ -509,8 +529,12 @@ router.get('/manutencoes-open', async (req, res) => {
 
 router.get('/register-manutencao', async (req, res) => {
   const computadoresList = await computadorController.getAll();
+  const maintenanceDescriptionTemplates = await getCurrentMaintenanceDescriptionTemplates(req);
 
-  return res.render('pages/register_manutencao');
+  return res.render('pages/register_manutencao', {
+    computadores: computadoresList,
+    maintenanceDescriptionTemplates,
+  });
 });
 
 router.post('/register-manutencao', async (req, res) => {

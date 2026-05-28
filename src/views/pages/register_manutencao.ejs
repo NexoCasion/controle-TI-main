@@ -33,6 +33,8 @@
       const $computadorGroup = $('#computadorGroup');
       const $computadorFiltro = $('#computadorFiltro');
       const $computadorResumo = $('#computadorResumo');
+      const $descricaoPreset = $('#descricaoPreset');
+      const $descricao = $('#descricao');
       let computadoresDisponiveis = [];
       let computadoresEmManutencao = new Set();
 
@@ -133,6 +135,17 @@
 
       $computadorFiltro.on('input', function() {
         renderizarComputadores($computador.val());
+      });
+
+      $descricaoPreset.on('change', function() {
+        const valor = String($(this).val() || '').trim();
+        if (!valor) return;
+
+        $descricao.val(valor).trigger('focus');
+        const elemento = $descricao.get(0);
+        if (elemento && typeof elemento.setSelectionRange === 'function') {
+          elemento.setSelectionRange(elemento.value.length, elemento.value.length);
+        }
       });
 
       carregarEmpresas();

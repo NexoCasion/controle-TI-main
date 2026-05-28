@@ -8,8 +8,55 @@ const Material = require('../models/Material');
 const EmpresaController = require('./empresa');
 
 class DashboardController {
-  async getHomeData() {
-    const { fn, col, Op, literal } = Sequelize;
+  normalizeIgnoredDescriptionTerms(value) {
+    let source = value;
+
+    if (typeof source === 'string') {
+      try {
+        source = JSON.parse(source);
+      } catch (error) {
+        source = value;
+      }
+    }
+
+    const parsed =
+      source && typeof source === 'object' && !Array.isArray(source)
+        ? source.rankingIgnoredDescriptions
+        : source;
+
+    const rawItems = Array.isArray(parsed)
+      ? parsed
+      : String(parsed || '')
+          .split(/\r?\n|,|;/)
+          .map((item) => item.trim());
+
+    const unique = [];
+
+    rawItems
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter(Boolean)
+      .forEach((item) => {
+        if (!unique.includes(item)) unique.push(item);
+      });
+
+    return unique.slice(0, 30);
+  }
+
+  async getHomeData(homeDashboardPreferences = null) {
+    const { fn, col, Op, literal, where } = Sequelize;
+    const rankingIgnoredDescriptions = this.normalizeIgnoredDescriptionTerms(
+      homeDashboardPreferences
+    );
+    const rankingWhere = rankingIgnoredDescriptions.length
+      ? {
+          [Op.and]: rankingIgnoredDescriptions.map((term) =>
+            where(
+              fn('LOWER', fn('COALESCE', col('manutencoes.descricao'), '')),
+              { [Op.notLike]: `%${term}%` }
+            )
+          ),
+        }
+      : undefined;
 
     const [
       maquinasAtivas,
@@ -31,6 +78,7 @@ class DashboardController {
       }),
       Manutencao.findAll({
         attributes: [[fn('COUNT', col('manutencoes.id')), 'total']],
+        where: rankingWhere,
         include: [
           {
             model: Computador,
@@ -98,6 +146,7 @@ class DashboardController {
         nome: row.computador?.empresa?.sigla || row.computador?.empresa?.nome || 'Sem empresa',
         total: Number(row.get('total') || 0),
       })),
+      rankingIgnoredDescriptions,
       maquinasPorEmpresa: (maquinasPorEmpresaRows || []).map((row) => ({
         empresaId: Number(row.empresa?.id || row.empresaId || 0),
         nomeCompleto: row.empresa?.nome || 'Sem empresa',

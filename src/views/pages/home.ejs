@@ -168,6 +168,38 @@
             <div class="col-12">
               <div class="home-filter-card">
                 <div class="home-filter-head">
+                  <h6 class="mb-0">Ignorar descricoes no ranking de manutencoes</h6>
+                </div>
+                <p class="text-muted mb-3">
+                  Uma linha por termo. Ex.: <code>teste</code>, <code>erro</code>, <code>ajuste temporario</code>.
+                </p>
+                <textarea
+                  class="form-control"
+                  id="homeRankingIgnoredDescriptions"
+                  rows="4"
+                  placeholder="Um termo por linha&#10;teste&#10;erro"></textarea>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
+                  <h6 class="mb-0">Templates de descricao da manutencao</h6>
+                </div>
+                <p class="text-muted mb-3">
+                  Uma linha por template. Essas opcoes aparecem no campo "Descricao pronta" ao abrir uma manutencao.
+                </p>
+                <textarea
+                  class="form-control"
+                  id="homeMaintenanceDescriptionTemplates"
+                  rows="6"
+                  placeholder="Um template por linha&#10;Limpeza preventiva&#10;Erro de funcionamento"></textarea>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="home-filter-card">
+                <div class="home-filter-head">
                   <h6 class="mb-0">Ordem dos gráficos</h6>
                 </div>
                 <p class="text-muted mb-3">Defina qual gráfico aparece primeiro, segundo e terceiro no carrossel.</p>
@@ -232,6 +264,8 @@
       const modalFiltersEl = document.getElementById('modalHomeChartFilters');
       const orderAlertEl = document.getElementById('homeChartOrderAlert');
       const preferenceErrorEl = document.getElementById('homeChartPreferenceError');
+      const rankingIgnoredDescriptionsInput = document.getElementById('homeRankingIgnoredDescriptions');
+      const maintenanceDescriptionTemplatesInput = document.getElementById('homeMaintenanceDescriptionTemplates');
       const orderSelects = [
         document.getElementById('homeChartOrderFirst'),
         document.getElementById('homeChartOrderSecond'),
@@ -240,6 +274,14 @@
       if (!ctx) return;
 
       const defaultChartOrder = ['ranking', 'maquinas', 'materiais'];
+      const defaultMaintenanceDescriptionTemplates = [
+        'Limpeza preventiva',
+        'Erro de funcionamento',
+        'Lentidao ou travamento',
+        'Maquina sem ligar',
+        'Formatacao ou reinstalacao do sistema',
+        'Sem acesso a rede ou internet',
+      ];
       const chartOptionLabels = {
         ranking: 'Empresas com Mais Manutenções',
         maquinas: 'Máquinas Ativas por Empresa',
@@ -306,10 +348,76 @@
         return unique.length ? unique : [...fallback];
       }
 
+      function normalizeIgnoredDescriptions(value) {
+        const rawItems = Array.isArray(value)
+          ? value
+          : String(value || '')
+              .split(/\r?\n|,|;/)
+              .map((item) => item.trim());
+
+        const unique = [];
+
+        rawItems
+          .map((item) => String(item || '').trim().toLowerCase())
+          .filter(Boolean)
+          .forEach((item) => {
+            if (!unique.includes(item)) unique.push(item);
+          });
+
+        return unique.slice(0, 30);
+      }
+
+      function setRankingIgnoredDescriptionsValue(values) {
+        if (!rankingIgnoredDescriptionsInput) return;
+        rankingIgnoredDescriptionsInput.value = normalizeIgnoredDescriptions(values).join('\n');
+      }
+
+      function getRankingIgnoredDescriptionsValue() {
+        return normalizeIgnoredDescriptions(rankingIgnoredDescriptionsInput?.value || '');
+      }
+
+      function normalizeMaintenanceDescriptionTemplates(value) {
+        const rawItems = Array.isArray(value)
+          ? value
+          : String(value || '')
+              .split(/\r?\n|,|;/)
+              .map((item) => item.trim());
+
+        const unique = [];
+        const dedupeKeys = new Set();
+
+        rawItems
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+          .forEach((item) => {
+            const dedupeKey = item.toLowerCase();
+            if (dedupeKeys.has(dedupeKey)) return;
+            dedupeKeys.add(dedupeKey);
+            unique.push(item);
+          });
+
+        return unique.slice(0, 30);
+      }
+
+      function setMaintenanceDescriptionTemplatesValue(values) {
+        if (!maintenanceDescriptionTemplatesInput) return;
+        maintenanceDescriptionTemplatesInput.value = normalizeMaintenanceDescriptionTemplates(values).join('\n');
+      }
+
+      function getMaintenanceDescriptionTemplatesValue() {
+        return normalizeMaintenanceDescriptionTemplates(maintenanceDescriptionTemplatesInput?.value || '');
+      }
+
       const filtros = {
         ranking: normalizeEmpresaIds(homeDashboardPreferences.ranking, getDefaultRankingIds()),
         maquinas: normalizeEmpresaIds(homeDashboardPreferences.maquinas, getAllEmpresaIds()),
       };
+      let rankingIgnoredDescriptions = normalizeIgnoredDescriptions(
+        homeDashboardPreferences.rankingIgnoredDescriptions
+      );
+      let maintenanceDescriptionTemplates = normalizeMaintenanceDescriptionTemplates(
+        homeDashboardPreferences.maintenanceDescriptionTemplates
+      );
 
       function hideOrderAlert() {
         if (!orderAlertEl) return;
@@ -355,6 +463,8 @@
         return {
           ranking: normalizeEmpresaIds(base.ranking, getDefaultRankingIds()),
           maquinas: normalizeEmpresaIds(base.maquinas, getAllEmpresaIds()),
+          rankingIgnoredDescriptions: normalizeIgnoredDescriptions(base.rankingIgnoredDescriptions),
+          maintenanceDescriptionTemplates: normalizeMaintenanceDescriptionTemplates(base.maintenanceDescriptionTemplates),
           order: normalizeChartOrder(base.order),
         };
       }
@@ -368,6 +478,8 @@
           body: JSON.stringify({
             homeRankingEmpresaIds: preferences.ranking,
             homeMaquinasEmpresaIds: preferences.maquinas,
+            homeRankingIgnoredDescriptions: preferences.rankingIgnoredDescriptions.join('\n'),
+            homeMaintenanceDescriptionTemplates: preferences.maintenanceDescriptionTemplates.join('\n'),
             homeChartOrderFirst: preferences.order[0],
             homeChartOrderSecond: preferences.order[1],
             homeChartOrderThird: preferences.order[2],
@@ -585,6 +697,8 @@
           hidePreferenceError();
           setCheckedIds('ranking', filtros.ranking);
           setCheckedIds('maquinas', filtros.maquinas);
+          setRankingIgnoredDescriptionsValue(rankingIgnoredDescriptions);
+          setMaintenanceDescriptionTemplatesValue(maintenanceDescriptionTemplates);
           setOrderSelectValues(chartOrder);
 
           const modal = getModalInstance(modalFiltersEl);
@@ -604,11 +718,15 @@
           hidePreferenceError();
           const rankingIds = getCheckedIds('ranking');
           const maquinasIds = getCheckedIds('maquinas');
+          const nextIgnoredDescriptions = getRankingIgnoredDescriptionsValue();
+          const nextMaintenanceDescriptionTemplates = getMaintenanceDescriptionTemplatesValue();
           const currentChartId = chartConfigs[currentIndex]?.id || chartOrder[0];
 
           const nextPreferences = buildPreferencePayload({
             ranking: rankingIds,
             maquinas: maquinasIds,
+            rankingIgnoredDescriptions: nextIgnoredDescriptions,
+            maintenanceDescriptionTemplates: nextMaintenanceDescriptionTemplates,
             order: orderState.order,
           });
 
@@ -621,7 +739,16 @@
 
           filtros.ranking = [...nextPreferences.ranking];
           filtros.maquinas = [...nextPreferences.maquinas];
+          const ignoredDescriptionsChanged =
+            rankingIgnoredDescriptions.join('|') !== nextPreferences.rankingIgnoredDescriptions.join('|');
+          rankingIgnoredDescriptions = [...nextPreferences.rankingIgnoredDescriptions];
+          maintenanceDescriptionTemplates = [...nextPreferences.maintenanceDescriptionTemplates];
           chartOrder = [...nextPreferences.order];
+
+          if (ignoredDescriptionsChanged) {
+            window.location.reload();
+            return;
+          }
 
           chartConfigs = buildChartConfigs();
           const nextIndex = Math.max(chartConfigs.findIndex((config) => config.id === currentChartId), 0);
@@ -637,6 +764,8 @@
           const nextPreferences = buildPreferencePayload({
             ranking: getDefaultRankingIds(),
             maquinas: getAllEmpresaIds(),
+            rankingIgnoredDescriptions: [],
+            maintenanceDescriptionTemplates: defaultMaintenanceDescriptionTemplates,
             order: defaultChartOrder,
           });
           const currentChartId = chartConfigs[currentIndex]?.id || chartOrder[0];
@@ -653,11 +782,22 @@
 
           filtros.ranking = [...nextPreferences.ranking];
           filtros.maquinas = [...nextPreferences.maquinas];
+          const ignoredDescriptionsChanged =
+            rankingIgnoredDescriptions.join('|') !== nextPreferences.rankingIgnoredDescriptions.join('|');
+          rankingIgnoredDescriptions = [...nextPreferences.rankingIgnoredDescriptions];
+          maintenanceDescriptionTemplates = [...nextPreferences.maintenanceDescriptionTemplates];
           chartOrder = [...nextPreferences.order];
           setCheckedIds('ranking', nextPreferences.ranking);
           setCheckedIds('maquinas', nextPreferences.maquinas);
+          setRankingIgnoredDescriptionsValue(nextPreferences.rankingIgnoredDescriptions);
+          setMaintenanceDescriptionTemplatesValue(nextPreferences.maintenanceDescriptionTemplates);
           setOrderSelectValues(chartOrder);
           hideOrderAlert();
+
+          if (ignoredDescriptionsChanged) {
+            window.location.reload();
+            return;
+          }
 
           chartConfigs = buildChartConfigs();
           const nextIndex = Math.max(chartConfigs.findIndex((config) => config.id === currentChartId), 0);
