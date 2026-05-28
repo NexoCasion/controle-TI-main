@@ -168,11 +168,12 @@ class ManutencaoController {
     }
   }
 
-  async getComponentesEstruturadosDoComputador(computadorId, tipo = null, transaction = null) {
+  async getComponentesEstruturadosDoComputador(computadorId, tipo = null, transaction = null, options = {}) {
     const computador = await Computador.findByPk(Number(computadorId), { transaction });
     if (!computador) throw new Error('Computador não encontrado.');
 
     const estruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+    const includePlaceholders = !!options.includePlaceholders;
     if (!estruturado) throw new Error('Computador não está em modo estruturado.');
 
     const whereMaterial = {};
@@ -223,7 +224,62 @@ class ManutencaoController {
       atual.quantidade_no_computador += qtd;
     });
 
-    return Array.from(agrupado.values()).sort((a, b) => {
+    const componentes = Array.from(agrupado.values());
+
+    if (includePlaceholders) {
+      const parsed = await this.computadorEstruturadoService.getParsedFromComputador(
+        Number(computadorId),
+        transaction
+      );
+      const placeholders = [
+        parsed.processador,
+        ...(parsed.memorias || []),
+        ...(parsed.armazenamentos || []),
+        ...(parsed.fontes || []),
+      ].filter((item) => item && item.placeholder);
+
+      ['PROCESSADOR', 'MEMORIA', 'ARMAZENAMENTO', 'FONTE'].forEach((categoria) => {
+        const placeholderPadrao = this.computadorEstruturadoService.buildPlaceholderComponente(categoria);
+        if (!placeholderPadrao) return;
+
+        const jaExisteTipoReal = componentes.some(
+          (componente) => String(componente.tipo || '').trim() === String(placeholderPadrao.tipo || '').trim()
+        );
+        const jaExistePlaceholder = placeholders.some(
+          (item) => String(item.categoria || '').trim().toUpperCase() === categoria
+        );
+
+        if (!jaExisteTipoReal && !jaExistePlaceholder) {
+          placeholders.push(placeholderPadrao);
+        }
+      });
+
+      placeholders.forEach((item) => {
+        const tipoPlaceholder = String(item.tipo || '').trim();
+        if (!tipoPlaceholder) return;
+        if (tipo && String(tipo).trim() && tipoPlaceholder !== String(tipo).trim()) return;
+
+        const jaExisteTipo = componentes.some(
+          (componente) => String(componente.tipo || '').trim() === tipoPlaceholder
+        );
+        if (jaExisteTipo) return;
+
+        componentes.push({
+          id: `placeholder:${item.categoria}`,
+          tipo: item.tipo,
+          material: item.material,
+          marca: null,
+          especificacao: item.especificacao,
+          quantidade_no_computador: 0,
+          quantidade_disponivel: 0,
+          quantidade_em_uso: 0,
+          categoria: item.categoria,
+          placeholder: true,
+        });
+      });
+    }
+
+    return componentes.sort((a, b) => {
       const tipoDiff = String(a.tipo || '').localeCompare(String(b.tipo || ''));
       if (tipoDiff !== 0) return tipoDiff;
       return String(a.material || '').localeCompare(String(b.material || ''));
@@ -533,6 +589,7 @@ class ManutencaoController {
       specs_depois = null,
 
       materialRemovidoId = null,
+      tipoRemovido = null,
       qtdRemovida = 1,
       destinoRemovida = null,
       motivoRemovida = null,
@@ -554,13 +611,16 @@ class ManutencaoController {
 
     const specs_antes = computador.specs_override || computador.specs || null;
     const computadorEstruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+    const procedimentoComPeca = tipo === 'TROCA_PECA' || tipo === 'REMOCAO_PECA';
+    const trocaDePeca = tipo === 'TROCA_PECA';
+    const remocaoDePeca = tipo === 'REMOCAO_PECA';
 
     if (!computadorEstruturado) {
       throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de continuar a manutenção.');
     }
 
     // 3) Se NÃO for troca de peça, salva procedimento simples
-    if (tipo !== 'TROCA_PECA') {
+    if (!procedimentoComPeca) {
       await ManutencaoItem.create({
         manutencaoId,
         descricao: descricao.trim(),
@@ -573,16 +633,27 @@ class ManutencaoController {
       return true;
     }
 
-    // ========== TROCA DE PEÇA (transação completa) ==========
-    if (!materialId) throw new Error('materialId é obrigatório para TROCA_PECA.');
+    // ========== TROCA / REMOÇÃO DE PEÇA (transação completa) ==========
     const qtd = Number(quantidade) || 1;
-    if (qtd <= 0) throw new Error('Quantidade inválida.');
-    // ✅ peça removida é obrigatória na TROCA_PECA
-    if (!materialRemovidoId) throw new Error('materialRemovidoId é obrigatório para TROCA_PECA.');
-    const qtdRem = Number(qtdRemovida) || 1;
+    const placeholderSelecionado =
+      typeof materialRemovidoId === 'string' && materialRemovidoId.startsWith('placeholder:');
+    const categoriaPlaceholder = placeholderSelecionado
+      ? String(materialRemovidoId).split(':')[1] || ''
+      : '';
+    if (trocaDePeca) {
+      if (!materialId) throw new Error('materialId é obrigatório para TROCA_PECA.');
+      if (qtd <= 0) throw new Error('Quantidade inválida.');
+    }
+    if (!materialRemovidoId) {
+      throw new Error('materialRemovidoId é obrigatório para movimentação de peça.');
+    }
+    const qtdRem = placeholderSelecionado ? 1 : (Number(qtdRemovida) || 1);
+    if (remocaoDePeca && placeholderSelecionado) {
+      throw new Error('RemoÃ§Ã£o sem troca exige um componente real vinculado Ã  mÃ¡quina.');
+    }
     if (qtdRem <= 0) throw new Error('qtdRemovida inválida.');
     if (!computadorEstruturado) {
-      throw new Error('Troca de peça exige converter esta máquina para o modo estruturado antes de continuar.');
+      throw new Error('Troca ou remoção de peça exige converter esta máquina para o modo estruturado antes de continuar.');
     }
 
     if (destinoRemovida !== 'RECUPERAR' && destinoRemovida !== 'DEFEITO') {
@@ -594,36 +665,59 @@ class ManutencaoController {
     }
 
     return await database.transaction(async (t) => {
-      // 5) Definir specs_depois
       let specsDepoisFinal = specs_antes;
-      if (!computadorEstruturado) {
-        specsDepoisFinal = specs_depois ? String(specs_depois) : specs_antes;
+      let material = null;
+
+      if (!computadorEstruturado && specs_depois) {
+        specsDepoisFinal = String(specs_depois);
       }
 
-      // 6) Snapshot congelado (histórico)
-      const material = await Material.findByPk(materialId, { transaction: t });
-      if (!material) throw new Error('Material não encontrado.');
+      if (trocaDePeca) {
+        material = await Material.findByPk(materialId, { transaction: t });
+        if (!material) throw new Error('Material não encontrado.');
 
-      if (Number(material.quantidade_disponivel || 0) < qtd) {
-        throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
+        if (Number(material.quantidade_disponivel || 0) < qtd) {
+          throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
+        }
       }
 
-      const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
+      const matRem = placeholderSelecionado
+        ? {
+            id: null,
+            tipo:
+              tipoRemovido ||
+              this.computadorEstruturadoService.buildPlaceholderComponente(categoriaPlaceholder)?.tipo ||
+              categoriaPlaceholder,
+            material:
+              this.computadorEstruturadoService.buildPlaceholderComponente(categoriaPlaceholder)?.material ||
+              tipoRemovido ||
+              categoriaPlaceholder,
+            marca: null,
+            especificacao: null,
+            nf: null,
+          }
+        : await Material.findByPk(materialRemovidoId, { transaction: t });
       if (!matRem) throw new Error('Material removido não encontrado.');
 
-      const tipoInstalado = String(material.tipo || '').trim().toUpperCase();
-      const tipoRemovido = String(matRem.tipo || '').trim().toUpperCase();
-      if (!tipoInstalado || !tipoRemovido || tipoInstalado !== tipoRemovido) {
-        throw new Error(
-          `A peça nova precisa ter o mesmo tipo da peça removida. Instalado: ${material.tipo || '-'} | Removido: ${matRem.tipo || '-'}.`
-        );
+      if (trocaDePeca) {
+        const tipoInstalado = this.computadorEstruturadoService.inferCategoria(material);
+        const tipoRemovido = placeholderSelecionado
+          ? String(categoriaPlaceholder || '').trim().toUpperCase()
+          : this.computadorEstruturadoService.inferCategoria(matRem);
+        if (!tipoInstalado || !tipoRemovido || tipoInstalado !== tipoRemovido) {
+          throw new Error(
+            `A peça nova precisa ter o mesmo tipo da peça removida. Instalado: ${material.tipo || '-'} | Removido: ${matRem.tipo || '-'}.`
+          );
+        }
       }
 
-      const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
-        computadorId,
-        materialRemovidoId,
-        t
-      );
+      const quantidadeNoComputador = placeholderSelecionado
+        ? qtdRem
+        : await this.getQuantidadeEstruturadaNoComputador(
+            computadorId,
+            materialRemovidoId,
+            t
+          );
 
       if (quantidadeNoComputador < qtdRem) {
         throw new Error(
@@ -631,31 +725,34 @@ class ManutencaoController {
         );
       }
 
+      const detalhesRemocao = placeholderSelecionado
+        ? `Slot vazio preservado: ${matRem.material}`
+        : [
+            matRem.tipo,
+            matRem.material,
+            matRem.marca ? `Marca: ${matRem.marca}` : null,
+            matRem.especificacao ? `Spec: ${matRem.especificacao}` : null,
+            matRem.nf ? `NF: ${matRem.nf}` : null,
+            `Qtd: ${qtdRem}`,
+          ]
+            .filter(Boolean)
+            .join(' | ');
+
       const snapshot = [
-        `Instalado: ${[
-          material.tipo,
-          material.material,
-          material.marca ? `Marca: ${material.marca}` : null,
-          material.especificacao ? `Spec: ${material.especificacao}` : null,
-          material.nf ? `NF: ${material.nf}` : null,
-          `Qtd: ${qtd}`,
-        ]
-          .filter(Boolean)
-          .join(' | ')}`,
-
-        `Removido: ${[
-          matRem.tipo,
-          matRem.material,
-          matRem.marca ? `Marca: ${matRem.marca}` : null,
-          matRem.especificacao ? `Spec: ${matRem.especificacao}` : null,
-          matRem.nf ? `NF: ${matRem.nf}` : null,
-          `Qtd: ${qtdRem}`,
-        ]
-          .filter(Boolean)
-          .join(' | ')}`,
-
+        trocaDePeca
+          ? `Instalado: ${[
+              material.tipo,
+              material.material,
+              material.marca ? `Marca: ${material.marca}` : null,
+              material.especificacao ? `Spec: ${material.especificacao}` : null,
+              material.nf ? `NF: ${material.nf}` : null,
+              `Qtd: ${qtd}`,
+            ]
+              .filter(Boolean)
+              .join(' | ')}`
+          : 'Procedimento: Remoção de peça sem troca',
+        `${remocaoDePeca ? 'Removido sem reposição' : 'Removido'}: ${detalhesRemocao}`,
         `Destino removida: ${destinoRemovida}`,
-
         destinoRemovida === 'DEFEITO' && motivoRemovida
           ? `Motivo: ${String(motivoRemovida).trim()}`
           : null,
@@ -663,12 +760,11 @@ class ManutencaoController {
         .filter(Boolean)
         .join(' || ');
 
-      // 7) Criar manutencaoItem
       const item = await ManutencaoItem.create(
         {
           manutencaoId,
           descricao: descricao.trim(),
-          tipo: 'TROCA_PECA',
+          tipo,
           specs_antes,
           specs_depois: specsDepoisFinal,
           material_snapshot: snapshot,
@@ -676,44 +772,37 @@ class ManutencaoController {
         { transaction: t }
       );
 
-      // 8) Vínculo procedimento ↔ material
-      await ManutencaoMaterial.create(
-        {
-          manutencaoItem_id: item.id,
-          material_id: material.id,
-          quantidade: qtd,
-        },
-        { transaction: t }
-      );
+      if (trocaDePeca) {
+        await ManutencaoMaterial.create(
+          {
+            manutencaoItem_id: item.id,
+            material_id: material.id,
+            quantidade: qtd,
+          },
+          { transaction: t }
+        );
 
-      // 9) Atualizar estoque
-      material.quantidade_disponivel = material.quantidade_disponivel - qtd;
-      material.quantidade_em_uso = material.quantidade_em_uso + qtd;
-      await material.save({ transaction: t });
+        material.quantidade_disponivel = material.quantidade_disponivel - qtd;
+        material.quantidade_em_uso = material.quantidade_em_uso + qtd;
+        await material.save({ transaction: t });
 
-      // 10) Log de movimento
-      await MaterialMovimento.create(
-        {
-          material_id: material.id,
-          tipo_movimento: 'SAIDA_MANUTENCAO',
-          quantidade: qtd,
-          referencia_manutencaoItem_id: item.id,
-          referencia_computador_id: computadorId,
-        },
-        { transaction: t }
-      );
-      // ====== PROCESSAR PEÇA REMOVIDA ======
+        await MaterialMovimento.create(
+          {
+            material_id: material.id,
+            tipo_movimento: 'SAIDA_MANUTENCAO',
+            quantidade: qtd,
+            referencia_manutencaoItem_id: item.id,
+            referencia_computador_id: computadorId,
+          },
+          { transaction: t }
+        );
+      }
 
-      if (!matRem) throw new Error('Material removido não encontrado.');
-
-      // sempre tira do EM USO (como você definiu)
-      // regra nova:
-      // se a peça removida já existia com saldo em uso, tira do em uso.
-      // se foi recém-cadastrada (em_uso = 0 e disponivel = 0), permite entrada direta no sistema.
-      // se não tem saldo e não é recém-cadastrada, continua barrando.
-
-      if (destinoRemovida === 'RECUPERAR') {
+      if (!placeholderSelecionado && destinoRemovida === 'RECUPERAR') {
         await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
+        if (remocaoDePeca) {
+          await this.removerQuantidadeEstruturadaDoComputador(computadorId, matRem.id, qtdRem, t);
+        }
         matRem.quantidade_disponivel = matRem.quantidade_disponivel + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -724,12 +813,17 @@ class ManutencaoController {
             quantidade: qtdRem,
             referencia_manutencaoItem_id: item.id,
             referencia_computador_id: computadorId,
-            observacao: 'Peça removida recuperada na troca',
+            observacao: remocaoDePeca
+              ? 'Peça removida sem troca e enviada para recuperação'
+              : 'Peça removida recuperada na troca',
           },
           { transaction: t }
         );
-      } else if (destinoRemovida === 'DEFEITO') {
+      } else if (!placeholderSelecionado && destinoRemovida === 'DEFEITO') {
         await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
+        if (remocaoDePeca) {
+          await this.removerQuantidadeEstruturadaDoComputador(computadorId, matRem.id, qtdRem, t);
+        }
         matRem.quantidade_baixada = (matRem.quantidade_baixada || 0) + qtdRem;
         await matRem.save({ transaction: t });
 
@@ -746,19 +840,33 @@ class ManutencaoController {
         );
       }
 
-      // 11) Atualizar composição/specs do computador
-      if (computadorEstruturado) {
-        const resultadoEstruturado =
-          await this.computadorEstruturadoService.substituirComponenteEstruturado({
-            computadorId,
-            materialInstaladoId: material.id,
-            quantidadeInstalada: qtd,
-            materialRemovidoId: matRem.id,
-            quantidadeRemovida: qtdRem,
-            transaction: t,
-          });
+      if (computadorEstruturado && trocaDePeca) {
+        const resultadoEstruturado = placeholderSelecionado
+          ? await this.computadorEstruturadoService.instalarComponenteEstruturado({
+              computadorId,
+              materialInstaladoId: material.id,
+              quantidadeInstalada: qtd,
+              categoria: categoriaPlaceholder || tipoRemovido || material.tipo,
+              transaction: t,
+            })
+          : await this.computadorEstruturadoService.substituirComponenteEstruturado({
+              computadorId,
+              materialInstaladoId: material.id,
+              quantidadeInstalada: qtd,
+              materialRemovidoId: matRem.id,
+              quantidadeRemovida: qtdRem,
+              transaction: t,
+            });
 
         specsDepoisFinal = resultadoEstruturado.specsText || specsDepoisFinal;
+        item.specs_depois = specsDepoisFinal;
+        await item.save({ transaction: t });
+      } else if (computadorEstruturado && remocaoDePeca) {
+        const resultadoEstruturado = await this.computadorEstruturadoService.syncSpecsEstruturadasDoComputador(
+          computadorId,
+          t
+        );
+        specsDepoisFinal = resultadoEstruturado.specsText || null;
         item.specs_depois = specsDepoisFinal;
         await item.save({ transaction: t });
       } else if (specsDepoisFinal && specsDepoisFinal !== specs_antes) {

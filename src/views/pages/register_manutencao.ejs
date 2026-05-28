@@ -28,38 +28,114 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     $(document).ready(function() {
-      $.get("/get-empresas", function(data) {
-        $('#empresa').empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
-        data.forEach(function(empresa) {
-          $('#empresa').append($('<option>', {
-            value: empresa.id,
-            text: empresa.nome
+      const $empresa = $('#empresa');
+      const $computador = $('#computador');
+      const $computadorGroup = $('#computadorGroup');
+      const $computadorFiltro = $('#computadorFiltro');
+      const $computadorResumo = $('#computadorResumo');
+      let computadoresDisponiveis = [];
+      let computadoresEmManutencao = new Set();
+
+      function formatarComputador(computador) {
+        return [computador.id, computador.patrimonio || '-', computador.setor || '-'].join(' - ');
+      }
+
+      function resetComputadores() {
+        $computador.empty().append('<option value="" selected disabled>Selecione o Computador</option>');
+        $computadorResumo.text('Selecione uma empresa para carregar as máquinas.');
+      }
+
+      function renderizarComputadores(prefId = null) {
+        const termo = String($computadorFiltro.val() || '').trim().toLowerCase();
+        const disponiveis = computadoresDisponiveis.filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+        const filtrados = !termo
+          ? disponiveis
+          : disponiveis.filter((computador) => formatarComputador(computador).toLowerCase().includes(termo));
+
+        resetComputadores();
+
+        if (!filtrados.length) {
+          $computador.append($('<option>', {
+            value: '',
+            text: disponiveis.length
+              ? 'Nenhum computador encontrado com esse filtro'
+              : 'Nenhum computador disponível para nova manutenção',
+            disabled: true
           }));
-        });
-      });
-
-      $('#empresa').change(function() {
-        var empresaId = $(this).val();
-        $('#computador').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-
-        if (empresaId) {
-          $.get("/computadores-by-empresa?empresaId=" + empresaId, function(resultado) {
-            const lista = Array.isArray(resultado.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
-            $('#computador').empty().append('<option value="" selected disabled>Selecione o Computador</option>');
-
-            lista.forEach(function(computador) {
-              $('#computador').append($('<option>', {
-                value: computador.id,
-                text: `${computador.id} - ${computador.patrimonio}`
-              }));
-            });
-
-            $('#computadorGroup').show();
-          });
         } else {
-          $('#computadorGroup').hide();
+          filtrados.forEach(function(computador) {
+            $computador.append($('<option>', {
+              value: computador.id,
+              text: formatarComputador(computador)
+            }));
+          });
         }
+
+        $computadorResumo.text(`${filtrados.length} de ${disponiveis.length} computadores disponíveis para manutenção.`);
+
+        if (prefId) {
+          $computador.val(String(prefId));
+        }
+
+        $computadorGroup.show();
+      }
+
+      function carregarEmpresas() {
+        $.get('/get-empresas', function(data) {
+          $empresa.empty().append('<option value="" selected disabled>Selecione a Empresa</option>');
+          data.forEach(function(empresa) {
+            $empresa.append($('<option>', {
+              value: empresa.id,
+              text: empresa.nome
+            }));
+          });
+        });
+      }
+
+      function carregarComputadores(empresaId) {
+        resetComputadores();
+
+        if (!empresaId) {
+          $computadorFiltro.val('');
+          $computadorGroup.hide();
+          return;
+        }
+
+        $computadorResumo.text('Carregando computadores...');
+
+        $.when(
+          $.get(`/computadores-by-empresa?empresaId=${encodeURIComponent(empresaId)}&limit=all&sortBy=patrimonio&sortDir=ASC`),
+          $.get('/manutencoes-open')
+        ).done(function(resultadoResp, manutResp) {
+          const resultado = resultadoResp[0];
+          const manutencoes = manutResp[0];
+          const lista = Array.isArray(resultado?.rows) ? resultado.rows : (Array.isArray(resultado) ? resultado : []);
+
+          computadoresDisponiveis = lista;
+          computadoresEmManutencao = new Set(
+            (Array.isArray(manutencoes) ? manutencoes : [])
+              .map((manutencao) => Number(manutencao.computadorId))
+              .filter((id) => Number.isFinite(id))
+          );
+
+          renderizarComputadores();
+        }).fail(function() {
+          resetComputadores();
+          $computadorResumo.text('Erro ao carregar os computadores desta empresa.');
+          $computadorGroup.show();
+        });
+      }
+
+      $empresa.on('change', function() {
+        $computadorFiltro.val('');
+        carregarComputadores($(this).val());
       });
+
+      $computadorFiltro.on('input', function() {
+        renderizarComputadores($computador.val());
+      });
+
+      carregarEmpresas();
     });
   </script>
 </body>

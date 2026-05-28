@@ -11,9 +11,6 @@
                 <h2 class="card-title mb-1">Importar Computador Estruturado</h2>
                 <small class="text-muted">Processador, memoria e armazenamento serao lancados como materiais em uso.</small>
               </div>
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnOpenBatchCsvFromSingleComputadores">
-                Importar grupo
-              </button>
             </div>
 
             <div class="alert alert-light border text-start mb-4">
@@ -68,9 +65,14 @@
               <hr class="my-4">
 
               <div class="d-flex justify-content-between flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-secondary" id="btnBackToStructuredFromCsvComputadores">
-                  Cadastro manual
-                </button>
+                <div class="d-flex flex-wrap gap-2" aria-label="Tipo de cadastro">
+                  <button type="button" class="btn btn-outline-secondary" id="btnBackToStructuredFromCsvComputadores">
+                    Manual
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" id="btnOpenBatchCsvFromSingleComputadores">
+                    CSV grupo
+                  </button>
+                </div>
                 <button type="submit" class="btn btn-primary px-4">Importar</button>
               </div>
             </form>

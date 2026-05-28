@@ -9,6 +9,71 @@ const { parseHwinfoCsv, buildStructuredSpecsText } = require('./hwinfoCsvParser'
 const { validarPatrimonioUnico } = require('./patrimonioUnicoService');
 
 class ComputadorEstruturadoService {
+  getCategoriaConfig(categoria = '') {
+    const cat = String(categoria || '').trim().toUpperCase();
+    const configs = {
+      PROCESSADOR: {
+        categoria: 'PROCESSADOR',
+        tipo: 'Processador',
+        placeholder: 'Sem processador',
+        collection: 'processador',
+        multiple: false,
+      },
+      MEMORIA: {
+        categoria: 'MEMORIA',
+        tipo: 'Memoria',
+        placeholder: 'Sem memoria',
+        collection: 'memorias',
+        multiple: true,
+      },
+      ARMAZENAMENTO: {
+        categoria: 'ARMAZENAMENTO',
+        tipo: 'Armazenamento',
+        placeholder: 'Sem armazenamento',
+        collection: 'armazenamentos',
+        multiple: true,
+      },
+      FONTE: {
+        categoria: 'FONTE',
+        tipo: 'Fonte',
+        placeholder: 'Sem fonte',
+        collection: 'fontes',
+        multiple: true,
+      },
+    };
+
+    return configs[cat] || null;
+  }
+
+  buildPlaceholderComponente(categoria = '') {
+    const config = this.getCategoriaConfig(categoria);
+    if (!config) return null;
+
+    return {
+      categoria: config.categoria,
+      tipo: config.tipo,
+      material: config.placeholder,
+      especificacao: null,
+      quantidade: 0,
+      placeholder: true,
+    };
+  }
+
+  isPlaceholderComponente(componente = null) {
+    return !!(componente && componente.placeholder);
+  }
+
+  hasStructuredCategory(parsed = {}, categoria = '') {
+    const config = this.getCategoriaConfig(categoria);
+    if (!config) return false;
+
+    if (!config.multiple) {
+      return !!parsed?.[config.collection];
+    }
+
+    return Array.isArray(parsed?.[config.collection]) && parsed[config.collection].length > 0;
+  }
+
   parseStructuredSpecs(rawValue) {
     if (!rawValue) return {};
 
@@ -50,6 +115,7 @@ class ComputadorEstruturadoService {
       material: material.material,
       especificacao: material.especificacao || null,
       quantidade: Number(quantidade || 1),
+      placeholder: false,
     };
   }
 
@@ -102,6 +168,22 @@ class ComputadorEstruturadoService {
         parsed.fontes.push(componente);
       }
     });
+
+    if (!parsed.processador && this.hasStructuredCategory(stored, 'PROCESSADOR')) {
+      parsed.processador = this.buildPlaceholderComponente('PROCESSADOR');
+    }
+
+    if (!parsed.memorias.length && this.hasStructuredCategory(stored, 'MEMORIA')) {
+      parsed.memorias = [this.buildPlaceholderComponente('MEMORIA')];
+    }
+
+    if (!parsed.armazenamentos.length && this.hasStructuredCategory(stored, 'ARMAZENAMENTO')) {
+      parsed.armazenamentos = [this.buildPlaceholderComponente('ARMAZENAMENTO')];
+    }
+
+    if (!parsed.fontes.length && this.hasStructuredCategory(stored, 'FONTE')) {
+      parsed.fontes = [this.buildPlaceholderComponente('FONTE')];
+    }
 
     return parsed;
   }
@@ -181,32 +263,79 @@ class ComputadorEstruturadoService {
       );
     }
 
-    const categoriaInstalada = this.inferCategoria(materialInstalado, categoriaPreferencial);
+    await this.vincularComponenteEstruturado({
+      computadorId,
+      materialId: materialInstalado.id,
+      quantidade: quantidadeNova,
+      categoria: categoriaPreferencial,
+      origem: 'MANUTENCAO_TROCA',
+      transaction,
+    });
+
+    return this.syncSpecsEstruturadasDoComputador(computadorId, transaction);
+  }
+
+  async vincularComponenteEstruturado({
+    computadorId,
+    materialId,
+    quantidade = 1,
+    categoria = null,
+    origem = 'MANUTENCAO_TROCA',
+    transaction,
+  }) {
+    const material = await Material.findByPk(materialId, { transaction });
+    if (!material) throw new Error('Material instalado nao encontrado.');
+
+    const categoriaFinal = this.inferCategoria(material, categoria);
+    const quantidadeFinal = Number(quantidade || 1);
 
     const vinculoInstalado = await ComputadorMaterial.findOne({
       where: {
         computador_id: computadorId,
-        material_id: materialInstaladoId,
-        categoria: categoriaInstalada,
+        material_id: materialId,
+        categoria: categoriaFinal,
       },
       transaction,
     });
 
     if (vinculoInstalado) {
-      vinculoInstalado.quantidade = Number(vinculoInstalado.quantidade || 0) + quantidadeNova;
+      vinculoInstalado.quantidade = Number(vinculoInstalado.quantidade || 0) + quantidadeFinal;
       await vinculoInstalado.save({ transaction });
     } else {
       await ComputadorMaterial.create(
         {
           computador_id: computadorId,
-          material_id: materialInstaladoId,
-          quantidade: quantidadeNova,
-          categoria: categoriaInstalada,
-          origem: 'MANUTENCAO_TROCA',
+          material_id: materialId,
+          quantidade: quantidadeFinal,
+          categoria: categoriaFinal,
+          origem,
         },
         { transaction }
       );
     }
+
+    return {
+      material,
+      categoria: categoriaFinal,
+      quantidade: quantidadeFinal,
+    };
+  }
+
+  async instalarComponenteEstruturado({
+    computadorId,
+    materialInstaladoId,
+    quantidadeInstalada = 1,
+    categoria = null,
+    transaction,
+  }) {
+    await this.vincularComponenteEstruturado({
+      computadorId,
+      materialId: materialInstaladoId,
+      quantidade: quantidadeInstalada,
+      categoria,
+      origem: 'MANUTENCAO_TROCA',
+      transaction,
+    });
 
     return this.syncSpecsEstruturadasDoComputador(computadorId, transaction);
   }
@@ -316,7 +445,7 @@ class ComputadorEstruturadoService {
       ...(parsed.memorias || []),
       ...(parsed.armazenamentos || []),
       ...(parsed.fontes || []),
-    ];
+    ].filter((componente) => componente && !this.isPlaceholderComponente(componente));
   }
 
   async registrarMovimentoEstruturado(material, computadorId, quantidade, tipoMovimento, observacao, transaction) {

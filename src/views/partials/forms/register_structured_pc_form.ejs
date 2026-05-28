@@ -4,6 +4,7 @@
   const _actionUrl = (typeof actionUrl !== 'undefined') ? actionUrl : '/computadores/estruturado-manual';
   const _csvTargetModal = (typeof csvTargetModal !== 'undefined') ? csvTargetModal : 'modalImportCsv';
   const _csvEmpresaTargetId = (typeof csvEmpresaTargetId !== 'undefined') ? csvEmpresaTargetId : 'empresaImport';
+  const _batchTargetModal = (typeof batchTargetModal !== 'undefined') ? batchTargetModal : null;
   const _structuredModalId = (typeof structuredModalId !== 'undefined') ? structuredModalId : 'modalRegisterStructuredPc';
 %>
 
@@ -81,9 +82,16 @@
 
   <div class="d-flex justify-content-between flex-wrap gap-2">
     <% if (_inModal) { %>
-    <button type="button" id="btnImportCsvFromStructured" class="btn btn-outline-secondary">
-      Importar CSV
-    </button>
+    <div class="d-flex flex-wrap gap-2" aria-label="Tipo de cadastro">
+      <button type="button" id="btnImportCsvFromStructured" class="btn btn-outline-secondary">
+        CSV único
+      </button>
+      <% if (_batchTargetModal) { %>
+      <button type="button" id="btnImportCsvBatchFromStructured" class="btn btn-outline-secondary">
+        CSV grupo
+      </button>
+      <% } %>
+    </div>
     <% } else { %>
     <a href="/importar-csv" class="btn btn-outline-secondary">
       Importar CSV

@@ -299,6 +299,7 @@
               <select class="form-select" name="tipo" id="tipoProcedimento" required>
                 <option value="" selected disabled>Selecione...</option>
                 <option value="TROCA_PECA">Troca de peça</option>
+                <option value="REMOCAO_PECA">Remoção de peça</option>
                 <option value="LIMPEZA">Limpeza</option>
                 <option value="MANUT_SIMPLES">Manutenção simples</option>
               </select>
@@ -320,10 +321,10 @@
                     <select class="form-select" id="tipoPeca" name="tipoPeca">
                       <option value="" selected disabled>Selecione...</option>
                     </select>
-                    <small class="text-muted">Carregado de Materiais</small>
+                    <small class="text-muted" id="tipoPecaHelp">Carregado de Materiais</small>
                   </div>
 
-                  <div class="col-md-5">
+                  <div class="col-md-5" id="blocoMaterialInstalado">
                     <label class="form-label">Material disponível</label>
                     <select class="form-select" name="materialId" id="materialId">
                       <option value="" selected disabled>Selecione o tipo primeiro...</option>
@@ -331,21 +332,24 @@
                     <small class="text-muted" id="infoDisponivel"></small>
                   </div>
 
-                  <div class="col-md-3">
+                  <div class="col-md-3" id="blocoQuantidadeInstalada">
                     <label class="form-label">Quantidade</label>
                     <input class="form-control" type="number" name="quantidade" id="quantidade" min="1" value="1">
                   </div>
 
-                  <div class="col-12">
+                  <div class="col-12" id="blocoSpecsDepois">
                     <label class="form-label">Specs depois da troca</label>
                     <textarea class="form-control" name="specs_depois" id="specsDepois" rows="3"></textarea>
                     <small class="text-muted" id="specsDepoisHelp">
                       Começa com as specs atuais (override se existir). Você edita a string livre.
                     </small>
 
+                  </div>
+
+                  <div class="col-12">
                     <hr class="my-3">
 
-                    <h6 class="mb-2">Peça removida (obrigatório)</h6>
+                    <h6 class="mb-2" id="tituloPecaRemovida">Peça removida (obrigatório)</h6>
 
                     <div class="row g-3">
                       <div class="col-md-4">
@@ -353,7 +357,7 @@
                         <select class="form-select" id="tipoRemovido" disabled>
                           <option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>
                         </select>
-                        <small class="text-muted">O tipo removido acompanha o tipo escolhido para a troca.</small>
+                        <small class="text-muted" id="tipoRemovidoHelp">O tipo removido acompanha o tipo escolhido para a troca.</small>
                       </div>
 
                       <div class="col-md-5">
@@ -689,12 +693,16 @@
       const tipoPeca = document.getElementById('tipoPeca');
       const materialId = document.getElementById('materialId');
       const quantidade = document.getElementById('quantidade');
+      const blocoMaterialInstalado = document.getElementById('blocoMaterialInstalado');
+      const blocoQuantidadeInstalada = document.getElementById('blocoQuantidadeInstalada');
+      const blocoSpecsDepois = document.getElementById('blocoSpecsDepois');
       const specsDepois = document.getElementById('specsDepois');
       const specsBase = document.getElementById('specsBase');
       const specsModo = document.getElementById('specsModo');
       const specsDepoisHelp = document.getElementById('specsDepoisHelp');
       const alertLegadoEstruturado = document.getElementById('alertLegadoEstruturado');
       const infoDisponivel = document.getElementById('infoDisponivel');
+      const tipoPecaHelp = document.getElementById('tipoPecaHelp');
       const btnSalvar = document.getElementById('btnSalvarProcedimento');
       const btnOpenProcedimento = document.getElementById('btnOpenProcedimento');
       const btnConverterEstruturadoFromManutencao = document.getElementById('btnConverterEstruturadoFromManutencao');
@@ -713,6 +721,8 @@
       const destinoRemovida = document.getElementById('destinoRemovida');
       const motivoRemovida = document.getElementById('motivoRemovida');
       const infoRemovido = document.getElementById('infoRemovido');
+      const tituloPecaRemovida = document.getElementById('tituloPecaRemovida');
+      const tipoRemovidoHelp = document.getElementById('tipoRemovidoHelp');
       const computadorIdAtual = Number('<%= manutencao.computador.id %>');
 
       const formCondenarMaquina = document.getElementById('formCondenarMaquina');
@@ -729,9 +739,18 @@
       let modalLegadoJaExibido = false;
 
       let componentesEstruturadosCache = [];
+      let componentesEstruturadosComPlaceholderCache = [];
 
       function isEstruturado() {
         return (specsModo.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
+      }
+
+      function procedimentoAtualEhTroca() {
+        return tipoProcedimento.value === 'TROCA_PECA';
+      }
+
+      function procedimentoAtualEhRemocao() {
+        return tipoProcedimento.value === 'REMOCAO_PECA';
       }
 
       function getModalInstance(modalEl) {
@@ -771,12 +790,14 @@
         blocoTrocaPeca.style.display = enabled ? 'block' : 'none';
         const estruturado = (specsModo.value || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
         const legado = !estruturado;
+        const troca = procedimentoAtualEhTroca();
+        const remocao = procedimentoAtualEhRemocao();
 
         tipoPeca.disabled = !enabled;
-        materialId.disabled = !enabled;
-        quantidade.disabled = !enabled;
-        specsDepois.disabled = !enabled;
-        specsDepois.readOnly = enabled && estruturado;
+        materialId.disabled = !enabled || !troca;
+        quantidade.disabled = !enabled || !troca;
+        specsDepois.disabled = !enabled || !troca;
+        specsDepois.readOnly = enabled && troca && estruturado;
 
         tipoRemovido.disabled = true;
         materialRemovidoId.disabled = !enabled;
@@ -785,16 +806,40 @@
         motivoRemovida.disabled = !enabled;
 
         tipoPeca.required = enabled;
-        materialId.required = enabled;
-        quantidade.required = enabled;
+        materialId.required = enabled && troca;
+        quantidade.required = enabled && troca;
 
         tipoRemovido.required = enabled;
         materialRemovidoId.required = enabled;
         qtdRemovida.required = enabled;
         destinoRemovida.required = enabled;
 
+        if (blocoMaterialInstalado) {
+          blocoMaterialInstalado.style.display = enabled && troca ? '' : 'none';
+        }
+        if (blocoQuantidadeInstalada) {
+          blocoQuantidadeInstalada.style.display = enabled && troca ? '' : 'none';
+        }
+        if (blocoSpecsDepois) {
+          blocoSpecsDepois.style.display = enabled && troca ? '' : 'none';
+        }
+
+        if (tituloPecaRemovida) {
+          tituloPecaRemovida.textContent = remocao ? 'Peça para remover (obrigatório)' : 'Peça removida (obrigatório)';
+        }
+        if (tipoPecaHelp) {
+          tipoPecaHelp.textContent = remocao
+            ? 'Carregado pelos tipos realmente vinculados nesta máquina.'
+            : 'Carregado de Materiais.';
+        }
+        if (tipoRemovidoHelp) {
+          tipoRemovidoHelp.textContent = remocao
+            ? 'Escolha o tipo do componente que será removido desta máquina.'
+            : 'O tipo removido acompanha o tipo escolhido para a troca.';
+        }
+
         if (specsDepoisHelp) {
-          specsDepoisHelp.textContent = estruturado
+          specsDepoisHelp.textContent = troca && estruturado
             ? 'Este computador esta em modo estruturado. As specs serao recalculadas automaticamente pelos componentes vinculados.'
             : 'Comeca com as specs atuais (override se existir). Voce edita a string livre.';
         }
@@ -879,20 +924,26 @@
         });
       }
 
-      async function carregarTipos() {
-        if (!componentesEstruturadosCache.length) {
-          await carregarComponentesEstruturados();
-        }
+      async function carregarTipos(modoProcedimento = tipoProcedimento.value) {
+        const cacheAlvo = modoProcedimento === 'REMOCAO_PECA'
+          ? await carregarComponentesEstruturados(false)
+          : await carregarComponentesEstruturados(true);
 
-        const tipos = [...new Set(componentesEstruturadosCache.map((item) => item.tipo).filter(Boolean))];
+        const tipos = [...new Set(cacheAlvo.map((item) => item.tipo).filter(Boolean))];
 
         tipoPeca.innerHTML = '<option value="" selected disabled>Selecione...</option>';
-        tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
+        tipoRemovido.innerHTML = `<option value="" selected disabled>${
+          modoProcedimento === 'REMOCAO_PECA'
+            ? 'Selecione o tipo da peça para remover...'
+            : 'Selecione o tipo da peça nova primeiro...'
+        }</option>`;
 
         if (!tipos.length) {
           const opt = document.createElement('option');
           opt.value = '';
-          opt.textContent = 'Esta máquina não possui componentes trocáveis';
+          opt.textContent = modoProcedimento === 'REMOCAO_PECA'
+            ? 'Esta máquina não possui componentes para remoção'
+            : 'Esta máquina não possui componentes trocáveis';
           opt.disabled = true;
           tipoPeca.appendChild(opt);
           return;
@@ -906,7 +957,14 @@
         });
       }
 
-      async function carregarComponentesEstruturados() {
+      async function carregarComponentesEstruturados(includePlaceholders = false) {
+        if (includePlaceholders) {
+          componentesEstruturadosComPlaceholderCache = await fetchJson(
+            `/computadores/${computadorIdAtual}/componentes-estruturados?includePlaceholders=1`
+          );
+          return componentesEstruturadosComPlaceholderCache;
+        }
+
         componentesEstruturadosCache = await fetchJson(`/computadores/${computadorIdAtual}/componentes-estruturados`);
         return componentesEstruturadosCache;
       }
@@ -925,7 +983,11 @@
         tipoRemovido.innerHTML = '';
 
         if (!tipo) {
-          tipoRemovido.innerHTML = '<option value="" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
+          tipoRemovido.innerHTML = `<option value="" selected disabled>${
+            procedimentoAtualEhRemocao()
+              ? 'Selecione o tipo da peça para remover...'
+              : 'Selecione o tipo da peça nova primeiro...'
+          }</option>`;
           return;
         }
 
@@ -965,11 +1027,11 @@
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Carregando...</option>';
         infoRemovido.textContent = 'Somente componentes vinculados a esta máquina aparecem aqui.';
 
-        if (!componentesEstruturadosCache.length) {
-          await carregarComponentesEstruturados();
-        }
-
-        const list = componentesEstruturadosCache.filter((item) => item.tipo === tipo);
+        const usarPlaceholders = procedimentoAtualEhTroca();
+        const cacheAlvo = usarPlaceholders
+          ? await carregarComponentesEstruturados(true)
+          : await carregarComponentesEstruturados(false);
+        const list = cacheAlvo.filter((item) => item.tipo === tipo);
         materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione...</option>';
 
         if (!list.length) {
@@ -984,10 +1046,13 @@
         list.forEach((m) => {
           const opt = document.createElement('option');
           opt.value = m.id;
-          opt.textContent = `${m.material} (${m.marca || '-'}) - Na máquina: ${m.quantidade_no_computador ?? 0}`;
+          opt.textContent = m.placeholder
+            ? `${m.material} (slot vazio)`
+            : `${m.material} (${m.marca || '-'}) - Na máquina: ${m.quantidade_no_computador ?? 0}`;
           opt.dataset.disponivel = m.quantidade_disponivel ?? 0;
           opt.dataset.uso = m.quantidade_em_uso ?? 0;
           opt.dataset.qtdNoComputador = m.quantidade_no_computador ?? 0;
+          opt.dataset.placeholder = m.placeholder ? '1' : '0';
           materialRemovidoId.appendChild(opt);
         });
       }
@@ -995,8 +1060,9 @@
       tipoProcedimento.addEventListener('change', async () => {
         const v = tipoProcedimento.value;
         const estruturado = isEstruturado();
+        const procedimentoComPeca = v === 'TROCA_PECA' || v === 'REMOCAO_PECA';
 
-        if (v === 'TROCA_PECA') {
+        if (procedimentoComPeca) {
           if (!estruturado) {
             setTrocaPecaEnabled(false);
             tipoProcedimento.value = '';
@@ -1005,8 +1071,8 @@
           }
 
           setTrocaPecaEnabled(true);
-          await carregarTipos();
           await carregarComponentesEstruturados();
+          await carregarTipos(v);
 
           tipoPeca.value = '';
           materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
@@ -1014,13 +1080,17 @@
           infoDisponivel.textContent = '';
 
           definirTipoRemovido('');
-          materialRemovidoId.innerHTML = '<option value="" selected disabled>Selecione o tipo removido primeiro...</option>';
+          materialRemovidoId.innerHTML = `<option value="" selected disabled>${
+            v === 'REMOCAO_PECA'
+              ? 'Selecione o tipo da peça para remover...'
+              : 'Selecione o tipo removido primeiro...'
+          }</option>`;
           qtdRemovida.value = 1;
           destinoRemovida.value = 'RECUPERAR';
           motivoRemovida.value = '';
           infoRemovido.textContent = '';
 
-          specsDepois.value = specsBase.value || '';
+          specsDepois.value = v === 'TROCA_PECA' ? (specsBase.value || '') : '';
         } else {
           setTrocaPecaEnabled(false);
 
@@ -1043,7 +1113,12 @@
         const tipo = tipoPeca.value;
         if (!tipo) return;
 
-        await carregarMateriaisPorTipo(tipo);
+        if (procedimentoAtualEhTroca()) {
+          await carregarMateriaisPorTipo(tipo);
+        } else {
+          materialId.innerHTML = '<option value="" selected disabled>Nao se aplica para remocao</option>';
+          infoDisponivel.textContent = '';
+        }
 
         definirTipoRemovido(tipo);
         await carregarMateriaisRemovidosPorTipo(tipo);
@@ -1062,12 +1137,15 @@
 
       materialRemovidoId.addEventListener('change', () => {
         const opt = materialRemovidoId.options[materialRemovidoId.selectedIndex];
+        const placeholder = String(opt.dataset.placeholder || '0') === '1';
         const disp = Number(opt.dataset.disponivel || 0);
         const uso = Number(opt.dataset.uso || 0);
         const qtdNoComputador = Number(opt.dataset.qtdNoComputador || 0);
-        infoRemovido.textContent = `Na máquina: ${qtdNoComputador} | Em uso sist.: ${uso} | Disponível sist.: ${disp}`;
+        infoRemovido.textContent = placeholder
+          ? 'Slot vazio preservado na estrutura. Nenhuma peça adicional será removida nesta troca.'
+          : `Na máquina: ${qtdNoComputador} | Em uso sist.: ${uso} | Disponível sist.: ${disp}`;
 
-        if (qtdNoComputador > 0) {
+        if (!placeholder && qtdNoComputador > 0) {
           qtdRemovida.max = qtdNoComputador;
           if (Number(qtdRemovida.value) > qtdNoComputador) qtdRemovida.value = qtdNoComputador;
         } else {
@@ -1085,42 +1163,54 @@
           const fd = new FormData(form);
           const payload = Object.fromEntries(fd.entries());
 
-          if (payload.tipo === 'TROCA_PECA') {
+          if (payload.tipo === 'TROCA_PECA' || payload.tipo === 'REMOCAO_PECA') {
             if ((specsModo.value || 'LEGADO').toUpperCase() !== 'ESTRUTURADO') {
-              throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de usar troca de peça.');
+              throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de movimentar peças.');
             }
 
-            if (!payload.materialId) throw new Error('Selecione um material.');
+            const trocaDePeca = payload.tipo === 'TROCA_PECA';
 
-            const qtd = Number(payload.quantidade || 1);
-            if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
-            payload.quantidade = qtd;
-            payload.specs_depois = payload.specs_depois || '';
+            if (trocaDePeca && !payload.materialId) throw new Error('Selecione um material.');
+
+            if (trocaDePeca) {
+              const qtd = Number(payload.quantidade || 1);
+              if (!qtd || qtd <= 0) throw new Error('Quantidade inválida.');
+              payload.quantidade = qtd;
+              payload.specs_depois = payload.specs_depois || '';
+            } else {
+              delete payload.materialId;
+              delete payload.quantidade;
+              delete payload.specs_depois;
+            }
 
             if (!tipoRemovido.value) throw new Error('Selecione o tipo removido.');
             if (!materialRemovidoId.value) throw new Error('Selecione o material removido.');
 
-            const remQtd = Number(qtdRemovida.value || 1);
-            if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
-
             const optRemovido = materialRemovidoId.options[materialRemovidoId.selectedIndex];
+            const placeholderSelecionado = String(optRemovido.dataset.placeholder || '0') === '1';
+            const remQtd = placeholderSelecionado ? 1 : Number(qtdRemovida.value || 1);
+            if (!remQtd || remQtd <= 0) throw new Error('Qtd removida inválida.');
             const qtdNoComputador = Number(optRemovido.dataset.qtdNoComputador || 0);
-            if (qtdNoComputador <= 0) {
+            if (!placeholderSelecionado && qtdNoComputador <= 0) {
               throw new Error('Selecione um componente realmente vinculado a esta máquina.');
             }
-            if (remQtd > qtdNoComputador) {
+            if (!placeholderSelecionado && remQtd > qtdNoComputador) {
               throw new Error(`Qtd removida maior que a quantidade vinculada à máquina. Vinculado: ${qtdNoComputador}.`);
             }
 
             const dest = destinoRemovida.value;
-            if (dest === 'DEFEITO' && (!motivoRemovida.value || !motivoRemovida.value.trim())) {
+            if (!placeholderSelecionado && dest === 'DEFEITO' && (!motivoRemovida.value || !motivoRemovida.value.trim())) {
               throw new Error('Motivo é obrigatório quando destino = Defeito.');
             }
 
-            payload.materialRemovidoId = Number(materialRemovidoId.value);
+            payload.tipoRemovido = tipoRemovido.value;
+            payload.materialRemovidoId = placeholderSelecionado
+              ? materialRemovidoId.value
+              : Number(materialRemovidoId.value);
             payload.qtdRemovida = remQtd;
             payload.destinoRemovida = dest;
-            payload.motivoRemovida = dest === 'DEFEITO' ? motivoRemovida.value.trim() : '';
+            payload.motivoRemovida =
+              !placeholderSelecionado && dest === 'DEFEITO' ? motivoRemovida.value.trim() : '';
           } else {
             delete payload.materialId;
             delete payload.quantidade;

@@ -24,9 +24,11 @@
 
   <div class="form-group" id="computadorGroup" style="display: none;">
     <label for="computador">Selecione o Computador</label>
+    <input type="search" class="form-control mb-2" id="computadorFiltro" placeholder="Pesquisar por ID, patrimônio ou setor">
     <select class="form-control" id="computador" name="computadorId" required>
       <option value="" selected disabled>Selecione o Computador</option>
     </select>
+    <small class="text-muted d-block mt-2" id="computadorResumo">Carregando computadores...</small>
   </div>
 
   <div class="form-group">

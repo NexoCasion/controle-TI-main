@@ -23,9 +23,11 @@
 
           <div class="mb-3 d-none" id="computadorGroupModal">
             <label for="computadorModal" class="form-label">Selecione o Computador</label>
+            <input type="search" class="form-control mb-2" id="computadorFiltroModal" placeholder="Pesquisar por ID, patrimônio ou setor">
             <select class="form-control" id="computadorModal" name="computadorId" required>
               <option value="" selected disabled>Selecione o Computador</option>
             </select>
+            <small class="text-muted d-block mt-2" id="computadorResumoModal">Selecione uma empresa para carregar as máquinas.</small>
           </div>
 
           <div class="mb-0">
@@ -48,14 +50,17 @@
     const modalEl = document.getElementById("modalRegisterManutencao");
     const empresaSelect = document.getElementById("empresaModal");
     const computadorSelect = document.getElementById("computadorModal");
+    const computadorFiltro = document.getElementById("computadorFiltroModal");
+    const computadorResumo = document.getElementById("computadorResumoModal");
     const computadorGroup = document.getElementById("computadorGroupModal");
     const alertBox = document.getElementById("manutencaoModalAlert");
 
-    if (!modalEl || !empresaSelect || !computadorSelect || !computadorGroup || !alertBox) return;
+    if (!modalEl || !empresaSelect || !computadorSelect || !computadorFiltro || !computadorResumo || !computadorGroup || !alertBox) return;
     if (modalEl.dataset.enhanced === "true") return;
     modalEl.dataset.enhanced = "true";
 
     let computadoresEmManutencao = new Set();
+    let computadoresDisponiveis = [];
 
     function showAlert(message) {
       alertBox.textContent = message;
@@ -71,6 +76,7 @@
       computadorSelect.innerHTML = "";
       computadorSelect.append(new Option("Selecione o Computador", "", true, true));
       computadorSelect.options[0].disabled = true;
+      computadorResumo.textContent = "Selecione uma empresa para carregar as máquinas.";
     }
 
     function resetEmpresas() {
@@ -81,6 +87,20 @@
 
     function showComputadorGroup(show) {
       computadorGroup.classList.toggle("d-none", !show);
+    }
+
+    function formatarTextoComputador(computador) {
+      const partes = [
+        computador.id,
+        computador.patrimonio || "-",
+        computador.setor || "-",
+      ];
+
+      return partes.join(" - ");
+    }
+
+    function atualizarResumo(total, visiveis) {
+      computadorResumo.textContent = `${visiveis} de ${total} computadores disponíveis para manutenção.`;
     }
 
     async function getJson(url) {
@@ -97,19 +117,34 @@
     }
 
     function preencherComputadores(lista, pref = null) {
+      const termo = String(computadorFiltro.value || "").trim().toLowerCase();
       const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+      const filtrados = !termo
+        ? disponiveis
+        : disponiveis.filter((computador) =>
+            formatarTextoComputador(computador).toLowerCase().includes(termo)
+          );
 
       resetComputadores();
 
-      if (!disponiveis.length) {
-        const option = new Option("Nenhum computador disponível para nova manutenção", "", false, false);
+      if (!filtrados.length) {
+        const option = new Option(
+          disponiveis.length
+            ? "Nenhum computador encontrado com esse filtro"
+            : "Nenhum computador disponível para nova manutenção",
+          "",
+          false,
+          false
+        );
         option.disabled = true;
         computadorSelect.append(option);
       } else {
-        disponiveis.forEach((computador) => {
-          computadorSelect.append(new Option(`${computador.id} - ${computador.patrimonio}`, String(computador.id)));
+        filtrados.forEach((computador) => {
+          computadorSelect.append(new Option(formatarTextoComputador(computador), String(computador.id)));
         });
       }
+
+      atualizarResumo(disponiveis.length, filtrados.length);
 
       if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== "") {
         const idPreferido = Number(pref.computadorId);
@@ -117,6 +152,13 @@
           showAlert("Este computador já possui uma manutenção em aberto. Feche a manutenção atual antes de abrir outra.");
         } else {
           computadorSelect.value = String(pref.computadorId);
+          computadorFiltro.value = formatarTextoComputador(
+            disponiveis.find((computador) => Number(computador.id) === idPreferido) || {
+              id: pref.computadorId,
+              patrimonio: "",
+              setor: "",
+            }
+          );
         }
         window.__prefManutencao = null;
       }
@@ -132,8 +174,10 @@
         return;
       }
 
+      computadorResumo.textContent = "Carregando computadores...";
+
       const [resultado, manutencoesAbertas] = await Promise.all([
-        getJson(`/computadores-by-empresa?empresaId=${encodeURIComponent(empresaId)}`),
+        getJson(`/computadores-by-empresa?empresaId=${encodeURIComponent(empresaId)}&limit=all&sortBy=patrimonio&sortDir=ASC`),
         getJson("/manutencoes-open"),
       ]);
 
@@ -146,7 +190,8 @@
           .filter((id) => Number.isFinite(id))
       );
 
-      preencherComputadores(lista, pref);
+      computadoresDisponiveis = lista;
+      preencherComputadores(computadoresDisponiveis, pref);
     }
 
     async function carregarEmpresas(pref = null) {
@@ -167,6 +212,7 @@
 
     empresaSelect.addEventListener("change", async () => {
       hideAlert();
+      computadorFiltro.value = "";
       try {
         await carregarComputadoresDisponiveis(empresaSelect.value);
       } catch (error) {
@@ -175,8 +221,13 @@
       }
     });
 
+    computadorFiltro.addEventListener("input", () => {
+      preencherComputadores(computadoresDisponiveis);
+    });
+
     modalEl.addEventListener("shown.bs.modal", async () => {
       hideAlert();
+      computadorFiltro.value = "";
       const pref = window.__prefManutencao || null;
 
       try {

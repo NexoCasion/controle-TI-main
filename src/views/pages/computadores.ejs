@@ -96,7 +96,8 @@
   <%- include("../partials/modals/modal_register_structured_pc", {
     empresas: empresas,
     csvTargetModal: 'modalImportCsvComputadores',
-    csvEmpresaTargetId: 'empresaImportComputadores'
+    csvEmpresaTargetId: 'empresaImportComputadores',
+    batchTargetModal: 'modalImportCsvBatchComputadores'
   }) %>
   <% if (importCsvBatchResult) { %>
   <div class="modal fade" id="modalImportCsvBatchResultado" tabindex="-1" aria-hidden="true">
@@ -246,8 +247,10 @@
 
       const btnAddStructuredPc = document.getElementById("btnAddStructuredPc");
       const btnImportCsvFromStructured = document.getElementById("btnImportCsvFromStructured");
+      const btnImportCsvBatchFromStructured = document.getElementById("btnImportCsvBatchFromStructured");
       const btnBackToStructuredFromCsvComputadores = document.getElementById("btnBackToStructuredFromCsvComputadores");
       const btnOpenBatchCsvFromSingleComputadores = document.getElementById("btnOpenBatchCsvFromSingleComputadores");
+      const btnBackToManualFromBatchComputadores = document.getElementById("btnBackToManualFromBatchComputadores");
       const btnBackToSingleCsvFromBatchComputadores = document.getElementById("btnBackToSingleCsvFromBatchComputadores");
       const modalImportCsvBatchResultadoEl = document.getElementById("modalImportCsvBatchResultado");
 
@@ -492,6 +495,19 @@
         });
       }
 
+      if (btnImportCsvBatchFromStructured) {
+        btnImportCsvBatchFromStructured.addEventListener("click", () => {
+          switchModal("modalRegisterStructuredPc", "modalImportCsvBatchComputadores", () => {
+            const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
+            const empresaManual = document.getElementById("manualEmpresaId");
+
+            if (empresaImportBatch && empresaManual && empresaManual.value) {
+              empresaImportBatch.value = empresaManual.value;
+            }
+          });
+        });
+      }
+
       if (btnOpenBatchCsvFromSingleComputadores) {
         btnOpenBatchCsvFromSingleComputadores.addEventListener("click", () => {
           switchModal("modalImportCsvComputadores", "modalImportCsvBatchComputadores", () => {
@@ -525,6 +541,25 @@
 
             if (fonteImport && fonteImportBatch && fonteImportBatch.value) {
               fonteImport.value = fonteImportBatch.value;
+            }
+          });
+        });
+      }
+
+      if (btnBackToManualFromBatchComputadores) {
+        btnBackToManualFromBatchComputadores.addEventListener("click", () => {
+          switchModal("modalImportCsvBatchComputadores", "modalRegisterStructuredPc", () => {
+            const empresaImportBatch = document.getElementById("empresaImportBatchComputadores");
+            const empresaManual = document.getElementById("manualEmpresaId");
+            const fonteImportBatch = document.getElementById("fonteImportBatchComputadores");
+            const fonteManual = document.getElementById("manualFonte");
+
+            if (empresaImportBatch && empresaManual && empresaImportBatch.value) {
+              empresaManual.value = empresaImportBatch.value;
+            }
+
+            if (fonteImportBatch && fonteManual && fonteImportBatch.value) {
+              fonteManual.value = fonteImportBatch.value;
             }
           });
         });

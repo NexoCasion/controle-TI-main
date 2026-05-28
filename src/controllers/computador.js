@@ -117,8 +117,10 @@ class ComputadorController {
       const where = this.buildStatusWhere(status);
       const busca = String(q || '').trim();
       const pageNumber = Math.max(Number(page) || 1, 1);
-      const limitNumber = Math.min(Math.max(Number(limit) || 20, 1), 200);
-      const offset = (pageNumber - 1) * limitNumber;
+      const limitRaw = String(limit ?? '').trim().toLowerCase();
+      const semPaginacao = limitRaw === 'all';
+      const limitNumber = semPaginacao ? null : Math.min(Math.max(Number(limit) || 20, 1), 200);
+      const offset = semPaginacao ? 0 : (pageNumber - 1) * limitNumber;
 
       if (empresaId !== undefined && empresaId !== null && String(empresaId) !== '') {
         where.empresaId = Number(empresaId);
@@ -134,21 +136,28 @@ class ComputadorController {
         ];
       }
 
-      const { rows, count } = await Computador.findAndCountAll({
+      const queryOptions = {
         where,
         include: [{ model: Empresa, as: 'empresa', attributes: ['nome'] }],
         order: this.buildOrder(sortBy, sortDir),
-        limit: limitNumber,
-        offset,
         distinct: true,
-      });
+      };
+
+      if (!semPaginacao) {
+        queryOptions.limit = limitNumber;
+        queryOptions.offset = offset;
+      }
+
+      const { rows, count } = await Computador.findAndCountAll(queryOptions);
+
+      const totalPages = semPaginacao ? 1 : Math.max(Math.ceil(count / limitNumber), 1);
 
       return {
         rows: rows.map((computador) => this.mapComputador(computador)),
         total: count,
-        page: pageNumber,
-        limit: limitNumber,
-        totalPages: Math.max(Math.ceil(count / limitNumber), 1),
+        page: semPaginacao ? 1 : pageNumber,
+        limit: semPaginacao ? count : limitNumber,
+        totalPages,
       };
     } catch (error) {
       throw new Error('Erro ao paginar computadores: ' + error.message);

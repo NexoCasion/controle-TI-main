@@ -351,7 +351,7 @@ router.get('/computadores-by-empresa', async (req, res) => {
     status,
     q,
     page: Number(page),
-    limit: Number(limit),
+    limit,
     sortBy,
     sortDir,
   });
@@ -554,8 +554,17 @@ router.get('/ver-manutencao', async (req, res) => {
 router.get('/computadores/:id/componentes-estruturados', async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipo } = req.query;
-    const componentes = await manutencaoController.getComponentesEstruturadosDoComputador(Number(id), tipo);
+    const { tipo, includePlaceholders } = req.query;
+    const componentes = await manutencaoController.getComponentesEstruturadosDoComputador(
+      Number(id),
+      tipo,
+      null,
+      {
+        includePlaceholders:
+          String(includePlaceholders) === '1' ||
+          String(includePlaceholders).toLowerCase() === 'true',
+      }
+    );
     return res.json(componentes);
   } catch (err) {
     console.error('Erro ao buscar componentes estruturados do computador:', err);
@@ -592,7 +601,10 @@ router.post('/add-item-manutencao', async (req, res) => {
       specs_depois: specs_depois || null,
 
       // peça removida
-      materialRemovidoId: materialRemovidoId ? Number(materialRemovidoId) : null,
+      materialRemovidoId:
+        String(materialRemovidoId || '').trim().startsWith('placeholder:')
+          ? String(materialRemovidoId || '').trim()
+          : (materialRemovidoId ? Number(materialRemovidoId) : null),
       qtdRemovida: qtdRemovida ? Number(qtdRemovida) : 1,
       destinoRemovida: destinoRemovida || null,
       motivoRemovida: motivoRemovida || null,
