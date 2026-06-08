@@ -45,6 +45,10 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: true,
   },
+  anydesk: {
+    type: Sequelize.STRING,
+    allowNull: true,
+  },
   ativo: {
     type: Sequelize.BOOLEAN,
     allowNull: false,

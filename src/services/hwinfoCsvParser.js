@@ -77,6 +77,16 @@ function parseCsvPair(line) {
   };
 }
 
+function isAnydeskKey(key = '') {
+  const normalized = String(key || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
+
+  return normalized.includes('ANYDESK');
+}
+
 function normalizeMemorySpec(raw = '') {
   const size = parseGbFromText(raw);
   const type = detectMemoryType(raw);
@@ -129,6 +139,7 @@ function parseHwinfoCsv(content) {
   let processador = null;
   let nomeComputador = null;
   let marcaComputador = null;
+  let anydesk = null;
   const memorias = [];
   const armazenamentos = [];
   let currentDiskSection = '';
@@ -144,6 +155,17 @@ function parseHwinfoCsv(content) {
     if (!pair && currentMemoryDetail) {
       pushMemoryDetail(memorias, currentMemoryDetail);
       currentMemoryDetail = null;
+    }
+
+    if (!pair && !anydesk && /anydesk/i.test(line)) {
+      const fallbackAnydesk = line
+        .replace(/^.*anydesk\s*[:\-]?\s*/i, '')
+        .trim();
+
+      if (fallbackAnydesk) {
+        anydesk = fallbackAnydesk;
+        continue;
+      }
     }
 
     if (/^Unidades /i.test(line)) {
@@ -179,6 +201,11 @@ function parseHwinfoCsv(content) {
 
       if (pair.key === 'Nome do processador') {
         processador = pair.value;
+        continue;
+      }
+
+      if (!anydesk && isAnydeskKey(pair.key)) {
+        anydesk = pair.value;
         continue;
       }
 
@@ -251,6 +278,7 @@ function parseHwinfoCsv(content) {
   return {
     nomeComputador,
     marcaComputador,
+    anydesk,
     processador: processador
       ? {
           categoria: 'PROCESSADOR',
@@ -320,7 +348,7 @@ function parseComputerIdentityFromFilename(filename = '') {
 
   if (parts.length < 2) {
     throw new Error(
-      'Nome do arquivo fora do padrao esperado. Use patrimonio-setor.csv ou patrimonio-setor-fonte.csv.'
+      'Nome do arquivo fora do padrao esperado. Use patrimonio-setor.csv, patrimonio-setor-fonte.csv ou nomes com setor contendo hifens.'
     );
   }
 
@@ -330,7 +358,7 @@ function parseComputerIdentityFromFilename(filename = '') {
 
   if (!patrimonio || !setor) {
     throw new Error(
-      'Nao foi possivel identificar patrimonio e setor pelo nome do arquivo. Use patrimonio-setor.csv ou patrimonio-setor-fonte.csv.'
+      'Nao foi possivel identificar patrimonio e setor pelo nome do arquivo. Use patrimonio-setor.csv, patrimonio-setor-fonte.csv ou nomes com setor contendo hifens.'
     );
   }
 

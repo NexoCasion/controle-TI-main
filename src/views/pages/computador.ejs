@@ -23,10 +23,22 @@
   <% } %>
 
   <div class="container">
+    <% const computadorSemAnydesk = !String(computador.anydesk || '').trim(); %>
     <a href="javascript:history.back()" class="btn btn-back">
       <i class="fas fa-arrow-left"></i>
     </a>
     <h1 class="mt-4 mb-4">Informações do Computador</h1>
+
+    <% if (computadorSemAnydesk) { %>
+    <div class="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" role="alert">
+      <div>
+        <strong>AnyDesk não configurado.</strong> Esta máquina está sem ID AnyDesk cadastrado e isso é de extrema importância para acesso remoto, suporte e agilidade no atendimento.
+      </div>
+      <button type="button" class="btn btn-sm btn-dark" id="btnConfigurarAnydeskTopo">
+        Configurar agora
+      </button>
+    </div>
+    <% } %>
 
     <div class="card p-3 mb-3 border-0">
       <h2 class="pc-title mb-1">Patrimônio: <%= computador.patrimonio %></h2>
@@ -36,6 +48,7 @@
       </p>
 
       <p class="mb-1">Local: <b><%= computador.setor %></b></p>
+      <p class="mb-1">ID AnyDesk: <b><%= computador.anydesk || '-' %></b></p>
       <small class="text-muted d-block" style="white-space: pre-line;"><%= (computador.specs_override || computador.specs || '-') %></small>
 
       <div class="mt-2">
@@ -111,7 +124,7 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-light border text-start">
-            O patrimônio, local e empresa atuais serão mantidos. O CSV será usado para montar os componentes reais desta máquina. Se o arquivo vier como patrimonio-setor-fonte.csv, a fonte também será identificada pelo nome.
+            O patrimonio, local e empresa atuais serao mantidos. O CSV sera usado para montar os componentes reais desta maquina. Se o nome vier com mais de dois blocos, o ultimo pode ser usado como fonte e o restante do meio continua sendo o setor. O ID AnyDesk tambem sera lido do CSV quando existir.
           </div>
           <label for="csvEstruturadoPc" class="form-label">Arquivo CSV do HWiNFO</label>
           <input type="file" class="form-control" id="csvEstruturadoPc" name="csvFile" accept=".csv" required>
@@ -119,6 +132,7 @@
             <label for="fonteEstruturadoPc" class="form-label">Indique a fonte da máquina</label>
             <input type="text" class="form-control" id="fonteEstruturadoPc" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietária">
             <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+            <small class="text-muted d-block mt-1">Setores podem conter hifens no nome do arquivo, e o ID AnyDesk e lido do proprio CSV quando existir.</small>
           </div>
         </div>
         <div class="modal-footer">
@@ -193,13 +207,15 @@
         setor: computador.setor || "",
         specs: (computador.specs_override || computador.specs || ""),
         specsModo: computador.specs_modo || "LEGADO",
-        empresaId: computador.empresaId ?? ""
+        empresaId: computador.empresaId ?? "",
+        anydesk: computador.anydesk || ""
       }) %>;
 
       const btnRegisterManutFromView = document.getElementById("btnRegisterManutFromView");
       const btnAddManFromEdit = document.getElementById("btnAddManutencaoFromEdit");
       const btnTransferFromEdit = document.getElementById("btnTransferirFromEdit");
       const btnConverterEstruturadoFromView = document.getElementById("btnConverterEstruturadoFromView");
+      const btnConfigurarAnydeskTopo = document.getElementById("btnConfigurarAnydeskTopo");
       const btnAbrirEstruturadoManualPc = document.getElementById("btnAbrirEstruturadoManualPc");
       const btnAbrirEstruturadoCsvPc = document.getElementById("btnAbrirEstruturadoCsvPc");
       const formEstruturadoManualPc = document.getElementById("formEstruturadoManualPc");
@@ -297,6 +313,7 @@
           const inPatrimonio = document.getElementById("editPatrimonio");
           const inSetor = document.getElementById("editSetor");
           const inSpecs = document.getElementById("editSpecs");
+          const inAnydesk = document.getElementById("editAnydesk");
           const inSpecsPanel = document.getElementById("editSpecsReadonlyPanel");
           const inSpecsModo = document.getElementById("specsModo");
           const inSpecsHelp = document.getElementById("editSpecsHelp");
@@ -304,6 +321,7 @@
           if (form) form.action = `/editar-pc?id=${pcCtx.id}`;
           if (inPatrimonio) inPatrimonio.value = pcCtx.patrimonio;
           if (inSetor) inSetor.value = pcCtx.setor;
+          if (inAnydesk) inAnydesk.value = pcCtx.anydesk || "";
           if (inSpecs) {
             inSpecs.value = pcCtx.specs;
             inSpecs.readOnly = pcCtx.specsModo === "ESTRUTURADO";
@@ -328,6 +346,13 @@
           };
 
           showModal("modalEditPc");
+        });
+      }
+
+      if (btnConfigurarAnydeskTopo) {
+        btnConfigurarAnydeskTopo.addEventListener("click", () => {
+          const btnEdit = document.getElementById("btnEditPcFromView");
+          if (btnEdit) btnEdit.click();
         });
       }
 

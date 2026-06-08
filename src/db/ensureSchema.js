@@ -27,6 +27,10 @@ async function ensureComputadoresColumns() {
   if (!columns.includes('specs_estruturadas')) {
     await database.query("ALTER TABLE computadores ADD COLUMN specs_estruturadas TEXT;");
   }
+
+  if (!columns.includes('anydesk')) {
+    await database.query("ALTER TABLE computadores ADD COLUMN anydesk VARCHAR(255);");
+  }
 }
 
 async function ensurePatrimonioUniqueIndex() {

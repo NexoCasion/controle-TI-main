@@ -14,18 +14,18 @@
             </div>
 
             <div class="alert alert-light border text-start mb-4">
-              <strong>Padrao do arquivo:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
-              <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code> ou <code>0003-TESTESETOR-ATX250W.csv</code>. A empresa continua vindo do campo abaixo.</small>
+              <strong>Padrao do arquivo:</strong> <code>patrimonio-setor.csv</code>, <code>patrimonio-setor-fonte.csv</code> ou nomes com setor contendo hifens<br>
+              <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code>, <code>0003-TESTESETOR-ATX250W.csv</code> ou <code>1950-DeptoTI-TESTE-ID.csv</code>. A empresa continua vindo do campo abaixo.</small>
             </div>
 
             <div class="alert import-download-alert text-start mb-4">
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                   <strong>Precisa gerar o CSV?</strong><br>
-                  <small>Baixe a ferramenta de inventario para gerar o arquivo antes da importacao.</small>
+                  <small>Baixe a ferramenta de inventario para gerar o arquivo antes da importacao. O sistema tambem aproveita o ID AnyDesk quando ele vier no CSV.</small>
                 </div>
-                <a class="btn btn-primary btn-sm" href="/downloads/Inventario3.0.exe" download>
-                  Baixar Inventario 3.0
+                <a class="btn btn-primary btn-sm" href="/downloads/inventariador-4.0.exe" download>
+                  Baixar Inventariador 4.0
                 </a>
               </div>
             </div>
@@ -49,15 +49,16 @@
                 <div class="col-12">
                   <label for="fonteImportComputadores" class="form-label">Indique a fonte da maquina</label>
                   <input type="text" class="form-control" name="fonte" id="fonteImportComputadores" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
-                  <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+                  <small class="text-muted">Opcional. Se a fonte vier no ultimo bloco do nome do arquivo, este campo pode ficar em branco.</small>
                 </div>
 
                 <div class="col-12">
                   <div class="small text-muted">
                     O sistema vai:
-                    1. criar o computador com patrimonio e setor pelo nome do arquivo
+                    1. criar o computador com patrimonio pela primeira parte do nome e setor pelo miolo do nome
                     2. marcar a maquina como estruturada
                     3. registrar CPU, memoria, armazenamento e fonte como materiais em uso quando informados
+                    4. salvar o ID AnyDesk quando ele vier no CSV
                   </div>
                 </div>
               </div>

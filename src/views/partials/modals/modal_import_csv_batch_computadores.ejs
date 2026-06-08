@@ -14,18 +14,18 @@
             </div>
 
             <div class="alert alert-light border text-start mb-4">
-              <strong>Padrao dos arquivos:</strong> <code>patrimonio-setor.csv</code> ou <code>patrimonio-setor-fonte.csv</code><br>
-              <small class="text-muted">Voce pode selecionar varios arquivos manualmente ou uma pasta inteira, dependendo do navegador.</small>
+              <strong>Padrao dos arquivos:</strong> <code>patrimonio-setor.csv</code>, <code>patrimonio-setor-fonte.csv</code> ou nomes com setor contendo hifens<br>
+              <small class="text-muted">Voce pode selecionar varios arquivos manualmente ou uma pasta inteira, dependendo do navegador. Ex.: <code>1950-DeptoTI-TESTE-ID.csv</code>.</small>
             </div>
 
             <div class="alert import-download-alert text-start mb-4">
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                   <strong>Precisa gerar o CSV?</strong><br>
-                  <small>Baixe a ferramenta de inventario para montar os arquivos antes da importacao em lote.</small>
+                  <small>Baixe a ferramenta de inventario para montar os arquivos antes da importacao em lote. O sistema tambem aproveita o ID AnyDesk quando ele vier nos CSVs.</small>
                 </div>
-                <a class="btn btn-primary btn-sm" href="/downloads/Inventario3.0.exe" download>
-                  Baixar Inventario 3.0
+                <a class="btn btn-primary btn-sm" href="/downloads/inventariador-4.0.exe" download>
+                  Baixar Inventariador 4.0
                 </a>
               </div>
             </div>
@@ -59,12 +59,12 @@
                 <div class="col-12">
                   <label for="fonteImportBatchComputadores" class="form-label">Fonte padrao do lote</label>
                   <input type="text" class="form-control" name="fonte" id="fonteImportBatchComputadores" placeholder="Opcional. Ex: ATX 500W ou Dell proprietaria">
-                  <small class="text-muted">Opcional. So e usada quando o nome do arquivo nao trouxer a fonte na terceira parte.</small>
+                  <small class="text-muted">Opcional. So e usada quando o nome do arquivo nao trouxer a fonte no ultimo bloco.</small>
                 </div>
 
                 <div class="col-12">
                   <div class="small text-muted">
-                    O sistema vai processar arquivo por arquivo. Se algum falhar, os outros continuam sendo importados.
+                    O sistema vai processar arquivo por arquivo, incluindo o ID AnyDesk quando ele vier no CSV. Se algum falhar, os outros continuam sendo importados.
                   </div>
                 </div>
               </div>
@@ -77,7 +77,7 @@
                     Manual
                   </button>
                   <button type="button" class="btn btn-outline-secondary" id="btnBackToSingleCsvFromBatchComputadores">
-                    CSV único
+                    CSV unico
                   </button>
                 </div>
                 <button type="submit" class="btn btn-primary px-4">Importar grupo</button>

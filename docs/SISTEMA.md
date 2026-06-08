@@ -516,6 +516,7 @@ Arquivo principal:
 - memorias
 - armazenamentos
 - fonte, quando informada manualmente ou no nome do arquivo
+- ID AnyDesk, quando presente no conteudo do CSV
 
 ### Padrao de nome do arquivo
 
@@ -523,19 +524,25 @@ O nome do CSV pode seguir:
 
 - `patrimonio-setor.csv`
 - `patrimonio-setor-fonte.csv`
+- ou formatos com mais hifens no setor, onde a primeira parte e o patrimonio, o miolo vira setor e a ultima parte pode virar fonte
 
 Exemplos:
 
 - `0012-TI.csv`
 - `0012-TI-ATX250W.csv`
 - `1000-OFICINA-DELL240W.csv`
+- `1950-DeptoTI-TESTE-ID.csv`
 
 ### Regra de fonte
 
 Se a fonte nao vier no CSV em si, o sistema pode usar:
 
 - campo manual da tela de importacao
-- ou a terceira parte do nome do arquivo
+- ou a ultima parte do nome do arquivo quando existirem 3 ou mais blocos
+
+### Regra de AnyDesk
+
+Quando o CSV trouxer uma linha como `ID AnyDesk:` ou outro campo equivalente com `AnyDesk` no nome, o valor e salvo em `computadores.anydesk`.
 
 ### Regra de armazenamento
 

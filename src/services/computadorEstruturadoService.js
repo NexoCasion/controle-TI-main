@@ -393,6 +393,7 @@ class ComputadorEstruturadoService {
 
   buildParsedManual(payload = {}) {
     const modelo = String(payload.modeloComputador || '').trim();
+    const anydesk = String(payload.anydesk || '').trim();
     const processador = String(payload.processador || '').trim();
     const memoriasInformadas = this.splitManualItems(payload.memoria);
     const armazenamentosInformados = this.splitManualItems(payload.armazenamento);
@@ -400,6 +401,7 @@ class ComputadorEstruturadoService {
     return {
       nomeComputador: null,
       marcaComputador: modelo || null,
+      anydesk: anydesk || null,
       processador: processador
         ? {
             categoria: 'PROCESSADOR',
@@ -535,11 +537,15 @@ class ComputadorEstruturadoService {
     }
 
     const specsText = buildStructuredSpecsText(parsed);
+    const anydesk = String(parsed?.anydesk || '').trim();
 
     computador.specs = specsText || computador.specs || 'Computador estruturado';
     computador.specs_modo = 'ESTRUTURADO';
     computador.specs_estruturadas = JSON.stringify(parsed);
     computador.specs_override = specsText || computador.specs_override;
+    if (anydesk) {
+      computador.anydesk = anydesk;
+    }
     await computador.save({ transaction });
 
     return {
@@ -577,6 +583,7 @@ class ComputadorEstruturadoService {
           specs: buildStructuredSpecsText(parsed) || 'Computador estruturado',
           empresaId: Number(empresaId),
           setor: String(setor || '').trim() || null,
+          anydesk: String(parsed?.anydesk || '').trim() || null,
         },
         { transaction }
       );

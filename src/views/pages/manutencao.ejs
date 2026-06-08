@@ -596,7 +596,7 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-light border text-start">
-            O patrimônio, setor e empresa atuais serão mantidos. O CSV será usado para montar os componentes reais da máquina. Se o arquivo vier como patrimonio-setor-fonte.csv, a fonte também será identificada pelo nome.
+            O patrimonio, setor e empresa atuais serao mantidos. O CSV sera usado para montar os componentes reais da maquina. Se o nome vier com mais de dois blocos, o ultimo pode ser usado como fonte e o restante do meio continua sendo o setor. O ID AnyDesk tambem sera lido do CSV quando existir.
           </div>
 
           <label for="csvLegadoExistente" class="form-label">Arquivo CSV do HWiNFO</label>
@@ -605,6 +605,7 @@
             <label for="fonteLegadoExistente" class="form-label">Indique a fonte da maquina</label>
             <input type="text" class="form-control" id="fonteLegadoExistente" name="fonte" placeholder="Ex: ATX 500W, Micro ATX 300W ou Dell proprietaria">
             <small class="text-muted">Opcional. Se a fonte vier no nome do arquivo, este campo pode ficar em branco.</small>
+            <small class="text-muted d-block mt-1">Setores podem conter hifens no nome do arquivo, e o ID AnyDesk e lido do proprio CSV quando existir.</small>
           </div>
         </div>
         <div class="modal-footer">

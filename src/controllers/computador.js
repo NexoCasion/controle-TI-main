@@ -14,6 +14,7 @@ class ComputadorController {
       specs_modo: computador.dataValues.specs_modo,
       specs_estruturadas: computador.dataValues.specs_estruturadas,
       setor: computador.dataValues.setor,
+      anydesk: computador.dataValues.anydesk,
       empresaId: computador.dataValues.empresaId,
       ativo: computador.dataValues.ativo,
       status: computador.dataValues.status,
@@ -53,7 +54,7 @@ class ComputadorController {
     return [['patrimonio', direction]];
   }
 
-  async create(name, description, empresaId, local) {
+  async create(name, description, empresaId, local, anydesk = null) {
     try {
       if (!empresaId) {
         throw new Error('ID da empresa nao fornecido');
@@ -64,6 +65,7 @@ class ComputadorController {
         specs: description,
         empresaId: empresaId,
         setor: local,
+        anydesk: String(anydesk || '').trim() || null,
       });
       return computador;
     } catch (error) {
@@ -132,6 +134,7 @@ class ComputadorController {
           { specs: { [Op.like]: `%${busca}%` } },
           { specs_override: { [Op.like]: `%${busca}%` } },
           { setor: { [Op.like]: `%${busca}%` } },
+          { anydesk: { [Op.like]: `%${busca}%` } },
           { '$empresa.nome$': { [Op.like]: `%${busca}%` } },
         ];
       }
@@ -229,9 +232,13 @@ class ComputadorController {
         computador.specs = resultado.specsText || computador.specs;
         computador.specs_override = resultado.specsText || computador.specs_override;
       } else {
-        const specsEditadas = String(computador_new.specs || '').trim();
-        computador.specs = specsEditadas;
-        computador.specs_override = specsEditadas;
+      const specsEditadas = String(computador_new.specs || '').trim();
+      computador.specs = specsEditadas;
+      computador.specs_override = specsEditadas;
+    }
+
+      if (Object.prototype.hasOwnProperty.call(computador_new, 'anydesk')) {
+        computador.anydesk = String(computador_new.anydesk || '').trim() || null;
       }
 
       await computador.save();

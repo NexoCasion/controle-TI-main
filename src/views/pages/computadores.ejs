@@ -44,7 +44,7 @@
         <div class="row g-3 mb-3 text-start">
           <div class="col-md-8">
             <label for="searchInput" class="form-label">Pesquisar:</label>
-            <input id="searchInput" class="form-control" type="text" placeholder="Digite patrimônio, especificações, setor ou empresa...">
+            <input id="searchInput" class="form-control" type="text" placeholder="Digite patrimônio, AnyDesk, especificações, setor ou empresa...">
           </div>
           <div class="col-md-4">
             <label for="pageSizeSelect" class="form-label">Máximo por página:</label>
@@ -315,6 +315,7 @@
           const empresaNome = escapeHtml(computador.empresa?.nome ?? "Sem empresa");
           const specsAttr = escapeHtml((specsExibicao ?? "").toString());
           const specsModoAttr = escapeHtml((computador.specs_modo ?? "LEGADO").toString());
+          const anydeskAttr = escapeHtml((computador.anydesk ?? "").toString());
           const row = `
   <tr class="editar-pcs">
     <td>${patrimonio}</td>
@@ -329,6 +330,7 @@
           data-id="${computador.id}"
           data-patrimonio="${patrimonio}"
           data-setor="${setor}"
+          data-anydesk="${anydeskAttr}"
           data-specs="${specsAttr}"
           data-specs-modo="${specsModoAttr}"
           data-bs-toggle="modal"
@@ -407,15 +409,18 @@
         const form = document.getElementById("formEditPc");
         const inPatrimonio = document.getElementById("editPatrimonio");
         const inSetor = document.getElementById("editSetor");
+        const inAnydesk = document.getElementById("editAnydesk");
         const inSpecs = document.getElementById("editSpecs");
         const inSpecsModo = document.getElementById("specsModo");
         const inSpecsHelp = document.getElementById("editSpecsHelp");
+        const anydesk = btn.getAttribute("data-anydesk") || "";
 
         if (!form || !inPatrimonio || !inSetor || !inSpecs) return;
 
         form.action = `/editar-pc?id=${id}`;
         inPatrimonio.value = patrimonio;
         inSetor.value = setor;
+        if (inAnydesk) inAnydesk.value = anydesk;
         inSpecs.value = specs;
         inSpecs.readOnly = specsModo === "ESTRUTURADO";
         if (inSpecsModo) inSpecsModo.value = specsModo;

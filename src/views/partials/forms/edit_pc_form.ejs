@@ -47,6 +47,11 @@
   </div>
 
   <div class="form-group">
+    <label for="editAnydesk">ID AnyDesk</label>
+    <input type="text" class="form-control" id="editAnydesk" name="anydesk" value="<%= (typeof anydesk !== 'undefined' && anydesk !== null) ? anydesk : '' %>" placeholder="Ex: 123 456 789">
+  </div>
+
+  <div class="form-group">
     <label for="<%= specsId %>">Descrição</label>
     <textarea style="background-color: var(--input-bg);"
       class="form-control <%= _specsReadonly ? 'd-none' : '' %>"

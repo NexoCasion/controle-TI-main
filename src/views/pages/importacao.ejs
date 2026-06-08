@@ -36,8 +36,8 @@
           <div class="card shadow-sm">
             <div class="card-body p-4">
               <div class="alert alert-light border text-start">
-                <strong>Padrão do arquivo:</strong> <code>0000-SETOR.csv</code> ou <code>0000-SETOR-FONTE.csv</code><br>
-                <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code> ou <code>0003-TESTESETOR-ATX250W.csv</code>. A empresa é definida no seletor abaixo e, se a fonte vier no nome, ela será importada automaticamente.</small>
+                <strong>Padrao do arquivo:</strong> <code>patrimonio-setor.csv</code>, <code>patrimonio-setor-fonte.csv</code> ou nomes com setor contendo hifens<br>
+                <small class="text-muted">Exemplos: <code>0003-TESTESETOR.csv</code>, <code>0003-TESTESETOR-ATX250W.csv</code> ou <code>1950-DeptoTI-TESTE-ID.csv</code>. A empresa continua vindo do seletor abaixo, a fonte pode vir no ultimo bloco do nome e o ID AnyDesk e lido do proprio CSV quando existir.</small>
               </div>
 
               <form action="/importar-csv" method="post" enctype="multipart/form-data">
@@ -64,8 +64,8 @@
 
                   <div class="col-12">
                     <div class="small text-muted">
-                      O sistema vai criar o computador pelo nome do arquivo e importar processador, memória, armazenamento
-                      e fonte como materiais em uso quando informados.
+                      O sistema vai criar o computador pelo nome do arquivo e importar processador, memoria, armazenamento,
+                      fonte e ID AnyDesk quando essas informacoes estiverem presentes.
                     </div>
                   </div>
                 </div>

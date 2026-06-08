@@ -327,7 +327,7 @@ router.get('/get-empresas', async (req, res) => {
 router.get('/editar-pc', async (req, res) => {
   const { id } = req.query;
   const computador = await computadorController.getById(id);
-  const { patrimonio, specs, specs_override, specs_modo, empresa, setor } = computador;
+  const { patrimonio, specs, specs_override, specs_modo, empresa, setor, anydesk } = computador;
   const empresas = await empresaController.getAll();
   return res.render('pages/editar-pc', {
     specs: specs_override || specs,
@@ -337,14 +337,15 @@ router.get('/editar-pc', async (req, res) => {
     empresas,
     empresa,
     setor,
+    anydesk,
     structuredSpecsView: buildStructuredSpecsView(computador),
   });
 });
 
 router.post('/editar-pc', async (req, res) => {
   const { id } = req.query;
-  const { patrimonio, specs, setor } = req.body;
-  const computador = await computadorController.update({ id, patrimonio, specs, setor });
+  const { patrimonio, specs, setor, anydesk } = req.body;
+  const computador = await computadorController.update({ id, patrimonio, specs, setor, anydesk });
   return res.redirect(`/ver-pc?id=${id}`);
 });
 router.get('/computadores-by-empresa', async (req, res) => {

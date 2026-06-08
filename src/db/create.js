@@ -38,6 +38,10 @@ const Computador = database.define('computadores', {
     type: Sequelize.STRING,
     allowNull: false,
   },
+  anydesk: {
+    type: Sequelize.STRING,
+    allowNull: true,
+  },
 
   // Adicionando a chave estrangeira para a tabela Empresa
   empresaId: {
