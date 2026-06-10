@@ -22,7 +22,7 @@
           <button type="button" class="btn btn-back" data-bs-dismiss="modal" aria-label="Fechar">
             <i class="fas fa-arrow-left"></i>
           </button>
-          <h5 class="modal-title mb-0">Cadastro de Manutenção</h5>
+          <h5 class="modal-title mb-0">Cadastro de Manutencao</h5>
         </div>
       </div>
 
@@ -38,30 +38,40 @@
           </div>
 
           <div class="mb-3 d-none" id="computadorGroupModal">
-            <label for="computadorModal" class="form-label">Selecione o Computador</label>
-            <input type="search" class="form-control mb-2" id="computadorFiltroModal" placeholder="Pesquisar por ID, patrimônio ou setor">
-            <select class="form-control" id="computadorModal" name="computadorId" required>
-              <option value="" selected disabled>Selecione o Computador</option>
-            </select>
-            <small class="text-muted d-block mt-2" id="computadorResumoModal">Selecione uma empresa para carregar as máquinas.</small>
+            <label for="computadorFiltroModal" class="form-label">Selecione o Computador</label>
+            <input type="hidden" id="computadorModal" name="computadorId">
+            <div class="position-relative manutencao-autocomplete-shell">
+              <input
+                type="search"
+                class="form-control manutencao-autocomplete-input"
+                id="computadorFiltroModal"
+                placeholder="Pesquisar por ID, patrimonio ou setor"
+                autocomplete="off">
+              <div
+                class="list-group position-absolute w-100 shadow-sm d-none manutencao-autocomplete-menu"
+                id="computadorSugestoesModal"
+                style="z-index: 1057; max-height: 260px; overflow-y: auto;">
+              </div>
+            </div>
+            <small class="text-muted d-block mt-2" id="computadorResumoModal">Selecione uma empresa para carregar as maquinas.</small>
           </div>
 
           <div class="mb-3">
-            <label for="descricaoPresetModal" class="form-label">Descri&ccedil;&atilde;o pronta</label>
+            <label for="descricaoPresetModal" class="form-label">Descricao pronta</label>
             <select class="form-control" id="descricaoPresetModal">
-              <option value="" selected>Selecionar sugest&atilde;o...</option>
+              <option value="" selected>Selecionar sugestao...</option>
               <% _maintenanceDescriptionTemplates.forEach(function(item) { %>
               <option value="<%= item %>"><%= item %></option>
               <% }) %>
             </select>
             <small class="text-muted d-block mt-2">
-              Ao selecionar uma op&ccedil;&atilde;o, o campo descri&ccedil;&atilde;o abaixo ser&aacute; preenchido e poder&aacute; ser ajustado.
+              Ao selecionar uma opcao, o campo descricao abaixo sera preenchido e podera ser ajustado.
             </small>
           </div>
 
           <div class="mb-0">
-            <label for="descricaoModal" class="form-label">Descrição</label>
-            <textarea id="descricaoModal" placeholder="Informe a queixa do usuário e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
+            <label for="descricaoModal" class="form-label">Descricao</label>
+            <textarea id="descricaoModal" placeholder="Informe a queixa do usuario e as suspeitas do problema" class="form-control" rows="10" name="descricao" required></textarea>
           </div>
         </form>
       </div>
@@ -78,20 +88,37 @@
   document.addEventListener("DOMContentLoaded", () => {
     const modalEl = document.getElementById("modalRegisterManutencao");
     const empresaSelect = document.getElementById("empresaModal");
-    const computadorSelect = document.getElementById("computadorModal");
+    const computadorInput = document.getElementById("computadorModal");
     const computadorFiltro = document.getElementById("computadorFiltroModal");
+    const computadorSugestoes = document.getElementById("computadorSugestoesModal");
     const computadorResumo = document.getElementById("computadorResumoModal");
     const computadorGroup = document.getElementById("computadorGroupModal");
     const alertBox = document.getElementById("manutencaoModalAlert");
     const descricaoPresetSelect = document.getElementById("descricaoPresetModal");
     const descricaoTextarea = document.getElementById("descricaoModal");
+    const form = document.getElementById("manutencaoFormModal");
 
-    if (!modalEl || !empresaSelect || !computadorSelect || !computadorFiltro || !computadorResumo || !computadorGroup || !alertBox || !descricaoPresetSelect || !descricaoTextarea) return;
+    if (
+      !modalEl ||
+      !empresaSelect ||
+      !computadorInput ||
+      !computadorFiltro ||
+      !computadorSugestoes ||
+      !computadorResumo ||
+      !computadorGroup ||
+      !alertBox ||
+      !descricaoPresetSelect ||
+      !descricaoTextarea ||
+      !form
+    ) return;
+
     if (modalEl.dataset.enhanced === "true") return;
     modalEl.dataset.enhanced = "true";
 
     let computadoresEmManutencao = new Set();
     let computadoresDisponiveis = [];
+    let computadoresFiltrados = [];
+    let highlightedIndex = -1;
 
     function showAlert(message) {
       alertBox.textContent = message;
@@ -104,10 +131,12 @@
     }
 
     function resetComputadores() {
-      computadorSelect.innerHTML = "";
-      computadorSelect.append(new Option("Selecione o Computador", "", true, true));
-      computadorSelect.options[0].disabled = true;
-      computadorResumo.textContent = "Selecione uma empresa para carregar as máquinas.";
+      computadoresFiltrados = [];
+      highlightedIndex = -1;
+      computadorInput.value = "";
+      computadorResumo.textContent = "Selecione uma empresa para carregar as maquinas.";
+      computadorSugestoes.innerHTML = "";
+      computadorSugestoes.classList.add("d-none");
     }
 
     function resetEmpresas() {
@@ -130,17 +159,98 @@
     }
 
     function formatarTextoComputador(computador) {
-      const partes = [
+      return [
         computador.id,
         computador.patrimonio || "-",
         computador.setor || "-",
-      ];
-
-      return partes.join(" - ");
+      ].join(" - ");
     }
 
     function atualizarResumo(total, visiveis) {
-      computadorResumo.textContent = `${visiveis} de ${total} computadores disponíveis para manutenção.`;
+      computadorResumo.textContent = `${visiveis} de ${total} computadores disponiveis para manutencao.`;
+    }
+
+    function atualizarSelecao(computador = null, updateSearch = false) {
+      computadorInput.value = computador ? String(computador.id) : "";
+
+      if (computador && updateSearch) {
+        computadorFiltro.value = formatarTextoComputador(computador);
+      }
+    }
+
+    function hideSugestoes() {
+      computadorSugestoes.classList.add("d-none");
+    }
+
+    function selecionarComputador(computador, updateSearch = true) {
+      atualizarSelecao(computador, updateSearch);
+      hideSugestoes();
+      highlightedIndex = -1;
+    }
+
+    function renderSugestoes() {
+      computadorSugestoes.innerHTML = "";
+
+      if (!computadoresFiltrados.length) {
+        hideSugestoes();
+        return;
+      }
+
+      computadoresFiltrados.forEach((computador, index) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `list-group-item list-group-item-action${index === highlightedIndex ? " active" : ""}`;
+        item.textContent = formatarTextoComputador(computador);
+        item.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          selecionarComputador(computador);
+        });
+        computadorSugestoes.appendChild(item);
+      });
+
+      computadorSugestoes.classList.remove("d-none");
+    }
+
+    function preencherComputadores(lista, pref = null) {
+      const termo = String(computadorFiltro.value || "").trim().toLowerCase();
+      const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
+
+      computadoresFiltrados = !termo
+        ? disponiveis
+        : disponiveis.filter((computador) =>
+            formatarTextoComputador(computador).toLowerCase().includes(termo)
+          );
+
+      highlightedIndex = computadoresFiltrados.length ? 0 : -1;
+      atualizarResumo(disponiveis.length, computadoresFiltrados.length);
+
+      if (!computadoresFiltrados.length) {
+        atualizarSelecao(null);
+        computadorResumo.textContent = disponiveis.length
+          ? "Nenhuma maquina encontrada com esse filtro."
+          : "Nenhuma maquina disponivel para nova manutencao.";
+        hideSugestoes();
+      } else {
+        renderSugestoes();
+      }
+
+      if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== "") {
+        const idPreferido = Number(pref.computadorId);
+        if (computadoresEmManutencao.has(idPreferido)) {
+          showAlert("Este computador ja possui uma manutencao em aberto. Feche a manutencao atual antes de abrir outra.");
+        } else {
+          const computadorPreferido =
+            disponiveis.find((computador) => Number(computador.id) === idPreferido) ||
+            null;
+
+          if (computadorPreferido) {
+            selecionarComputador(computadorPreferido, true);
+          }
+        }
+        window.__prefManutencao = null;
+      }
+
+      showComputadorGroup(true);
     }
 
     async function getJson(url) {
@@ -150,60 +260,10 @@
       });
 
       if (!response.ok) {
-        throw new Error("Falha ao carregar dados do formulário de manutenção.");
+        throw new Error("Falha ao carregar dados do formulario de manutencao.");
       }
 
       return response.json();
-    }
-
-    function preencherComputadores(lista, pref = null) {
-      const termo = String(computadorFiltro.value || "").trim().toLowerCase();
-      const disponiveis = (lista || []).filter((computador) => !computadoresEmManutencao.has(Number(computador.id)));
-      const filtrados = !termo
-        ? disponiveis
-        : disponiveis.filter((computador) =>
-            formatarTextoComputador(computador).toLowerCase().includes(termo)
-          );
-
-      resetComputadores();
-
-      if (!filtrados.length) {
-        const option = new Option(
-          disponiveis.length
-            ? "Nenhum computador encontrado com esse filtro"
-            : "Nenhum computador disponível para nova manutenção",
-          "",
-          false,
-          false
-        );
-        option.disabled = true;
-        computadorSelect.append(option);
-      } else {
-        filtrados.forEach((computador) => {
-          computadorSelect.append(new Option(formatarTextoComputador(computador), String(computador.id)));
-        });
-      }
-
-      atualizarResumo(disponiveis.length, filtrados.length);
-
-      if (pref && pref.computadorId !== undefined && pref.computadorId !== null && pref.computadorId !== "") {
-        const idPreferido = Number(pref.computadorId);
-        if (computadoresEmManutencao.has(idPreferido)) {
-          showAlert("Este computador já possui uma manutenção em aberto. Feche a manutenção atual antes de abrir outra.");
-        } else {
-          computadorSelect.value = String(pref.computadorId);
-          computadorFiltro.value = formatarTextoComputador(
-            disponiveis.find((computador) => Number(computador.id) === idPreferido) || {
-              id: pref.computadorId,
-              patrimonio: "",
-              setor: "",
-            }
-          );
-        }
-        window.__prefManutencao = null;
-      }
-
-      showComputadorGroup(true);
     }
 
     async function carregarComputadoresDisponiveis(empresaId, pref = null) {
@@ -256,16 +316,65 @@
       try {
         await carregarComputadoresDisponiveis(empresaSelect.value);
       } catch (error) {
-        showAlert(error.message || "Erro ao carregar os computadores disponíveis.");
+        showAlert(error.message || "Erro ao carregar os computadores disponiveis.");
         showComputadorGroup(false);
       }
     });
 
     computadorFiltro.addEventListener("input", () => {
+      atualizarSelecao(null);
       preencherComputadores(computadoresDisponiveis);
     });
 
+    computadorFiltro.addEventListener("focus", () => {
+      if (computadoresFiltrados.length) {
+        renderSugestoes();
+      }
+    });
+
+    computadorFiltro.addEventListener("keydown", (event) => {
+      if (!computadoresFiltrados.length) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        highlightedIndex = Math.min(highlightedIndex + 1, computadoresFiltrados.length - 1);
+        renderSugestoes();
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        highlightedIndex = Math.max(highlightedIndex - 1, 0);
+        renderSugestoes();
+        return;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        selecionarComputador(computadoresFiltrados[Math.max(highlightedIndex, 0)]);
+        return;
+      }
+
+      if (event.key === "Escape") {
+        hideSugestoes();
+      }
+    });
+
+    computadorFiltro.addEventListener("blur", () => {
+      window.setTimeout(() => {
+        hideSugestoes();
+      }, 120);
+    });
+
     descricaoPresetSelect.addEventListener("change", aplicarDescricaoPreset);
+
+    form.addEventListener("submit", (event) => {
+      if (String(computadorInput.value || "").trim()) return;
+
+      event.preventDefault();
+      showAlert("Pesquise e selecione um computador antes de registrar a manutencao.");
+      computadorFiltro.focus();
+    });
 
     modalEl.addEventListener("shown.bs.modal", async () => {
       hideAlert();
@@ -275,7 +384,7 @@
       try {
         await carregarEmpresas(pref);
       } catch (error) {
-        showAlert(error.message || "Erro ao carregar o formulário de manutenção.");
+        showAlert(error.message || "Erro ao carregar o formulario de manutencao.");
         showComputadorGroup(false);
       }
     });

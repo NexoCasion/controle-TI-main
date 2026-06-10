@@ -1789,6 +1789,41 @@ header + .container #totalComputadores,
   /* ícone verdinho */
 }
 
+.maintenance-page .maintenance-description-card {
+  max-width: 860px;
+  padding: 1.25rem 1.4rem;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(214, 0, 28, 0.08), transparent 38%),
+    color-mix(in srgb, var(--surface-soft) 84%, #ffffff 16%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, rgba(214, 0, 28, 0.14) 20%);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+}
+
+.maintenance-page .maintenance-description-text {
+  color: var(--text);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  font-weight: 600;
+  white-space: pre-line;
+}
+
+.maintenance-page .specs-clean-item {
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .maintenance-page .maintenance-description-card {
+  background:
+    radial-gradient(circle at top left, rgba(225, 29, 72, 0.16), transparent 42%),
+    color-mix(in srgb, var(--surface) 90%, #0f172a 10%);
+  border-color: color-mix(in srgb, var(--border-color) 76%, rgba(251, 113, 133, 0.2) 24%);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.34);
+}
+
 /* Em telas pequenas, status vai pra linha de baixo (ainda alinhado) */
 @media (max-width: 576px) {
   .maintenance-page .maint-finalizada {
@@ -2538,6 +2573,86 @@ html[data-theme='dark'] .modal .modal-footer {
 html[data-theme='dark'] .modal-form-shell .text-muted,
 html[data-theme='dark'] .modal-form-shell small.text-muted {
   color: var(--muted) !important;
+}
+
+.manutencao-autocomplete-shell {
+  margin-top: 0.2rem;
+}
+
+.manutencao-autocomplete-input {
+  border-radius: 14px;
+  padding-right: 2.5rem;
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 90%, var(--surface-soft) 10%) 0%,
+    var(--surface) 100%
+  );
+}
+
+.manutencao-autocomplete-menu {
+  margin-top: 0.45rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 96%, var(--surface-soft) 4%);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12) !important;
+  overflow: hidden;
+}
+
+.manutencao-autocomplete-menu .list-group-item {
+  border: 0;
+  border-radius: 12px !important;
+  margin: 0;
+  padding: 0.72rem 0.9rem;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.35;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.manutencao-autocomplete-menu .list-group-item + .list-group-item {
+  margin-top: 0.2rem;
+}
+
+.manutencao-autocomplete-menu .list-group-item:hover,
+.manutencao-autocomplete-menu .list-group-item:focus {
+  background: color-mix(in srgb, var(--surface-soft) 74%, var(--surface) 26%);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.manutencao-autocomplete-menu .list-group-item.active {
+  background: linear-gradient(135deg, var(--primary) 0%, #ef4444 100%);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .manutencao-autocomplete-input {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 86%, #0f172a 14%) 0%,
+    var(--surface) 100%
+  );
+}
+
+html[data-theme='dark'] .manutencao-autocomplete-menu {
+  background: color-mix(in srgb, var(--surface) 94%, #111827 6%);
+  border-color: var(--border-color);
+  box-shadow: 0 20px 42px rgba(2, 6, 23, 0.42) !important;
+}
+
+html[data-theme='dark'] .manutencao-autocomplete-menu .list-group-item {
+  color: var(--text);
+}
+
+html[data-theme='dark'] .manutencao-autocomplete-menu .list-group-item:hover,
+html[data-theme='dark'] .manutencao-autocomplete-menu .list-group-item:focus {
+  background: color-mix(in srgb, #223149 78%, var(--surface) 22%);
+  color: #ffffff;
 }
 
 /* =========================

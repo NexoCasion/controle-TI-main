@@ -131,10 +131,12 @@
           </div>
         </div>
 
-        <div class="col-md-4">
-          <div class="meta-label text-center">Descrição</div>
-          <div class="meta-value text-center">
-            <%= manutencao.descricao ? manutencao.descricao : '-' %>
+        <div class="col-12">
+          <div class="maintenance-description-card mx-auto">
+            <div class="meta-label text-center">Descrição</div>
+            <div class="maintenance-description-text text-center">
+              <%= manutencao.descricao ? manutencao.descricao : '-' %>
+            </div>
           </div>
         </div>
 
@@ -143,10 +145,7 @@
           <% if (structuredSpecsView && structuredSpecsView.sections && structuredSpecsView.sections.length) { %>
           <div class="specs-clean-shell mt-2 text-start">
             <div class="specs-clean-toolbar">
-              <div>
-                <div class="specs-clean-title">Componentes vinculados</div>
-                <small class="text-muted">Separação automática dos materiais da máquina estruturada.</small>
-              </div>
+              <div class="specs-clean-title">Componentes vinculados</div>
               <span class="specs-clean-badge">Estruturado</span>
             </div>
 
