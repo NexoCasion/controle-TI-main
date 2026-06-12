@@ -125,30 +125,42 @@
                 <div class="home-filter-head">
                   <h6 class="mb-0">Ordem dos graficos da home</h6>
                 </div>
-                <p class="text-muted mb-3">A ordem salva aqui e a mesma usada no carrossel da home.</p>
+                <p class="text-muted mb-3">A ordem salva aqui e a mesma usada no carrossel da home, incluindo backups.</p>
                 <div class="row g-3">
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="perfilHomeChartOrderFirst">Primeiro grafico</label>
                     <select class="form-select" id="perfilHomeChartOrderFirst" name="homeChartOrderFirst">
                       <option value="ranking" <%= (homeDashboardPreferences?.order || [])[0] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
                       <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[0] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
                       <option value="materiais" <%= (homeDashboardPreferences?.order || [])[0] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                      <option value="backups" <%= (homeDashboardPreferences?.order || [])[0] === 'backups' ? 'selected' : '' %>>Backups das Maquinas</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="perfilHomeChartOrderSecond">Segundo grafico</label>
                     <select class="form-select" id="perfilHomeChartOrderSecond" name="homeChartOrderSecond">
                       <option value="ranking" <%= (homeDashboardPreferences?.order || [])[1] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
                       <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[1] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
                       <option value="materiais" <%= (homeDashboardPreferences?.order || [])[1] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                      <option value="backups" <%= (homeDashboardPreferences?.order || [])[1] === 'backups' ? 'selected' : '' %>>Backups das Maquinas</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="perfilHomeChartOrderThird">Terceiro grafico</label>
                     <select class="form-select" id="perfilHomeChartOrderThird" name="homeChartOrderThird">
                       <option value="ranking" <%= (homeDashboardPreferences?.order || [])[2] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
                       <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[2] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
                       <option value="materiais" <%= (homeDashboardPreferences?.order || [])[2] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                      <option value="backups" <%= (homeDashboardPreferences?.order || [])[2] === 'backups' ? 'selected' : '' %>>Backups das Maquinas</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label" for="perfilHomeChartOrderFourth">Quarto grafico</label>
+                    <select class="form-select" id="perfilHomeChartOrderFourth" name="homeChartOrderFourth">
+                      <option value="ranking" <%= (homeDashboardPreferences?.order || [])[3] === 'ranking' ? 'selected' : '' %>>Empresas com Mais Manutencoes</option>
+                      <option value="maquinas" <%= (homeDashboardPreferences?.order || [])[3] === 'maquinas' ? 'selected' : '' %>>Maquinas Ativas por Empresa</option>
+                      <option value="materiais" <%= (homeDashboardPreferences?.order || [])[3] === 'materiais' ? 'selected' : '' %>>Materiais Disponiveis por Tipo</option>
+                      <option value="backups" <%= (homeDashboardPreferences?.order || [])[3] === 'backups' ? 'selected' : '' %>>Backups das Maquinas</option>
                     </select>
                   </div>
                 </div>

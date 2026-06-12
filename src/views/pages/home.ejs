@@ -39,6 +39,11 @@
               <span class="home-menu-icon home-menu-icon-amber"><i class="fas fa-hdd"></i></span>
               <span>Lista de materiais</span>
             </a>
+
+            <a href="/backups" class="home-menu-card">
+              <span class="home-menu-icon home-menu-icon-cyan"><i class="fas fa-database"></i></span>
+              <span>Controle de backups</span>
+            </a>
           </div>
         </div>
 
@@ -87,6 +92,7 @@
               <div class="home-chart-wrap">
                 <canvas id="rankingEmpresasChart"></canvas>
               </div>
+              <div class="d-none" id="homeBackupSlide"></div>
             </div>
 
             <div class="home-chart-nav">
@@ -170,31 +176,43 @@
                 <div class="home-filter-head">
                   <h6 class="mb-0">Ordem dos gráficos</h6>
                 </div>
-                <p class="text-muted mb-3">Defina qual gráfico aparece primeiro, segundo e terceiro no carrossel.</p>
+                <p class="text-muted mb-3">Defina a ordem dos quatro itens do carrossel, incluindo backups.</p>
                 <div class="alert alert-warning d-none mb-3" id="homeChartOrderAlert"></div>
                 <div class="row g-3">
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="homeChartOrderFirst">Primeiro gráfico</label>
                     <select class="form-select" id="homeChartOrderFirst">
                       <option value="ranking">Empresas com Mais Manutenções</option>
                       <option value="maquinas">Máquinas Ativas por Empresa</option>
                       <option value="materiais">Materiais Disponíveis por Tipo</option>
+                      <option value="backups">Backups das Máquinas</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="homeChartOrderSecond">Segundo gráfico</label>
                     <select class="form-select" id="homeChartOrderSecond">
                       <option value="ranking">Empresas com Mais Manutenções</option>
                       <option value="maquinas">Máquinas Ativas por Empresa</option>
                       <option value="materiais">Materiais Disponíveis por Tipo</option>
+                      <option value="backups">Backups das Máquinas</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label" for="homeChartOrderThird">Terceiro gráfico</label>
                     <select class="form-select" id="homeChartOrderThird">
                       <option value="ranking">Empresas com Mais Manutenções</option>
                       <option value="maquinas">Máquinas Ativas por Empresa</option>
                       <option value="materiais">Materiais Disponíveis por Tipo</option>
+                      <option value="backups">Backups das Máquinas</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label" for="homeChartOrderFourth">Quarto gráfico</label>
+                    <select class="form-select" id="homeChartOrderFourth">
+                      <option value="ranking">Empresas com Mais Manutenções</option>
+                      <option value="maquinas">Máquinas Ativas por Empresa</option>
+                      <option value="materiais">Materiais Disponíveis por Tipo</option>
+                      <option value="backups">Backups das Máquinas</option>
                     </select>
                   </div>
                 </div>
@@ -218,9 +236,12 @@
       const rankingEmpresas = <%- JSON.stringify(rankingEmpresas || []) %>;
       const maquinasPorEmpresa = <%- JSON.stringify(maquinasPorEmpresa || []) %>;
       const materiaisDisponiveisPorTipo = <%- JSON.stringify(materiaisDisponiveisPorTipo || []) %>;
+      const backupSummary = <%- JSON.stringify(backupSummary || {}) %>;
       const homeDashboardPreferences = <%- JSON.stringify(homeDashboardPreferences || {}) %>;
 
       const ctx = document.getElementById('rankingEmpresasChart');
+      const chartWrapEl = document.querySelector('.home-chart-wrap');
+      const backupSlideEl = document.getElementById('homeBackupSlide');
       const titleEl = document.getElementById('homeChartTitle');
       const captionEl = document.getElementById('homeChartCaption');
       const prevBtn = document.getElementById('chartPrevBtn');
@@ -236,14 +257,28 @@
         document.getElementById('homeChartOrderFirst'),
         document.getElementById('homeChartOrderSecond'),
         document.getElementById('homeChartOrderThird'),
+        document.getElementById('homeChartOrderFourth'),
       ];
       if (!ctx) return;
 
+<<<<<<< Updated upstream
       const defaultChartOrder = ['ranking', 'maquinas', 'materiais'];
+=======
+      const defaultChartOrder = ['ranking', 'maquinas', 'materiais', 'backups'];
+      const defaultMaintenanceDescriptionTemplates = [
+        'Limpeza preventiva',
+        'Erro de funcionamento',
+        'Lentidao ou travamento',
+        'Maquina sem ligar',
+        'Formatacao ou reinstalacao do sistema',
+        'Sem acesso a rede ou internet',
+      ];
+>>>>>>> Stashed changes
       const chartOptionLabels = {
         ranking: 'Empresas com Mais Manutenções',
         maquinas: 'Máquinas Ativas por Empresa',
         materiais: 'Materiais Disponíveis por Tipo',
+        backups: 'Backups das Máquinas',
       };
 
       function getModalInstance(modalEl) {
@@ -371,6 +406,7 @@
             homeChartOrderFirst: preferences.order[0],
             homeChartOrderSecond: preferences.order[1],
             homeChartOrderThird: preferences.order[2],
+            homeChartOrderFourth: preferences.order[3],
           }),
         });
 
@@ -406,7 +442,7 @@
         if (!allValid || uniqueCount !== defaultChartOrder.length) {
           return {
             ok: false,
-            message: 'Escolha três gráficos diferentes para definir a ordem.',
+            message: 'Escolha quatro itens diferentes para definir a ordem do carrossel.',
           };
         }
 
@@ -427,6 +463,7 @@
             id: 'ranking',
             titulo: 'Empresas com Mais Manutenções',
             legenda: 'Manutenções',
+            viewType: 'chart',
             labels: rankingFiltrado.map((item) => labelQuebrada(item.nome)),
             tooltipLabels: rankingFiltrado.map((item) => item.nomeCompleto || item.nome),
             data: rankingFiltrado.map((item) => Number(item.total || 0)),
@@ -435,6 +472,7 @@
             id: 'maquinas',
             titulo: 'Máquinas Ativas por Empresa',
             legenda: 'Máquinas ativas',
+            viewType: 'chart',
             labels: maquinasFiltradas.map((item) => labelQuebrada(item.nome)),
             tooltipLabels: maquinasFiltradas.map((item) => item.nomeCompleto || item.nome),
             data: maquinasFiltradas.map((item) => Number(item.total || 0)),
@@ -443,9 +481,22 @@
             id: 'materiais',
             titulo: 'Materiais Disponíveis por Tipo',
             legenda: 'Disponíveis',
+            viewType: 'chart',
             labels: materiaisDisponiveisPorTipo.map((item) => labelQuebrada(item.tipo)),
             tooltipLabels: materiaisDisponiveisPorTipo.map((item) => item.tipo),
             data: materiaisDisponiveisPorTipo.map((item) => Number(item.total || 0)),
+          },
+          backups: {
+            id: 'backups',
+            titulo: 'Backups das Máquinas',
+            viewType: 'backups',
+            summary: {
+              emDia: Number(backupSummary.emDia || 0),
+              atrasado: Number(backupSummary.atrasado || 0),
+              pendente: Number(backupSummary.pendente || 0),
+            },
+            atrasados: Array.isArray(backupSummary.atrasados) ? backupSummary.atrasados : [],
+            registros: Array.isArray(backupSummary.registros) ? backupSummary.registros : [],
           },
         };
 
@@ -469,14 +520,21 @@
 
       let chartConfigs = buildChartConfigs();
       let currentIndex = 0;
+      const initialChartConfig =
+        chartConfigs.find((config) => config.viewType === 'chart') || {
+          legenda: '',
+          labels: ['Sem dados'],
+          tooltipLabels: ['Sem dados'],
+          data: [0],
+        };
 
       const chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: chartConfigs[0].labels.length ? chartConfigs[0].labels : ['Sem dados'],
+          labels: initialChartConfig.labels.length ? initialChartConfig.labels : ['Sem dados'],
           datasets: [{
-            label: chartConfigs[0].legenda,
-            data: chartConfigs[0].data.length ? chartConfigs[0].data : [0],
+            label: initialChartConfig.legenda,
+            data: initialChartConfig.data.length ? initialChartConfig.data : [0],
             backgroundColor: colors,
             borderRadius: 8,
             maxBarThickness: 42,
@@ -495,6 +553,9 @@
                   if (!items || !items.length) return '';
                   const index = items[0].dataIndex;
                   const config = chartConfigs[currentIndex];
+                  if (!config || config.viewType !== 'chart' || !Array.isArray(config.tooltipLabels)) {
+                    return '';
+                  }
                   return config.tooltipLabels[index] || '';
                 },
               },
@@ -524,6 +585,91 @@
         },
       });
 
+      function renderBackupSlide(config) {
+        if (!backupSlideEl) return;
+
+        const registros = Array.isArray(config.registros) ? config.registros : [];
+        const rows = registros.length
+          ? registros
+              .map((item) => `
+                <tr>
+                  <td><strong>${item.apelidoUsuario || '-'}</strong></td>
+                  <td>${item.computador?.setor || 'Sem setor'}</td>
+                  <td>${formatDateDisplay(item.ultimoBackupEm)}</td>
+                  <td><span class="badge ${item.status?.badgeClass || 'bg-secondary'}">${item.status?.label || '-'}</span></td>
+                </tr>
+              `)
+              .join('')
+          : '<tr><td colspan="4" class="text-muted text-center">Nenhum backup cadastrado no momento.</td></tr>';
+
+        backupSlideEl.innerHTML = `
+          <div class="row g-3 text-start">
+            <div class="col-md-4">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <small class="text-muted d-block">Em dia</small>
+                  <strong class="fs-4">${config.summary.emDia || 0}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <small class="text-muted d-block">Atrasados</small>
+                  <strong class="fs-4 text-danger">${config.summary.atrasado || 0}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                  <small class="text-muted d-block">Pendentes</small>
+                  <strong class="fs-4 text-warning">${config.summary.pendente || 0}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h3 class="h6 mb-0">Resumo das máquinas com backup</h3>
+                    <a href="/backups" class="btn btn-sm btn-outline-secondary">Ver controle</a>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Apelido</th>
+                          <th>Setor</th>
+                          <th>Último backup</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function formatDateDisplay(value) {
+        if (!value) return '-';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+
+        return date.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      }
+
       function applyChart(index) {
         chartConfigs = buildChartConfigs();
         const safeIndex = Math.min(Math.max(index, 0), Math.max(chartConfigs.length - 1, 0));
@@ -531,6 +677,16 @@
         currentIndex = safeIndex;
         if (titleEl) titleEl.textContent = config.titulo;
         if (captionEl) captionEl.textContent = `${safeIndex + 1} de ${chartConfigs.length}`;
+
+        if (config.viewType === 'backups') {
+          if (chartWrapEl) chartWrapEl.classList.add('d-none');
+          if (backupSlideEl) backupSlideEl.classList.remove('d-none');
+          renderBackupSlide(config);
+          return;
+        }
+
+        if (chartWrapEl) chartWrapEl.classList.remove('d-none');
+        if (backupSlideEl) backupSlideEl.classList.add('d-none');
         chart.data.labels = config.labels.length ? config.labels : ['Sem dados'];
         chart.data.datasets[0].label = config.legenda;
         chart.data.datasets[0].data = config.data.length ? config.data : [0];

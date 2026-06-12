@@ -134,6 +134,49 @@ async function ensureComputadorMateriaisTable() {
   `);
 }
 
+async function ensureBackupComputadoresTable() {
+  await database.query(`
+    CREATE TABLE IF NOT EXISTS backup_computadores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      computador_id INTEGER NOT NULL REFERENCES computadores(id) ON DELETE CASCADE,
+      apelido_usuario VARCHAR(255) NOT NULL,
+      responsavel_conferencia_user_id INTEGER REFERENCES users(id),
+      ultimo_backup_em DATETIME,
+      ativo TINYINT(1) NOT NULL DEFAULT 1,
+      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  const columns = await getTableColumns('backup_computadores');
+
+  if (!columns.includes('apelido_usuario')) {
+    await database.query(
+      "ALTER TABLE backup_computadores ADD COLUMN apelido_usuario VARCHAR(255) NOT NULL DEFAULT '';"
+    );
+  }
+
+  if (!columns.includes('ultimo_backup_em')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_backup_em DATETIME;');
+  }
+
+  if (!columns.includes('responsavel_conferencia_user_id')) {
+    await database.query(
+      'ALTER TABLE backup_computadores ADD COLUMN responsavel_conferencia_user_id INTEGER REFERENCES users(id);'
+    );
+  }
+
+  if (!columns.includes('ativo')) {
+    await database.query(
+      'ALTER TABLE backup_computadores ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;'
+    );
+  }
+
+  await database.query(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_backup_computadores_computador_id_unique ON backup_computadores(computador_id);'
+  );
+}
+
 async function ensureUsersTable() {
   await database.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -220,6 +263,7 @@ async function ensureSchema() {
   await ensureEmpresaColumns();
   await normalizeEmpresaDisplayOrder();
   await ensureComputadorMateriaisTable();
+  await ensureBackupComputadoresTable();
   await ensureUsersTable();
   await seedEmpresaSiglas();
   await seedAdminUser();

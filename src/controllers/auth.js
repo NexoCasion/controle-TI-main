@@ -6,7 +6,21 @@ const EmpresaController = require('./empresa');
 
 const ROLES_PERMITIDOS = ['admin', 'tecnico'];
 const ADD_COMPUTER_DEFAULT_MODALS = ['structured', 'single', 'batch'];
+<<<<<<< Updated upstream
 const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais'];
+=======
+const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais', 'backups'];
+const HOME_RANKING_IGNORED_TERM_LIMIT = 30;
+const MAINTENANCE_DESCRIPTION_TEMPLATE_LIMIT = 30;
+const DEFAULT_MAINTENANCE_DESCRIPTION_TEMPLATES = [
+  'Limpeza preventiva',
+  'Erro de funcionamento',
+  'Lentidao ou travamento',
+  'Maquina sem ligar',
+  'Formatacao ou reinstalacao do sistema',
+  'Sem acesso a rede ou internet',
+];
+>>>>>>> Stashed changes
 
 class AuthController {
   renderLogin(req, res) {
@@ -325,6 +339,7 @@ class AuthController {
         body.homeChartOrderFirst,
         body.homeChartOrderSecond,
         body.homeChartOrderThird,
+        body.homeChartOrderFourth,
       ],
     };
   }

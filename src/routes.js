@@ -12,6 +12,8 @@ const EmpresaController = require('./controllers/empresa');
 const empresaController = new EmpresaController();
 const ComputadorController = require('./controllers/computador');
 const computadorController = new ComputadorController();
+const BackupComputadorController = require('./controllers/backupComputador');
+const backupComputadorController = new BackupComputadorController();
 const ManutencaoController = require('./controllers/manutencao');
 const manutencaoController = new ManutencaoController();
 const TransferenciaController = require('./controllers/transferencia');
@@ -170,6 +172,39 @@ function buildStructuredSpecsView(computador = null) {
       fontes: fontes.length,
     },
   };
+}
+
+function formatBackupDateForCsv(value) {
+  if (!value) return '';
+
+  const data = new Date(value);
+  if (Number.isNaN(data.getTime())) return '';
+
+  return data.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function escapeCsvValue(value) {
+  const texto = String(value ?? '');
+  if (texto.includes(';') || texto.includes('"') || texto.includes('\n') || texto.includes('\r')) {
+    return `"${texto.replace(/"/g, '""')}"`;
+  }
+
+  return texto;
+}
+
+function escapeXmlValue(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 router.get('/login', redirectIfAuthenticated, (req, res) => authController.renderLogin(req, res));
@@ -375,6 +410,187 @@ router.get('/computadores', async (req, res) => {
     importCsvBatchResult,
     addComputerDefaultModal,
   });
+});
+
+router.get('/backups', async (req, res) => {
+  try {
+    const showInactive =
+      String(req.query.showInactive || '').trim() === '1' ||
+      String(req.query.showInactive || '').trim().toLowerCase() === 'true';
+    const backups = await backupComputadorController.getAll({ includeInactive: showInactive });
+    const computadores = await computadorController.getAll();
+    const empresas = await empresaController.getAll();
+    const usuariosResponsaveis = await User.findAll({
+      where: { ativo: true },
+      order: [['nome', 'ASC']],
+    });
+    const computadoresComBackup = new Set(backups.map((item) => Number(item.computadorId)));
+    const computadoresDisponiveis = computadores.filter(
+      (computador) => !computadoresComBackup.has(Number(computador.id))
+    );
+    const backupSummary = await backupComputadorController.getSummary();
+
+    return res.render('pages/backups', {
+      backups,
+      empresas,
+      usuariosResponsaveis,
+      computadoresDisponiveis,
+      backupSummary,
+      showInactive,
+      success: String(req.query.success || '').trim(),
+      error: String(req.query.error || '').trim(),
+    });
+  } catch (error) {
+    console.error('Erro ao carregar tela de backups:', error);
+    return res.status(500).send('Erro ao carregar tela de backups: ' + error.message);
+  }
+});
+
+router.post('/backups', async (req, res) => {
+  try {
+    await backupComputadorController.create(req.body);
+    return res.redirect('/backups?success=' + encodeURIComponent('Maquina adicionada ao controle de backup.'));
+  } catch (error) {
+    console.error('Erro ao cadastrar controle de backup:', error);
+    return res.redirect('/backups?error=' + encodeURIComponent(error.message));
+  }
+});
+
+router.post('/backups/:id', async (req, res) => {
+  try {
+    await backupComputadorController.update(req.params.id, req.body);
+    return res.redirect('/backups?success=' + encodeURIComponent('Controle de backup atualizado.'));
+  } catch (error) {
+    console.error('Erro ao atualizar controle de backup:', error);
+    return res.redirect('/backups?error=' + encodeURIComponent(error.message));
+  }
+});
+
+router.post('/backups/:id/registrar-agora', async (req, res) => {
+  try {
+    await backupComputadorController.registrarAgora(req.params.id);
+    return res.redirect('/backups?success=' + encodeURIComponent('Backup realizado registrado com a data atual.'));
+  } catch (error) {
+    console.error('Erro ao registrar backup atual:', error);
+    return res.redirect('/backups?error=' + encodeURIComponent(error.message));
+  }
+});
+
+router.post('/backups/:id/desativar', async (req, res) => {
+  try {
+    await backupComputadorController.desativar(req.params.id);
+    return res.redirect('/backups?success=' + encodeURIComponent('Controle de backup desativado com sucesso.'));
+  } catch (error) {
+    console.error('Erro ao desativar controle de backup:', error);
+    return res.redirect('/backups?error=' + encodeURIComponent(error.message));
+  }
+});
+
+router.get('/backups/exportar-csv', async (req, res) => {
+  try {
+    const backups = await backupComputadorController.getAll();
+    const linhas = [
+      'sep=;',
+      'computador_vinculado;apelido_usuario_principal;unidade;setor;data_ultimo_backup;responsavel_conferencia;status',
+      ...backups.map((item) =>
+        [
+          escapeCsvValue(item.computador?.patrimonio || ''),
+          escapeCsvValue(item.apelidoUsuario || ''),
+          escapeCsvValue(item.computador?.empresa?.nome || ''),
+          escapeCsvValue(item.computador?.setor || ''),
+          escapeCsvValue(formatBackupDateForCsv(item.ultimoBackupEm)),
+          escapeCsvValue(item.responsavelConferencia?.nome || ''),
+          escapeCsvValue(item.status?.label || ''),
+        ].join(';')
+      ),
+    ];
+
+    const csv = `\uFEFF${linhas.join('\r\n')}`;
+    const hoje = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="controle-backups-${hoje}.csv"`);
+    return res.status(200).send(csv);
+  } catch (error) {
+    console.error('Erro ao exportar CSV de backups:', error);
+    return res.status(500).send('Erro ao exportar CSV de backups: ' + error.message);
+  }
+});
+
+router.get('/backups/exportar-excel', async (req, res) => {
+  try {
+    const backups = await backupComputadorController.getAll();
+    const linhas = backups
+      .map((item) => {
+        const colunas = [
+          item.computador?.patrimonio || '',
+          item.apelidoUsuario || '',
+          item.computador?.empresa?.nome || '',
+          item.computador?.setor || '',
+          formatBackupDateForCsv(item.ultimoBackupEm),
+          item.responsavelConferencia?.nome || '',
+          item.status?.label || '',
+        ];
+
+        return `
+          <Row>
+            ${colunas
+              .map((coluna) => `<Cell><Data ss:Type="String">${escapeXmlValue(coluna)}</Data></Cell>`)
+              .join('')}
+          </Row>`;
+      })
+      .join('');
+
+    const excelXml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="Header">
+      <Font ss:Bold="1"/>
+      <Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/>
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="Backups">
+    <Table>
+      <Column ss:Width="130"/>
+      <Column ss:Width="110"/>
+      <Column ss:Width="180"/>
+      <Column ss:Width="220"/>
+      <Column ss:Width="160"/>
+      <Column ss:Width="180"/>
+      <Column ss:Width="120"/>
+      <Row ss:StyleID="Header">
+        <Cell><Data ss:Type="String">Computador vinculado</Data></Cell>
+        <Cell><Data ss:Type="String">Apelido do usuario</Data></Cell>
+        <Cell><Data ss:Type="String">Unidade</Data></Cell>
+        <Cell><Data ss:Type="String">Setor</Data></Cell>
+        <Cell><Data ss:Type="String">Data do ultimo backup</Data></Cell>
+        <Cell><Data ss:Type="String">Responsavel pela conferencia</Data></Cell>
+        <Cell><Data ss:Type="String">Status</Data></Cell>
+      </Row>
+      ${linhas}
+    </Table>
+    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+      <FreezePanes/>
+      <FrozenNoSplit/>
+      <SplitHorizontal>1</SplitHorizontal>
+      <TopRowBottomPane>1</TopRowBottomPane>
+    </WorksheetOptions>
+  </Worksheet>
+</Workbook>`;
+
+    const hoje = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="controle-backups-${hoje}.xls"`);
+    return res.status(200).send(`\uFEFF${excelXml}`);
+  } catch (error) {
+    console.error('Erro ao exportar Excel de backups:', error);
+    return res.status(500).send('Erro ao exportar Excel de backups: ' + error.message);
+  }
 });
 
 router.get('/register-pc', async (req, res) => {

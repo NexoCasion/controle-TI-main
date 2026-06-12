@@ -17,6 +17,7 @@ require('./models/Material');
 require('./models/ManutencaoMaterial');
 require('./models/MaterialMovimento');
 require('./models/ComputadorMaterial');
+require('./models/BackupComputador');
 require('./models/User');
 const ensureSchema = require('./db/ensureSchema');
 const { attachCurrentUser } = require('./middlewares/auth');

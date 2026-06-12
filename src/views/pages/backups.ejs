@@ -1,0 +1,672 @@
+<%
+  function padNumber(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function formatDateTimeLocal(value) {
+    if (!value) return '';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}T${padNumber(date.getHours())}:${padNumber(date.getMinutes())}`;
+  }
+
+  function formatDateDisplay(value) {
+    if (!value) return '-';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+%>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Backups</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+
+<body>
+  <header class="headerComponent">
+    <%- include("./../partials/header.ejs") %>
+  </header>
+
+  <main>
+    <div class="container mt-4">
+      <a href="javascript:history.back()" class="btn btn-back">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+          <h1 class="mt-4 mb-1">Controle de Backups</h1>
+          <p class="text-muted mb-0">Controle mensal de conferência de backups das máquinas ativas.</p>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#modalCadastrarBackup"
+            <%= computadoresDisponiveis.length ? '' : 'disabled' %>>
+            <i class="fas fa-plus-circle me-1"></i>
+            Cadastrar controle de backup
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-success"
+            data-bs-toggle="modal"
+            data-bs-target="#modalExportarBkps">
+            <i class="fas fa-file-export me-1"></i>
+            Exportar
+          </button>
+
+          <% if (showInactive) { %>
+          <a href="/backups" class="btn btn-outline-secondary">Ocultar desativados</a>
+          <% } else { %>
+          <a href="/backups?showInactive=1" class="btn btn-outline-secondary">Mostrar desativados</a>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+      <% } %>
+
+      <% if (backupSummary && backupSummary.atrasado > 0) { %>
+      <div class="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+          <strong>Atenção:</strong> existem <strong><%= backupSummary.atrasado %></strong> máquina(s) com backup atrasado.
+        </div>
+        <span class="badge bg-danger">Ação necessária</span>
+      </div>
+      <% } %>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="card border-0 p-3 h-100">
+            <small class="text-muted d-block">Em dia</small>
+            <strong class="fs-3"><%= backupSummary?.emDia || 0 %></strong>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 p-3 h-100 border border-danger">
+            <small class="text-muted d-block">Atrasados</small>
+            <strong class="fs-3 text-danger"><%= backupSummary?.atrasado || 0 %></strong>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 p-3 h-100">
+            <small class="text-muted d-block">Pendentes</small>
+            <strong class="fs-3 text-warning"><%= backupSummary?.pendente || 0 %></strong>
+          </div>
+        </div>
+      </div>
+
+      <% const backupsDisponiveisJson = JSON.stringify(computadoresDisponiveis || []); %>
+      <% const backupsRegistradosJson = JSON.stringify(backups || []); %>
+
+      <% if (!computadoresDisponiveis.length && !showInactive) { %>
+      <div class="alert alert-light border mb-4">
+        Todas as máquinas ativas já estão vinculadas a um controle de backup.
+      </div>
+      <% } %>
+
+      <div class="card border-0 p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <h2 class="h5 mb-0">Backups cadastrados</h2>
+          <small class="text-muted">Total exibido: <%= backups.length %></small>
+        </div>
+
+        <% if (!backups.length) { %>
+        <div class="alert alert-light border mb-0">
+          Nenhum controle de backup foi cadastrado ainda.
+        </div>
+        <% } else { %>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Computador vinculado</th>
+                <th>Apelido / usuário principal</th>
+                <th>Unidade</th>
+                <th>Setor</th>
+                <th>Último backup</th>
+                <th>Responsável pela conferência</th>
+                <th>Status</th>
+                <th class="text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% backups.forEach(function(backup) { %>
+              <tr class="<%= backup.status.code === 'ATRASADO' ? 'table-danger' : (backup.status.code === 'PENDENTE' ? 'table-warning' : '') %>">
+                <td><strong><%= backup.computador ? backup.computador.patrimonio : '-' %></strong></td>
+                <td><%= backup.apelidoUsuario || '-' %></td>
+                <td><%= backup.computador && backup.computador.empresa ? backup.computador.empresa.nome : '-' %></td>
+                <td><%= backup.computador && backup.computador.setor ? backup.computador.setor : '-' %></td>
+                <td><%= formatDateDisplay(backup.ultimoBackupEm) %></td>
+                <td><%= backup.responsavelConferencia ? backup.responsavelConferencia.nome : '-' %></td>
+                <td>
+                  <span class="badge <%= backup.status.badgeClass %>"><%= backup.status.label %></span>
+                </td>
+                <td>
+                  <div class="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                    <% if (backup.status.code !== 'DESATIVADO') { %>
+                    <form action="/backups/<%= backup.id %>/registrar-agora" method="post">
+                      <button type="submit" class="btn btn-outline-success btn-sm">
+                        Registrar backup realizado
+                      </button>
+                    </form>
+                    <% } %>
+
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm btn-editar-bkp"
+                      data-id="<%= backup.id %>">
+                      Editar
+                    </button>
+
+                    <% if (backup.status.code !== 'DESATIVADO') { %>
+                    <form action="/backups/<%= backup.id %>/desativar" method="post" onsubmit="return confirm('Desativar este controle de backup?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm">
+                        Desativar
+                      </button>
+                    </form>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal fade" id="modalCadastrarBackup" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <form action="/backups" method="post" class="modal-content" id="backupCreateForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Cadastrar controle de backup</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning d-none" id="backupCreateModalAlert" role="alert"></div>
+
+          <div class="row g-3">
+            <div class="col-lg-4">
+              <label for="empresaBkp" class="form-label">Unidade</label>
+              <select
+                id="empresaBkp"
+                class="form-select"
+                <%= computadoresDisponiveis.length ? '' : 'disabled' %>>
+                <option value="">Selecione a unidade</option>
+                <% empresas.forEach(function(empresa) { %>
+                <option value="<%= empresa.id %>"><%= empresa.nome %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="col-lg-4">
+              <label for="computadorFiltroBkp" class="form-label">Computador vinculado</label>
+              <input
+                type="hidden"
+                id="computadorId"
+                name="computadorId"
+                <%= computadoresDisponiveis.length ? '' : 'disabled' %>>
+              <div class="position-relative">
+                <input
+                  type="search"
+                  id="computadorFiltroBkp"
+                  class="form-control"
+                  placeholder="Pesquisar por patrimônio, ID ou setor"
+                  autocomplete="off"
+                  <%= computadoresDisponiveis.length ? '' : 'disabled' %>>
+                <div
+                  class="list-group position-absolute w-100 shadow-sm d-none"
+                  id="computadorSugestoesBkp"
+                  style="z-index: 1057; max-height: 260px; overflow-y: auto;">
+                </div>
+              </div>
+              <small class="text-muted d-block mt-2" id="computadorResumoBkp">
+                <%= computadoresDisponiveis.length ? 'Selecione a unidade para carregar as máquinas disponíveis.' : 'Nenhuma máquina disponível para adicionar.' %>
+              </small>
+            </div>
+
+            <div class="col-lg-4">
+              <label for="apelidoUsuario" class="form-label">Apelido / usuário principal</label>
+              <input
+                type="text"
+                id="apelidoUsuario"
+                name="apelidoUsuario"
+                class="form-control"
+                placeholder="Ex: Fiscal, Caixa 1, João"
+                <%= computadoresDisponiveis.length ? 'required' : 'disabled' %>>
+            </div>
+
+            <div class="col-lg-6">
+              <label for="responsavelConferenciaUserId" class="form-label">Responsável pela conferência</label>
+              <select
+                id="responsavelConferenciaUserId"
+                name="responsavelConferenciaUserId"
+                class="form-select"
+                required>
+                <option value="">Selecione um responsável</option>
+                <% usuariosResponsaveis.forEach(function(usuario) { %>
+                <option value="<%= usuario.id %>"><%= usuario.nome %></option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="col-lg-6">
+              <label for="ultimoBackupEm" class="form-label">Data do último backup</label>
+              <input
+                type="datetime-local"
+                id="ultimoBackupEm"
+                name="ultimoBackupEm"
+                class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" <%= computadoresDisponiveis.length ? '' : 'disabled' %>>
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalEditarBkp" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form method="post" class="modal-content" id="backupEditForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar controle de backup</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning d-none" id="backupEditModalAlert" role="alert"></div>
+
+          <div class="mb-3">
+            <label class="form-label">Computador vinculado</label>
+            <input type="text" class="form-control" id="editBackupMaquina" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label for="editApelidoUsuario" class="form-label">Apelido / usuário principal</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editApelidoUsuario"
+              name="apelidoUsuario"
+              required>
+          </div>
+
+          <div class="mb-3">
+            <label for="editResponsavelConferenciaUserId" class="form-label">Responsável pela conferência</label>
+            <select
+              id="editResponsavelConferenciaUserId"
+              name="responsavelConferenciaUserId"
+              class="form-select"
+              required>
+              <option value="">Selecione um responsável</option>
+              <% usuariosResponsaveis.forEach(function(usuario) { %>
+              <option value="<%= usuario.id %>"><%= usuario.nome %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="mb-0">
+            <label for="editUltimoBackupEm" class="form-label">Data do último backup</label>
+            <input
+              type="datetime-local"
+              class="form-control"
+              id="editUltimoBackupEm"
+              name="ultimoBackupEm">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalExportarBkps" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Exportar controle de backups</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Escolha o formato desejado para exportação.</p>
+
+          <div class="d-grid gap-3">
+            <a href="/backups/exportar-excel" class="btn btn-outline-primary btn-lg text-start">
+              <strong class="d-block">Excel</strong>
+              <small class="text-muted">Relatório com colunas organizadas para apresentação e conferência.</small>
+            </a>
+
+            <a href="/backups/exportar-csv" class="btn btn-outline-secondary btn-lg text-start">
+              <strong class="d-block">CSV</strong>
+              <small class="text-muted">Arquivo simples para filtros, integrações e importações.</small>
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const createModalEl = document.getElementById('modalCadastrarBackup');
+      const createForm = document.getElementById('backupCreateForm');
+      const createAlertBox = document.getElementById('backupCreateModalAlert');
+      const empresaSelect = document.getElementById('empresaBkp');
+      const computadorInput = document.getElementById('computadorId');
+      const computadorFiltro = document.getElementById('computadorFiltroBkp');
+      const computadorSugestoes = document.getElementById('computadorSugestoesBkp');
+      const computadorResumo = document.getElementById('computadorResumoBkp');
+      const apelidoInput = document.getElementById('apelidoUsuario');
+      const responsavelInput = document.getElementById('responsavelConferenciaUserId');
+      const ultimoBackupInput = document.getElementById('ultimoBackupEm');
+      const editModalEl = document.getElementById('modalEditarBkp');
+      const editModal = editModalEl && window.bootstrap && bootstrap.Modal
+        ? (bootstrap.Modal.getInstance(editModalEl) || new bootstrap.Modal(editModalEl))
+        : null;
+      const editForm = document.getElementById('backupEditForm');
+      const editBackupMaquina = document.getElementById('editBackupMaquina');
+      const editApelidoUsuario = document.getElementById('editApelidoUsuario');
+      const editResponsavelConferenciaUserId = document.getElementById('editResponsavelConferenciaUserId');
+      const editUltimoBackupEm = document.getElementById('editUltimoBackupEm');
+      const botoesEditar = document.querySelectorAll('.btn-editar-bkp');
+      const computadoresDisponiveis = <%- backupsDisponiveisJson %>;
+      const backupsRegistrados = <%- backupsRegistradosJson %>;
+
+      if (
+        !createModalEl ||
+        !createForm ||
+        !createAlertBox ||
+        !empresaSelect ||
+        !computadorInput ||
+        !computadorFiltro ||
+        !computadorSugestoes ||
+        !computadorResumo ||
+        !apelidoInput ||
+        !responsavelInput ||
+        !ultimoBackupInput ||
+        !editModalEl ||
+        !editForm ||
+        !editBackupMaquina ||
+        !editApelidoUsuario ||
+        !editResponsavelConferenciaUserId ||
+        !editUltimoBackupEm
+      ) return;
+
+      let computadoresDaEmpresa = [];
+      let computadoresFiltrados = [];
+      let highlightedIndex = -1;
+
+      function showCreateAlert(message) {
+        createAlertBox.textContent = message;
+        createAlertBox.classList.remove('d-none');
+      }
+
+      function hideCreateAlert() {
+        createAlertBox.textContent = '';
+        createAlertBox.classList.add('d-none');
+      }
+
+      function formatarTextoComputador(computador) {
+        return [
+          computador.id,
+          computador.patrimonio || '-',
+          computador.setor || '-',
+        ].join(' - ');
+      }
+
+      function formatarTextoCompletoComputador(computador) {
+        return [
+          computador.patrimonio || '-',
+          computador.empresa?.nome || '-',
+          computador.setor || '-',
+        ].join(' - ');
+      }
+
+      function atualizarResumo(total, visiveis) {
+        computadorResumo.textContent = `${visiveis} de ${total} máquinas disponíveis nesta unidade.`;
+      }
+
+      function hideSugestoes() {
+        computadorSugestoes.classList.add('d-none');
+      }
+
+      function atualizarSelecao(computador = null, updateSearch = false) {
+        computadorInput.value = computador ? String(computador.id) : '';
+
+        if (computador && updateSearch) {
+          computadorFiltro.value = formatarTextoComputador(computador);
+        }
+      }
+
+      function selecionarComputador(computador, updateSearch = true) {
+        atualizarSelecao(computador, updateSearch);
+        hideSugestoes();
+        highlightedIndex = -1;
+        hideCreateAlert();
+      }
+
+      function renderSugestoes() {
+        computadorSugestoes.innerHTML = '';
+
+        if (!computadoresFiltrados.length) {
+          hideSugestoes();
+          return;
+        }
+
+        computadoresFiltrados.forEach((computador, index) => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = `list-group-item list-group-item-action${index === highlightedIndex ? ' active' : ''}`;
+          item.textContent = formatarTextoComputador(computador);
+          item.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            selecionarComputador(computador);
+          });
+          computadorSugestoes.appendChild(item);
+        });
+
+        computadorSugestoes.classList.remove('d-none');
+      }
+
+      function preencherComputadores() {
+        const termo = String(computadorFiltro.value || '').trim().toLowerCase();
+
+        computadoresFiltrados = !termo
+          ? [...computadoresDaEmpresa]
+          : computadoresDaEmpresa.filter((computador) =>
+              formatarTextoComputador(computador).toLowerCase().includes(termo)
+            );
+
+        highlightedIndex = computadoresFiltrados.length ? 0 : -1;
+        atualizarResumo(computadoresDaEmpresa.length, computadoresFiltrados.length);
+
+        if (!computadoresFiltrados.length) {
+          atualizarSelecao(null);
+          computadorResumo.textContent = computadoresDaEmpresa.length
+            ? 'Nenhuma máquina encontrada com esse filtro.'
+            : 'Nenhuma máquina disponível nesta unidade.';
+          hideSugestoes();
+          return;
+        }
+
+        renderSugestoes();
+      }
+
+      function resetModalCriacao() {
+        hideCreateAlert();
+        empresaSelect.value = '';
+        computadorInput.value = '';
+        computadorFiltro.value = '';
+        apelidoInput.value = '';
+        responsavelInput.value = '';
+        ultimoBackupInput.value = '';
+        computadoresDaEmpresa = [];
+        computadoresFiltrados = [];
+        highlightedIndex = -1;
+        hideSugestoes();
+        computadorResumo.textContent = computadoresDisponiveis.length
+          ? 'Selecione a unidade para carregar as máquinas disponíveis.'
+          : 'Nenhuma máquina disponível para adicionar.';
+      }
+
+      empresaSelect.addEventListener('change', () => {
+        hideCreateAlert();
+        atualizarSelecao(null);
+        computadorFiltro.value = '';
+
+        const empresaId = String(empresaSelect.value || '');
+        computadoresDaEmpresa = computadoresDisponiveis.filter(
+          (computador) => String(computador.empresaId || '') === empresaId
+        );
+
+        if (!empresaId) {
+          computadoresDaEmpresa = [];
+          computadoresFiltrados = [];
+          highlightedIndex = -1;
+          hideSugestoes();
+          computadorResumo.textContent = 'Selecione a unidade para carregar as máquinas disponíveis.';
+          return;
+        }
+
+        preencherComputadores();
+      });
+
+      computadorFiltro.addEventListener('input', () => {
+        atualizarSelecao(null);
+        preencherComputadores();
+      });
+
+      computadorFiltro.addEventListener('focus', () => {
+        if (computadoresFiltrados.length) renderSugestoes();
+      });
+
+      computadorFiltro.addEventListener('keydown', (event) => {
+        if (!computadoresFiltrados.length) return;
+
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          highlightedIndex = Math.min(highlightedIndex + 1, computadoresFiltrados.length - 1);
+          renderSugestoes();
+          return;
+        }
+
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          highlightedIndex = Math.max(highlightedIndex - 1, 0);
+          renderSugestoes();
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          selecionarComputador(computadoresFiltrados[Math.max(highlightedIndex, 0)]);
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          hideSugestoes();
+        }
+      });
+
+      computadorFiltro.addEventListener('blur', () => {
+        window.setTimeout(hideSugestoes, 120);
+      });
+
+      createForm.addEventListener('submit', (event) => {
+        if (!String(empresaSelect.value || '').trim()) {
+          event.preventDefault();
+          showCreateAlert('Selecione a unidade antes de escolher o computador.');
+          empresaSelect.focus();
+          return;
+        }
+
+        if (!String(computadorInput.value || '').trim()) {
+          event.preventDefault();
+          showCreateAlert('Pesquise e selecione um computador antes de salvar o controle de backup.');
+          computadorFiltro.focus();
+          return;
+        }
+
+        if (!String(responsavelInput.value || '').trim()) {
+          event.preventDefault();
+          showCreateAlert('Selecione o responsável pela conferência.');
+          responsavelInput.focus();
+        }
+      });
+
+      createModalEl.addEventListener('shown.bs.modal', () => {
+        resetModalCriacao();
+        empresaSelect.focus();
+      });
+
+      botoesEditar.forEach((botao) => {
+        botao.addEventListener('click', () => {
+          const id = Number(botao.getAttribute('data-id'));
+          const registro = backupsRegistrados.find((item) => Number(item.id) === id);
+          if (!registro) return;
+
+          editForm.action = `/backups/${id}`;
+          editBackupMaquina.value = formatarTextoCompletoComputador(registro.computador || {});
+          editApelidoUsuario.value = registro.apelidoUsuario || '';
+          editResponsavelConferenciaUserId.value = String(registro.responsavelConferenciaUserId || '');
+          editUltimoBackupEm.value = formatDateTimeLocal(registro.ultimoBackupEm);
+
+          if (editModal) {
+            editModal.show();
+          }
+        });
+      });
+
+      function formatDateTimeLocal(value) {
+        if (!value) return '';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+
+        const pad = (numero) => String(numero).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+    });
+  </script>
+</body>
+
+</html>
