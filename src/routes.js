@@ -27,6 +27,8 @@ const authController = new AuthController();
 const { ensureAuth, redirectIfAuthenticated } = require('./middlewares/auth');
 const User = require('./models/User');
 const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
+const BackupStatusIntegrationService = require('./services/backupStatusIntegrationService');
+const backupStatusIntegrationService = new BackupStatusIntegrationService();
 
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -215,6 +217,38 @@ router.post('/login', loginRateLimit, redirectIfAuthenticated, async (req, res) 
 
 router.post('/logout', ensureAuth, async (req, res) => {
   return authController.logout(req, res);
+});
+
+router.post('/api/backups/status', async (req, res) => {
+  const authResult = backupStatusIntegrationService.isAuthorized(req.headers.authorization);
+
+  if (authResult.reason === 'CONFIG_MISSING') {
+    return res.status(503).json({
+      ok: false,
+      error: 'Integracao de backups nao configurada no servidor.',
+    });
+  }
+
+  if (!authResult.ok) {
+    return res.status(401).json({
+      ok: false,
+      error: 'Token de autenticacao invalido ou ausente.',
+    });
+  }
+
+  try {
+    const resultado = await backupStatusIntegrationService.receiveStatus(req.body);
+    return res.json({
+      ok: true,
+      backup: resultado,
+    });
+  } catch (error) {
+    if (error.code === 'BACKUP_NOT_FOUND') {
+      return res.status(404).json({ ok: false, error: error.message });
+    }
+
+    return res.status(400).json({ ok: false, error: error.message });
+  }
 });
 
 router.use(ensureAuth);

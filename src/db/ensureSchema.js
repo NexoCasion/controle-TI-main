@@ -142,6 +142,13 @@ async function ensureBackupComputadoresTable() {
       apelido_usuario VARCHAR(255) NOT NULL,
       responsavel_conferencia_user_id INTEGER REFERENCES users(id),
       ultimo_backup_em DATETIME,
+      pasta_backup VARCHAR(255),
+      ultimo_status VARCHAR(50),
+      ultimo_log_path VARCHAR(500),
+      ultimo_resultado_desktop INTEGER,
+      ultimo_resultado_documentos INTEGER,
+      ultimo_resultado_favoritos INTEGER,
+      ultima_sincronizacao_em DATETIME,
       ativo TINYINT(1) NOT NULL DEFAULT 1,
       createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -158,6 +165,34 @@ async function ensureBackupComputadoresTable() {
 
   if (!columns.includes('ultimo_backup_em')) {
     await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_backup_em DATETIME;');
+  }
+
+  if (!columns.includes('pasta_backup')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN pasta_backup VARCHAR(255);');
+  }
+
+  if (!columns.includes('ultimo_status')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_status VARCHAR(50);');
+  }
+
+  if (!columns.includes('ultimo_log_path')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_log_path VARCHAR(500);');
+  }
+
+  if (!columns.includes('ultimo_resultado_desktop')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_resultado_desktop INTEGER;');
+  }
+
+  if (!columns.includes('ultimo_resultado_documentos')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_resultado_documentos INTEGER;');
+  }
+
+  if (!columns.includes('ultimo_resultado_favoritos')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultimo_resultado_favoritos INTEGER;');
+  }
+
+  if (!columns.includes('ultima_sincronizacao_em')) {
+    await database.query('ALTER TABLE backup_computadores ADD COLUMN ultima_sincronizacao_em DATETIME;');
   }
 
   if (!columns.includes('responsavel_conferencia_user_id')) {
@@ -217,34 +252,24 @@ async function seedAdminUser() {
   const adminRole = String(process.env.ADMIN_ROLE || 'admin').trim();
 
   const existing = await database.query(
-    'SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) LIMIT 1;',
+    `
+      SELECT id
+      FROM users
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(?))
+         OR LOWER(TRIM(role)) = LOWER(TRIM(?))
+      LIMIT 1;
+    `,
     {
-      replacements: [adminEmail],
+      replacements: [adminEmail, 'admin'],
       type: database.QueryTypes.SELECT,
     }
   );
 
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-
   if (existing.length) {
-    await database.query(
-      `
-        UPDATE users
-        SET nome = ?,
-            password_hash = ?,
-            role = ?,
-            add_computer_default_modal = COALESCE(NULLIF(TRIM(add_computer_default_modal), ''), 'structured'),
-            home_dashboard_preferences = COALESCE(home_dashboard_preferences, NULL),
-            ativo = 1,
-            updatedAt = CURRENT_TIMESTAMP
-        WHERE id = ?;
-      `,
-      {
-        replacements: [adminNome, passwordHash, adminRole, existing[0].id],
-      }
-    );
     return;
   }
+
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
 
   await database.query(
     `

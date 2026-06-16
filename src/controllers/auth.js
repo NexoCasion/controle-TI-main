@@ -6,23 +6,60 @@ const EmpresaController = require('./empresa');
 
 const ROLES_PERMITIDOS = ['admin', 'tecnico'];
 const ADD_COMPUTER_DEFAULT_MODALS = ['structured', 'single', 'batch'];
-<<<<<<< Updated upstream
-const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais'];
-=======
 const HOME_DASHBOARD_CHART_IDS = ['ranking', 'maquinas', 'materiais', 'backups'];
-const HOME_RANKING_IGNORED_TERM_LIMIT = 30;
-const MAINTENANCE_DESCRIPTION_TEMPLATE_LIMIT = 30;
-const DEFAULT_MAINTENANCE_DESCRIPTION_TEMPLATES = [
-  'Limpeza preventiva',
-  'Erro de funcionamento',
-  'Lentidao ou travamento',
-  'Maquina sem ligar',
-  'Formatacao ou reinstalacao do sistema',
-  'Sem acesso a rede ou internet',
-];
->>>>>>> Stashed changes
 
 class AuthController {
+  isLegacyEncryptedValue(value) {
+    return /^enc:v\d+:/i.test(String(value || '').trim());
+  }
+
+  normalizeUserName(value) {
+    const nome = String(value || '').trim();
+
+    if (!nome) {
+      throw new Error('Nome e email sao obrigatorios.');
+    }
+
+    if (this.isLegacyEncryptedValue(nome)) {
+      throw new Error('Login/nome deve ser informado em texto normal para corrigir o cadastro.');
+    }
+
+    return nome;
+  }
+
+  normalizeUserEmail(value) {
+    const email = String(value || '').trim().toLowerCase();
+
+    if (!email) {
+      throw new Error('Nome e email sao obrigatorios.');
+    }
+
+    if (this.isLegacyEncryptedValue(email)) {
+      throw new Error('Email deve ser informado em texto normal para corrigir o cadastro.');
+    }
+
+    return email;
+  }
+
+  mapUserForView(user) {
+    if (!user) return null;
+
+    const plain =
+      typeof user.get === 'function'
+        ? user.get({ plain: true })
+        : { ...user };
+
+    const nomePrecisaCorrecao = this.isLegacyEncryptedValue(plain.nome);
+    const emailPrecisaCorrecao = this.isLegacyEncryptedValue(plain.email);
+
+    return {
+      ...plain,
+      nomePrecisaCorrecao,
+      emailPrecisaCorrecao,
+      cadastroLegadoInconsistente: nomePrecisaCorrecao || emailPrecisaCorrecao,
+    };
+  }
+
   renderLogin(req, res) {
     return res.render('pages/login', {
       error: null,
@@ -101,15 +138,20 @@ class AuthController {
         })
       : [];
 
+    const userView = this.mapUserForView(user);
+    const usersView = users.map((item) => this.mapUserForView(item));
+    const legacyUsersCount = usersView.filter((item) => item.cadastroLegadoInconsistente).length;
+
     return res.render('pages/perfil', {
-      user,
-      users,
+      user: userView,
+      users: usersView,
       empresasFiltro,
       homeDashboardPreferences: this.normalizeHomeDashboardPreferences(
-        user?.home_dashboard_preferences,
+        userView?.home_dashboard_preferences,
         empresasFiltro
       ),
       isAdmin,
+      legacyUsersCount,
       error: String(req.query.error || '').trim(),
       success: String(req.query.success || '').trim(),
     });
@@ -118,13 +160,13 @@ class AuthController {
   async createUser(req, res) {
     this.ensureAdmin(req);
 
-    const nome = String(req.body.nome || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
+    const nome = this.normalizeUserName(req.body.nome);
+    const email = this.normalizeUserEmail(req.body.email);
     const password = String(req.body.password || '');
     const role = this.normalizeRole(req.body.role);
     const ativo = String(req.body.ativo || '1') !== '0';
 
-    if (!nome || !email || !password) {
+    if (!password) {
       throw new Error('Preencha nome, email e senha do novo usuario.');
     }
 
@@ -160,15 +202,11 @@ class AuthController {
       throw new Error('Usuario nao encontrado.');
     }
 
-    const nome = String(req.body.nome || '').trim();
-    const email = String(req.body.email || '').trim().toLowerCase();
+    const nome = this.normalizeUserName(req.body.nome);
+    const email = this.normalizeUserEmail(req.body.email);
     const password = String(req.body.password || '');
     const role = this.normalizeRole(req.body.role);
     const ativo = String(req.body.ativo || '1') !== '0';
-
-    if (!nome || !email) {
-      throw new Error('Nome e email sao obrigatorios.');
-    }
 
     if (!ativo && Number(req.session?.user?.id) === Number(user.id)) {
       throw new Error('Nao e permitido desativar o usuario logado.');

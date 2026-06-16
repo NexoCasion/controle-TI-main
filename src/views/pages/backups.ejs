@@ -150,7 +150,10 @@
                 <th>Apelido / usuário principal</th>
                 <th>Unidade</th>
                 <th>Setor</th>
+                <th>Pasta no servidor</th>
                 <th>Último backup</th>
+                <th>Último status recebido</th>
+                <th>Última sincronização</th>
                 <th>Responsável pela conferência</th>
                 <th>Status</th>
                 <th class="text-center">Ações</th>
@@ -163,7 +166,10 @@
                 <td><%= backup.apelidoUsuario || '-' %></td>
                 <td><%= backup.computador && backup.computador.empresa ? backup.computador.empresa.nome : '-' %></td>
                 <td><%= backup.computador && backup.computador.setor ? backup.computador.setor : '-' %></td>
+                <td><code><%= backup.pastaBackup || '-' %></code></td>
                 <td><%= formatDateDisplay(backup.ultimoBackupEm) %></td>
+                <td><%= backup.ultimoStatus || '-' %></td>
+                <td><%= formatDateDisplay(backup.ultimaSincronizacaoEm) %></td>
                 <td><%= backup.responsavelConferencia ? backup.responsavelConferencia.nome : '-' %></td>
                 <td>
                   <span class="badge <%= backup.status.badgeClass %>"><%= backup.status.label %></span>
@@ -266,6 +272,16 @@
             </div>
 
             <div class="col-lg-6">
+              <label for="pastaBackup" class="form-label">Pasta no servidor</label>
+              <input
+                type="text"
+                id="pastaBackup"
+                name="pastaBackup"
+                class="form-control"
+                placeholder="Ex: REGINA ou \\\\SERVIDOR\\Backups\\Fiscal\\PC-0145">
+            </div>
+
+            <div class="col-lg-6">
               <label for="responsavelConferenciaUserId" class="form-label">Responsável pela conferência</label>
               <select
                 id="responsavelConferenciaUserId"
@@ -322,6 +338,16 @@
               id="editApelidoUsuario"
               name="apelidoUsuario"
               required>
+          </div>
+
+          <div class="mb-3">
+            <label for="editPastaBackup" class="form-label">Pasta no servidor</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editPastaBackup"
+              name="pastaBackup"
+              placeholder="Ex: REGINA ou \\\\SERVIDOR\\Backups\\Fiscal\\PC-0145">
           </div>
 
           <div class="mb-3">
@@ -396,6 +422,7 @@
       const computadorSugestoes = document.getElementById('computadorSugestoesBkp');
       const computadorResumo = document.getElementById('computadorResumoBkp');
       const apelidoInput = document.getElementById('apelidoUsuario');
+      const pastaBackupInput = document.getElementById('pastaBackup');
       const responsavelInput = document.getElementById('responsavelConferenciaUserId');
       const ultimoBackupInput = document.getElementById('ultimoBackupEm');
       const editModalEl = document.getElementById('modalEditarBkp');
@@ -405,6 +432,7 @@
       const editForm = document.getElementById('backupEditForm');
       const editBackupMaquina = document.getElementById('editBackupMaquina');
       const editApelidoUsuario = document.getElementById('editApelidoUsuario');
+      const editPastaBackup = document.getElementById('editPastaBackup');
       const editResponsavelConferenciaUserId = document.getElementById('editResponsavelConferenciaUserId');
       const editUltimoBackupEm = document.getElementById('editUltimoBackupEm');
       const botoesEditar = document.querySelectorAll('.btn-editar-bkp');
@@ -421,12 +449,14 @@
         !computadorSugestoes ||
         !computadorResumo ||
         !apelidoInput ||
+        !pastaBackupInput ||
         !responsavelInput ||
         !ultimoBackupInput ||
         !editModalEl ||
         !editForm ||
         !editBackupMaquina ||
         !editApelidoUsuario ||
+        !editPastaBackup ||
         !editResponsavelConferenciaUserId ||
         !editUltimoBackupEm
       ) return;
@@ -537,6 +567,7 @@
         computadorInput.value = '';
         computadorFiltro.value = '';
         apelidoInput.value = '';
+        pastaBackupInput.value = '';
         responsavelInput.value = '';
         ultimoBackupInput.value = '';
         computadoresDaEmpresa = [];
@@ -647,6 +678,7 @@
           editForm.action = `/backups/${id}`;
           editBackupMaquina.value = formatarTextoCompletoComputador(registro.computador || {});
           editApelidoUsuario.value = registro.apelidoUsuario || '';
+          editPastaBackup.value = registro.pastaBackup || '';
           editResponsavelConferenciaUserId.value = String(registro.responsavelConferenciaUserId || '');
           editUltimoBackupEm.value = formatDateTimeLocal(registro.ultimoBackupEm);
 

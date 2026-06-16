@@ -38,6 +38,41 @@ const BackupComputador = database.define(
       allowNull: true,
       field: 'ultimo_backup_em',
     },
+    pastaBackup: {
+      type: Sequelize.STRING,
+      allowNull: true,
+      field: 'pasta_backup',
+    },
+    ultimoStatus: {
+      type: Sequelize.STRING,
+      allowNull: true,
+      field: 'ultimo_status',
+    },
+    ultimoLogPath: {
+      type: Sequelize.STRING(500),
+      allowNull: true,
+      field: 'ultimo_log_path',
+    },
+    ultimoResultadoDesktop: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      field: 'ultimo_resultado_desktop',
+    },
+    ultimoResultadoDocumentos: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      field: 'ultimo_resultado_documentos',
+    },
+    ultimoResultadoFavoritos: {
+      type: Sequelize.INTEGER,
+      allowNull: true,
+      field: 'ultimo_resultado_favoritos',
+    },
+    ultimaSincronizacaoEm: {
+      type: Sequelize.DATE,
+      allowNull: true,
+      field: 'ultima_sincronizacao_em',
+    },
     ativo: {
       type: Sequelize.BOOLEAN,
       allowNull: false,

@@ -28,6 +28,12 @@
       <div class="card-body p-4">
         <h1 class="h3 mb-4">Perfil</h1>
 
+        <% if (user?.cadastroLegadoInconsistente) { %>
+        <div class="alert alert-warning">
+          Seu cadastro possui campos legados no formato <code>enc:v1:...</code>. Um administrador deve corrigir login/nome e email em texto normal.
+        </div>
+        <% } %>
+
         <div class="row g-3">
           <div class="col-md-6">
             <div class="mb-2"><strong>Nome:</strong> <%= user?.nome || '-' %></div>
@@ -228,21 +234,33 @@
           <span class="text-muted"><%= users.length %> usuario(s)</span>
         </div>
 
+        <% if (legacyUsersCount > 0) { %>
+        <div class="alert alert-warning">
+          Existem <strong><%= legacyUsersCount %></strong> usuario(s) com cadastro legado no formato <code>enc:v1:...</code>. Corrija login/nome e email em texto normal e deixe a nova senha em branco se nao quiser alterá-la.
+        </div>
+        <% } %>
+
         <% if (!users.length) { %>
         <div class="alert alert-light border mb-0">Nenhum usuario cadastrado.</div>
         <% } %>
 
         <% users.forEach((item) => { %>
-        <form action="/perfil/usuarios/<%= item.id %>" method="post" class="border rounded-3 p-3 mb-3">
+        <form action="/perfil/usuarios/<%= item.id %>" method="post" class="border rounded-3 p-3 mb-3 <%= item.cadastroLegadoInconsistente ? 'border-warning' : '' %>">
           <div class="row g-3 align-items-end">
             <div class="col-lg-3 col-md-6">
               <label class="form-label">Login / nome</label>
               <input type="text" class="form-control" name="nome" value="<%= item.nome %>" required>
+              <% if (item.nomePrecisaCorrecao) { %>
+              <small class="text-warning d-block mt-1">Valor legado detectado. Substitua por um login/nome em texto normal.</small>
+              <% } %>
             </div>
 
             <div class="col-lg-3 col-md-6">
               <label class="form-label">Email</label>
               <input type="email" class="form-control" name="email" value="<%= item.email %>" required>
+              <% if (item.emailPrecisaCorrecao) { %>
+              <small class="text-warning d-block mt-1">Valor legado detectado. Informe um email valido em texto normal.</small>
+              <% } %>
             </div>
 
             <div class="col-lg-2 col-md-4">

@@ -1,3 +1,4 @@
+const Sequelize = require('sequelize');
 const BackupComputador = require('../models/BackupComputador');
 const Computador = require('../models/Computador');
 const Empresa = require('../models/Empresa');
@@ -39,6 +40,36 @@ class BackupComputadorController {
     return id;
   }
 
+  normalizePastaBackup(value) {
+    const texto = String(value || '').trim();
+    return texto ? texto.slice(0, 255) : null;
+  }
+
+  async ensureUniquePastaBackup(pastaBackup, excludeId = null) {
+    const pastaNormalizada = this.normalizePastaBackup(pastaBackup);
+    if (!pastaNormalizada) return null;
+
+    const where = {
+      [Sequelize.Op.and]: [
+        Sequelize.where(
+          Sequelize.fn('UPPER', Sequelize.fn('TRIM', Sequelize.col('pasta_backup'))),
+          pastaNormalizada.toUpperCase()
+        ),
+      ],
+    };
+
+    if (excludeId) {
+      where.id = { [Sequelize.Op.ne]: Number(excludeId) };
+    }
+
+    const existente = await BackupComputador.findOne({ where });
+    if (existente) {
+      throw new Error('A pasta no servidor ja esta vinculada a outro controle de backup.');
+    }
+
+    return pastaNormalizada;
+  }
+
   async ensureResponsavelAtivo(userId) {
     if (!userId) return null;
 
@@ -68,6 +99,13 @@ class BackupComputadorController {
       apelidoUsuario: registro.apelidoUsuario,
       responsavelConferenciaUserId: registro.responsavelConferenciaUserId,
       ultimoBackupEm: registro.ultimoBackupEm,
+      pastaBackup: registro.pastaBackup,
+      ultimoStatus: registro.ultimoStatus,
+      ultimoLogPath: registro.ultimoLogPath,
+      ultimoResultadoDesktop: registro.ultimoResultadoDesktop,
+      ultimoResultadoDocumentos: registro.ultimoResultadoDocumentos,
+      ultimoResultadoFavoritos: registro.ultimoResultadoFavoritos,
+      ultimaSincronizacaoEm: registro.ultimaSincronizacaoEm,
       ativo: Boolean(registro.ativo),
       createdAt: registro.createdAt,
       updatedAt: registro.updatedAt,
@@ -181,17 +219,27 @@ class BackupComputadorController {
     return computador;
   }
 
-  async create({ computadorId, apelidoUsuario, responsavelConferenciaUserId, ultimoBackupEm }) {
+  async create({
+    computadorId,
+    apelidoUsuario,
+    responsavelConferenciaUserId,
+    ultimoBackupEm,
+    pastaBackup,
+  }) {
     const computador = await this.ensureComputadorAtivo(computadorId);
     const apelidoNormalizado = this.normalizeApelido(apelidoUsuario);
     const responsavelId = this.normalizeResponsavelConferenciaUserId(responsavelConferenciaUserId);
     const dataNormalizada = this.normalizeOptionalDate(ultimoBackupEm);
-
-    await this.ensureResponsavelAtivo(responsavelId);
-
     const existente = await BackupComputador.findOne({
       where: { computadorId: Number(computadorId) },
     });
+
+    const pastaBackupNormalizada = await this.ensureUniquePastaBackup(
+      pastaBackup,
+      existente?.id || null
+    );
+
+    await this.ensureResponsavelAtivo(responsavelId);
 
     if (existente) {
       if (existente.ativo) {
@@ -201,6 +249,7 @@ class BackupComputadorController {
       existente.apelidoUsuario = apelidoNormalizado;
       existente.responsavelConferenciaUserId = responsavelId;
       existente.ultimoBackupEm = dataNormalizada;
+      existente.pastaBackup = pastaBackupNormalizada;
       existente.ativo = true;
       await existente.save();
       return existente;
@@ -211,13 +260,14 @@ class BackupComputadorController {
       apelidoUsuario: apelidoNormalizado,
       responsavelConferenciaUserId: responsavelId,
       ultimoBackupEm: dataNormalizada,
+      pastaBackup: pastaBackupNormalizada,
       ativo: true,
     });
 
     return registro;
   }
 
-  async update(id, { apelidoUsuario, responsavelConferenciaUserId, ultimoBackupEm }) {
+  async update(id, { apelidoUsuario, responsavelConferenciaUserId, ultimoBackupEm, pastaBackup }) {
     const registro = await BackupComputador.findByPk(Number(id));
     if (!registro) {
       throw new Error('Registro de backup nao encontrado.');
@@ -227,10 +277,12 @@ class BackupComputadorController {
 
     const responsavelId = this.normalizeResponsavelConferenciaUserId(responsavelConferenciaUserId);
     await this.ensureResponsavelAtivo(responsavelId);
+    const pastaBackupNormalizada = await this.ensureUniquePastaBackup(pastaBackup, registro.id);
 
     registro.apelidoUsuario = this.normalizeApelido(apelidoUsuario);
     registro.responsavelConferenciaUserId = responsavelId;
     registro.ultimoBackupEm = this.normalizeOptionalDate(ultimoBackupEm);
+    registro.pastaBackup = pastaBackupNormalizada;
     await registro.save();
 
     return registro;

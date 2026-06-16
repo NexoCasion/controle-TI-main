@@ -22,6 +22,10 @@ function getSubmittedToken(req) {
 }
 
 function csrfProtection(req, res, next) {
+  if (req.path === '/api/backups/status') {
+    return next();
+  }
+
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();
   }
