@@ -452,6 +452,7 @@ class MaterialController {
         id: m.id,
         quantidade: m.quantidade,
         motivo: m.observacao || '-',
+        origem: pc?.patrimonio || 'ESTOQUE',
         patrimonio: pc?.patrimonio || '-',
         specs: pc?.specs_override || pc?.specs || '-',
         createdAt: m.createdAt,
