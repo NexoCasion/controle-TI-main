@@ -631,6 +631,13 @@ class ManutencaoController {
         const material = await Material.findByPk(materialId, { transaction: t });
         if (!material) throw new Error('Material não encontrado.');
 
+        const categoriaInstalada = this.computadorEstruturadoService.inferCategoria(material);
+        if (categoriaInstalada === 'OUTROS') {
+          throw new Error(
+            'Adicionar peca nesta tela aceita apenas componentes estruturados: Processador, Memoria, Armazenamento ou Fonte.'
+          );
+        }
+
         if (Number(material.quantidade_disponivel || 0) < qtdAdicao) {
           throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
         }

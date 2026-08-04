@@ -9,6 +9,14 @@ const { parseHwinfoCsv, buildStructuredSpecsText } = require('./hwinfoCsvParser'
 const { validarPatrimonioUnico } = require('./patrimonioUnicoService');
 
 class ComputadorEstruturadoService {
+  getTiposEstruturadosPermitidos() {
+    return ['Processador', 'Memoria', 'Armazenamento', 'Fonte'];
+  }
+
+  isTipoCompativelComEstruturado(tipo = '') {
+    return this.inferCategoria({ tipo }) !== 'OUTROS';
+  }
+
   getCategoriaConfig(categoria = '') {
     const cat = String(categoria || '').trim().toUpperCase();
     const configs = {

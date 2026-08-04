@@ -22,6 +22,8 @@ const DashboardController = require('./controllers/dashboard');
 const dashboardController = new DashboardController();
 const AuthController = require('./controllers/auth');
 const authController = new AuthController();
+const ComputadorEstruturadoService = require('./services/computadorEstruturadoService');
+const computadorEstruturadoService = new ComputadorEstruturadoService();
 const { ensureAuth, redirectIfAuthenticated } = require('./middlewares/auth');
 const User = require('./models/User');
 const { parseHwinfoCsv, parseComputerIdentityFromFilename } = require('./services/hwinfoCsvParser');
@@ -995,7 +997,15 @@ router.get('/materiais-data', async (req, res) => {
 // Tipos distintos (pra select)
 router.get('/materiais-tipos', async (req, res) => {
   try {
-    const tipos = await materialController.getTipos();
+    let tipos = await materialController.getTipos();
+    const somenteEstruturados =
+      String(req.query.somenteEstruturados || '') === '1' ||
+      String(req.query.somenteEstruturados || '').toLowerCase() === 'true';
+
+    if (somenteEstruturados) {
+      tipos = tipos.filter((tipo) => computadorEstruturadoService.isTipoCompativelComEstruturado(tipo));
+    }
+
     return res.json(tipos);
   } catch (err) {
     console.error('Erro ao buscar tipos:', err);

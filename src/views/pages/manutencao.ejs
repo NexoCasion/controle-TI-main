@@ -942,7 +942,7 @@
 
       async function carregarTipos(modoProcedimento = tipoProcedimento.value) {
         if (modoProcedimento === 'ADICIONAR_PECA') {
-          const tiposEstoque = await fetchJson('/materiais-tipos');
+          const tiposEstoque = await fetchJson('/materiais-tipos?somenteEstruturados=1');
 
           tipoPeca.innerHTML = '<option value=\"\" selected disabled>Selecione...</option>';
           tipoRemovido.innerHTML = '<option value=\"\" selected disabled>Selecione o tipo da peça nova primeiro...</option>';
@@ -1112,12 +1112,17 @@
           }
 
           setTrocaPecaEnabled(true);
-          await carregarComponentesEstruturados();
-          await carregarTipos(v);
+          if (v === 'ADICIONAR_PECA') {
+            await carregarTipos(v);
+          } else {
+            await carregarComponentesEstruturados();
+            await carregarTipos(v);
+          }
 
           tipoPeca.value = '';
           materialId.innerHTML = '<option value="" selected disabled>Selecione o tipo primeiro...</option>';
           quantidade.value = 1;
+          quantidade.removeAttribute('max');
           infoDisponivel.textContent = '';
 
           definirTipoRemovido('');
