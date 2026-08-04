@@ -299,6 +299,7 @@
                 <option value="" selected disabled>Selecione...</option>
                 <option value="TROCA_PECA">Troca de peça</option>
                 <option value="REMOCAO_PECA">Remoção de peça</option>
+                <option value="ADICIONAR_PECA">Adicionar peça</option>
                 <option value="LIMPEZA">Limpeza</option>
                 <option value="MANUT_SIMPLES">Manutenção simples</option>
               </select>
@@ -315,7 +316,7 @@
             <div class="col-12" id="blocoTrocaPeca" style="display:none;">
               <div class="card p-3 border">
                 <div class="row g-3">
-                  <div class="col-md-4">
+                  <div class="col-md-4" id="blocoTipoPeca">
                     <label class="form-label">Tipo de peça</label>
                     <select class="form-select" id="tipoPeca" name="tipoPeca">
                       <option value="" selected disabled>Selecione...</option>
@@ -693,6 +694,7 @@
       const tipoPeca = document.getElementById('tipoPeca');
       const materialId = document.getElementById('materialId');
       const quantidade = document.getElementById('quantidade');
+      const blocoTipoPeca = document.getElementById('blocoTipoPeca');
       const blocoMaterialInstalado = document.getElementById('blocoMaterialInstalado');
       const blocoQuantidadeInstalada = document.getElementById('blocoQuantidadeInstalada');
       const blocoSpecsDepois = document.getElementById('blocoSpecsDepois');
@@ -819,6 +821,10 @@
         }
         if (blocoQuantidadeInstalada) {
           blocoQuantidadeInstalada.style.display = enabled && troca ? '' : 'none';
+        }
+        if (blocoTipoPeca) {
+          blocoTipoPeca.classList.toggle('col-md-4', !remocao);
+          blocoTipoPeca.classList.toggle('col-md-12', remocao);
         }
         if (blocoSpecsDepois) {
           blocoSpecsDepois.style.display = enabled && troca ? '' : 'none';

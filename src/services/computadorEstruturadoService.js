@@ -208,6 +208,50 @@ class ComputadorEstruturadoService {
     };
   }
 
+  async adicionarComponenteEstruturado({
+    computadorId,
+    materialInstaladoId,
+    quantidadeInstalada = 1,
+    transaction,
+  }) {
+    const quantidadeNova = Number(quantidadeInstalada || 1);
+    if (quantidadeNova <= 0) {
+      throw new Error('Quantidade instalada invalida.');
+    }
+
+    const materialInstalado = await Material.findByPk(materialInstaladoId, { transaction });
+    if (!materialInstalado) throw new Error('Material instalado nao encontrado.');
+
+    const categoriaInstalada = this.inferCategoria(materialInstalado);
+
+    const vinculoInstalado = await ComputadorMaterial.findOne({
+      where: {
+        computador_id: computadorId,
+        material_id: materialInstaladoId,
+        categoria: categoriaInstalada,
+      },
+      transaction,
+    });
+
+    if (vinculoInstalado) {
+      vinculoInstalado.quantidade = Number(vinculoInstalado.quantidade || 0) + quantidadeNova;
+      await vinculoInstalado.save({ transaction });
+    } else {
+      await ComputadorMaterial.create(
+        {
+          computador_id: computadorId,
+          material_id: materialInstaladoId,
+          quantidade: quantidadeNova,
+          categoria: categoriaInstalada,
+          origem: 'MANUTENCAO_ADICAO',
+        },
+        { transaction }
+      );
+    }
+
+    return this.syncSpecsEstruturadasDoComputador(computadorId, transaction);
+  }
+
   async substituirComponenteEstruturado({
     computadorId,
     materialInstaladoId,
