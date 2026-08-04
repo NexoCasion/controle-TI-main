@@ -562,6 +562,203 @@ class ManutencaoController {
     }
 
     // 3) Se NÃO for troca de peça, salva procedimento simples
+    if (tipo === 'REMOVER_PECA') {
+      if (!materialRemovidoId) throw new Error('materialRemovidoId é obrigatório para REMOVER_PECA.');
+
+      const qtdRem = Number(qtdRemovida) || 1;
+      if (qtdRem <= 0) throw new Error('qtdRemovida inválida.');
+
+      if (destinoRemovida !== 'RECUPERAR' && destinoRemovida !== 'DEFEITO') {
+        throw new Error("destinoRemovida deve ser 'RECUPERAR' ou 'DEFEITO'.");
+      }
+
+      if (destinoRemovida === 'DEFEITO' && (!motivoRemovida || !String(motivoRemovida).trim())) {
+        throw new Error('motivoRemovida é obrigatório quando destinoRemovida=DEFEITO.');
+      }
+
+      return await database.transaction(async (t) => {
+        const matRem = await Material.findByPk(materialRemovidoId, { transaction: t });
+        if (!matRem) throw new Error('Material removido não encontrado.');
+
+        const quantidadeNoComputador = await this.getQuantidadeEstruturadaNoComputador(
+          computadorId,
+          materialRemovidoId,
+          t
+        );
+
+        if (quantidadeNoComputador < qtdRem) {
+          throw new Error(
+            `A máquina não possui esse componente em quantidade suficiente para remoção. Vinculado: ${quantidadeNoComputador}.`
+          );
+        }
+
+        const snapshot = [
+          `Removido: ${[
+            matRem.tipo,
+            matRem.material,
+            matRem.marca ? `Marca: ${matRem.marca}` : null,
+            matRem.especificacao ? `Spec: ${matRem.especificacao}` : null,
+            matRem.nf ? `NF: ${matRem.nf}` : null,
+            `Qtd: ${qtdRem}`,
+          ]
+            .filter(Boolean)
+            .join(' | ')}`,
+          `Destino removida: ${destinoRemovida}`,
+          destinoRemovida === 'DEFEITO' && motivoRemovida
+            ? `Motivo: ${String(motivoRemovida).trim()}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' || ');
+
+        const item = await ManutencaoItem.create(
+          {
+            manutencaoId,
+            descricao: descricao.trim(),
+            tipo: 'REMOVER_PECA',
+            specs_antes,
+            specs_depois: null,
+            material_snapshot: snapshot,
+          },
+          { transaction: t }
+        );
+
+        await ManutencaoMaterial.create(
+          {
+            manutencaoItem_id: item.id,
+            material_id: matRem.id,
+            quantidade: qtdRem,
+          },
+          { transaction: t }
+        );
+
+        if (destinoRemovida === 'RECUPERAR') {
+          await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
+          matRem.quantidade_disponivel = Number(matRem.quantidade_disponivel || 0) + qtdRem;
+          await matRem.save({ transaction: t });
+
+          await MaterialMovimento.create(
+            {
+              material_id: matRem.id,
+              tipo_movimento: 'ENTRADA_RECUPERACAO',
+              quantidade: qtdRem,
+              referencia_manutencaoItem_id: item.id,
+              referencia_computador_id: computadorId,
+              observacao: 'Peça removida na manutenção',
+            },
+            { transaction: t }
+          );
+        } else if (destinoRemovida === 'DEFEITO') {
+          await this.consumirEmUsoEstruturado(matRem, computadorId, qtdRem, t);
+          matRem.quantidade_baixada = Number(matRem.quantidade_baixada || 0) + qtdRem;
+          await matRem.save({ transaction: t });
+
+          await MaterialMovimento.create(
+            {
+              material_id: matRem.id,
+              tipo_movimento: 'BAIXA',
+              quantidade: qtdRem,
+              referencia_manutencaoItem_id: item.id,
+              referencia_computador_id: computadorId,
+              observacao: String(motivoRemovida || '').trim(),
+            },
+            { transaction: t }
+          );
+        }
+
+        await this.removerQuantidadeEstruturadaDoComputador(computadorId, matRem.id, qtdRem, t);
+        const resultadoEstruturado =
+          await this.computadorEstruturadoService.syncSpecsEstruturadasDoComputador(computadorId, t);
+
+        item.specs_depois = resultadoEstruturado.specsText || specs_antes;
+        await item.save({ transaction: t });
+
+        return true;
+      });
+    }
+
+    if (tipo === 'ADICIONAR_PECA') {
+      if (!materialId) throw new Error('materialId Ã© obrigatÃ³rio para ADICIONAR_PECA.');
+
+      const qtd = Number(quantidade) || 1;
+      if (qtd <= 0) throw new Error('Quantidade invÃ¡lida.');
+
+      return await database.transaction(async (t) => {
+        const material = await Material.findByPk(materialId, { transaction: t });
+        if (!material) throw new Error('Material nÃ£o encontrado.');
+
+        if (Number(material.quantidade_disponivel || 0) < qtd) {
+          throw new Error(`Estoque insuficiente. DisponÃ­vel: ${material.quantidade_disponivel}`);
+        }
+
+        const snapshot = [
+          `Instalado: ${[
+            material.tipo,
+            material.material,
+            material.marca ? `Marca: ${material.marca}` : null,
+            material.especificacao ? `Spec: ${material.especificacao}` : null,
+            material.nf ? `NF: ${material.nf}` : null,
+            `Qtd: ${qtd}`,
+          ]
+            .filter(Boolean)
+            .join(' | ')}`,
+          'Operacao: Adicao de peca',
+        ]
+          .filter(Boolean)
+          .join(' || ');
+
+        const item = await ManutencaoItem.create(
+          {
+            manutencaoId,
+            descricao: descricao.trim(),
+            tipo: 'ADICIONAR_PECA',
+            specs_antes,
+            specs_depois: null,
+            material_snapshot: snapshot,
+          },
+          { transaction: t }
+        );
+
+        await ManutencaoMaterial.create(
+          {
+            manutencaoItem_id: item.id,
+            material_id: material.id,
+            quantidade: qtd,
+          },
+          { transaction: t }
+        );
+
+        material.quantidade_disponivel = Number(material.quantidade_disponivel || 0) - qtd;
+        material.quantidade_em_uso = Number(material.quantidade_em_uso || 0) + qtd;
+        await material.save({ transaction: t });
+
+        await MaterialMovimento.create(
+          {
+            material_id: material.id,
+            tipo_movimento: 'SAIDA_MANUTENCAO',
+            quantidade: qtd,
+            referencia_manutencaoItem_id: item.id,
+            referencia_computador_id: computadorId,
+            observacao: 'PeÃ§a adicionada na manutenÃ§Ã£o',
+          },
+          { transaction: t }
+        );
+
+        const resultadoEstruturado =
+          await this.computadorEstruturadoService.adicionarComponenteEstruturado({
+            computadorId,
+            materialInstaladoId: material.id,
+            quantidadeInstalada: qtd,
+            transaction: t,
+          });
+
+        item.specs_depois = resultadoEstruturado.specsText || specs_antes;
+        await item.save({ transaction: t });
+
+        return true;
+      });
+    }
+
     if (tipo !== 'TROCA_PECA') {
       await ManutencaoItem.create({
         manutencaoId,
