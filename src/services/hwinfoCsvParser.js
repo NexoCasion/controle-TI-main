@@ -295,6 +295,15 @@ function parseHwinfoCsv(content) {
 }
 
 function buildStructuredSpecsText(parsed) {
+  const expandComponentTexts = (items = [], formatter = (item) => item) =>
+    (items || []).flatMap((item) => {
+      const text = formatter(item);
+      if (!text) return [];
+
+      const quantidade = Math.max(Number(item?.quantidade || 1), 1);
+      return Array.from({ length: quantidade }, () => text);
+    });
+
   const linhas = [];
 
   if (parsed.marcaComputador) {
@@ -307,24 +316,28 @@ function buildStructuredSpecsText(parsed) {
 
   if (parsed.memorias.length) {
     linhas.push(
-      `Memoria: ${parsed.memorias.map((mem) => mem.especificacao || mem.material).join(' | ')}`
+      `Memoria: ${expandComponentTexts(
+        parsed.memorias,
+        (mem) => mem.especificacao || mem.material
+      ).join(' | ')}`
     );
   }
 
   if (parsed.armazenamentos.length) {
     linhas.push(
-      `Armazenamento: ${parsed.armazenamentos
-        .map((item) => [item.material, item.especificacao].filter(Boolean).join(' - '))
-        .join(' | ')}`
+      `Armazenamento: ${expandComponentTexts(
+        parsed.armazenamentos,
+        (item) => [item.material, item.especificacao].filter(Boolean).join(' - ')
+      ).join(' | ')}`
     );
   }
 
   if ((parsed.fontes || []).length) {
     linhas.push(
-      `Fonte: ${(parsed.fontes || [])
-        .map((item) => item.especificacao || item.material)
-        .filter(Boolean)
-        .join(' | ')}`
+      `Fonte: ${expandComponentTexts(
+        parsed.fontes || [],
+        (item) => item.especificacao || item.material
+      ).join(' | ')}`
     );
   }
 

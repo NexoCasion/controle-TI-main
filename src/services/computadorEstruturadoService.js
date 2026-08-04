@@ -127,6 +127,55 @@ class ComputadorEstruturadoService {
     };
   }
 
+  async criarVinculosUnitarios({
+    computadorId,
+    materialId,
+    quantidade = 1,
+    categoria = null,
+    origem = 'MANUTENCAO_TROCA',
+    transaction,
+  }) {
+    const quantidadeFinal = Math.max(Number(quantidade || 1), 1);
+
+    for (let index = 0; index < quantidadeFinal; index += 1) {
+      await ComputadorMaterial.create(
+        {
+          computador_id: computadorId,
+          material_id: materialId,
+          quantidade: 1,
+          categoria,
+          origem,
+        },
+        { transaction }
+      );
+    }
+  }
+
+  async normalizarVinculosUnitariosDoComputador(computadorId, transaction) {
+    const vinculos = await ComputadorMaterial.findAll({
+      where: { computador_id: computadorId },
+      order: [['id', 'ASC']],
+      transaction,
+    });
+
+    for (const vinculo of vinculos) {
+      const quantidade = Number(vinculo.quantidade || 0);
+      if (quantidade <= 1) continue;
+
+      vinculo.quantidade = 1;
+      await vinculo.save({ transaction });
+
+      await this.criarVinculosUnitarios({
+        computadorId,
+        materialId: vinculo.material_id,
+        quantidade: quantidade - 1,
+        categoria: vinculo.categoria || null,
+        origem: vinculo.origem || 'MANUTENCAO_TROCA',
+        transaction,
+      });
+    }
+  }
+
   async getParsedFromComputador(computadorId, transaction) {
     const computador = await Computador.findByPk(computadorId, { transaction });
     if (!computador) throw new Error('Computador nao encontrado.');
@@ -200,6 +249,8 @@ class ComputadorEstruturadoService {
     const computador = await Computador.findByPk(computadorId, { transaction });
     if (!computador) throw new Error('Computador nao encontrado.');
 
+    await this.normalizarVinculosUnitariosDoComputador(computadorId, transaction);
+
     const parsed = await this.getParsedFromComputador(computadorId, transaction);
     const specsText = buildStructuredSpecsText(parsed);
 
@@ -232,30 +283,14 @@ class ComputadorEstruturadoService {
 
     const categoriaInstalada = this.inferCategoria(materialInstalado);
 
-    const vinculoInstalado = await ComputadorMaterial.findOne({
-      where: {
-        computador_id: computadorId,
-        material_id: materialInstaladoId,
-        categoria: categoriaInstalada,
-      },
+    await this.criarVinculosUnitarios({
+      computadorId,
+      materialId: materialInstaladoId,
+      quantidade: quantidadeNova,
+      categoria: categoriaInstalada,
+      origem: 'MANUTENCAO_ADICAO',
       transaction,
     });
-
-    if (vinculoInstalado) {
-      vinculoInstalado.quantidade = Number(vinculoInstalado.quantidade || 0) + quantidadeNova;
-      await vinculoInstalado.save({ transaction });
-    } else {
-      await ComputadorMaterial.create(
-        {
-          computador_id: computadorId,
-          material_id: materialInstaladoId,
-          quantidade: quantidadeNova,
-          categoria: categoriaInstalada,
-          origem: 'MANUTENCAO_ADICAO',
-        },
-        { transaction }
-      );
-    }
 
     return this.syncSpecsEstruturadasDoComputador(computadorId, transaction);
   }
@@ -341,30 +376,14 @@ class ComputadorEstruturadoService {
     const categoriaFinal = this.inferCategoria(material, categoria);
     const quantidadeFinal = Number(quantidade || 1);
 
-    const vinculoInstalado = await ComputadorMaterial.findOne({
-      where: {
-        computador_id: computadorId,
-        material_id: materialId,
-        categoria: categoriaFinal,
-      },
+    await this.criarVinculosUnitarios({
+      computadorId,
+      materialId,
+      quantidade: quantidadeFinal,
+      categoria: categoriaFinal,
+      origem,
       transaction,
     });
-
-    if (vinculoInstalado) {
-      vinculoInstalado.quantidade = Number(vinculoInstalado.quantidade || 0) + quantidadeFinal;
-      await vinculoInstalado.save({ transaction });
-    } else {
-      await ComputadorMaterial.create(
-        {
-          computador_id: computadorId,
-          material_id: materialId,
-          quantidade: quantidadeFinal,
-          categoria: categoriaFinal,
-          origem,
-        },
-        { transaction }
-      );
-    }
 
     return {
       material,
@@ -580,12 +599,25 @@ class ComputadorEstruturadoService {
         {
           computador_id: computador.id,
           material_id: material.id,
-          quantidade,
+          quantidade: 1,
           categoria: componente.categoria,
           origem,
         },
         { transaction }
       );
+
+      for (let index = 1; index < quantidade; index += 1) {
+        await ComputadorMaterial.create(
+          {
+            computador_id: computador.id,
+            material_id: material.id,
+            quantidade: 1,
+            categoria: componente.categoria,
+            origem,
+          },
+          { transaction }
+        );
+      }
     }
 
     const specsText = buildStructuredSpecsText(parsed);

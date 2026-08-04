@@ -108,18 +108,18 @@ function buildStructuredSpecsView(computador = null) {
     }
   }
 
-  const toItemText = (item) => {
+  const toItemTexts = (item) => {
     if (!item) return null;
 
     const parts = [item.material, item.especificacao]
       .map((value) => String(value || '').trim())
       .filter(Boolean);
 
-    if (!parts.length) return null;
+    if (!parts.length) return [];
 
     const label = parts.join(' - ');
-    const quantidade = Number(item.quantidade || 1);
-    return quantidade > 1 ? `${label} (${quantidade}x)` : label;
+    const quantidade = Math.max(Number(item.quantidade || 1), 1);
+    return Array.from({ length: quantidade }, () => label);
   };
 
   const sections = [];
@@ -133,17 +133,17 @@ function buildStructuredSpecsView(computador = null) {
   }
 
   if (parsed.processador) {
-    const processadorText = toItemText(parsed.processador);
-    if (processadorText) {
+    const processadorItems = toItemTexts(parsed.processador);
+    if (processadorItems.length) {
       sections.push({
         title: 'Processador',
-        items: [processadorText],
+        items: processadorItems,
       });
     }
   }
 
   const memorias = Array.isArray(parsed.memorias)
-    ? parsed.memorias.map(toItemText).filter(Boolean)
+    ? parsed.memorias.flatMap(toItemTexts).filter(Boolean)
     : [];
   if (memorias.length) {
     sections.push({
@@ -153,7 +153,7 @@ function buildStructuredSpecsView(computador = null) {
   }
 
   const armazenamentos = Array.isArray(parsed.armazenamentos)
-    ? parsed.armazenamentos.map(toItemText).filter(Boolean)
+    ? parsed.armazenamentos.flatMap(toItemTexts).filter(Boolean)
     : [];
   if (armazenamentos.length) {
     sections.push({
@@ -163,7 +163,7 @@ function buildStructuredSpecsView(computador = null) {
   }
 
   const fontes = Array.isArray(parsed.fontes)
-    ? parsed.fontes.map(toItemText).filter(Boolean)
+    ? parsed.fontes.flatMap(toItemTexts).filter(Boolean)
     : [];
   if (fontes.length) {
     sections.push({
