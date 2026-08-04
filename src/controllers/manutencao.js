@@ -611,15 +611,98 @@ class ManutencaoController {
 
     const specs_antes = computador.specs_override || computador.specs || null;
     const computadorEstruturado = String(computador.specs_modo || 'LEGADO').toUpperCase() === 'ESTRUTURADO';
-    const procedimentoComPeca = tipo === 'TROCA_PECA' || tipo === 'REMOCAO_PECA';
+    const procedimentoComPeca =
+      tipo === 'TROCA_PECA' || tipo === 'REMOCAO_PECA' || tipo === 'ADICIONAR_PECA';
     const trocaDePeca = tipo === 'TROCA_PECA';
     const remocaoDePeca = tipo === 'REMOCAO_PECA';
+    const adicaoDePeca = tipo === 'ADICIONAR_PECA';
 
     if (!computadorEstruturado) {
       throw new Error('Esta máquina ainda está em modo legado. Converta para estruturado antes de continuar a manutenção.');
     }
 
     // 3) Se NÃO for troca de peça, salva procedimento simples
+    if (adicaoDePeca) {
+      const qtdAdicao = Number(quantidade) || 1;
+      if (!materialId) throw new Error('materialId é obrigatório para ADICIONAR_PECA.');
+      if (qtdAdicao <= 0) throw new Error('Quantidade inválida.');
+
+      return await database.transaction(async (t) => {
+        const material = await Material.findByPk(materialId, { transaction: t });
+        if (!material) throw new Error('Material não encontrado.');
+
+        if (Number(material.quantidade_disponivel || 0) < qtdAdicao) {
+          throw new Error(`Estoque insuficiente. Disponível: ${material.quantidade_disponivel}`);
+        }
+
+        const snapshot = [
+          `Instalado: ${[
+            material.tipo,
+            material.material,
+            material.marca ? `Marca: ${material.marca}` : null,
+            material.especificacao ? `Spec: ${material.especificacao}` : null,
+            material.nf ? `NF: ${material.nf}` : null,
+            `Qtd: ${qtdAdicao}`,
+          ]
+            .filter(Boolean)
+            .join(' | ')}`,
+          'Procedimento: Adição de peça',
+        ]
+          .filter(Boolean)
+          .join(' || ');
+
+        const item = await ManutencaoItem.create(
+          {
+            manutencaoId,
+            descricao: descricao.trim(),
+            tipo: 'ADICIONAR_PECA',
+            specs_antes,
+            specs_depois: null,
+            material_snapshot: snapshot,
+          },
+          { transaction: t }
+        );
+
+        await ManutencaoMaterial.create(
+          {
+            manutencaoItem_id: item.id,
+            material_id: material.id,
+            quantidade: qtdAdicao,
+          },
+          { transaction: t }
+        );
+
+        material.quantidade_disponivel = Number(material.quantidade_disponivel || 0) - qtdAdicao;
+        material.quantidade_em_uso = Number(material.quantidade_em_uso || 0) + qtdAdicao;
+        await material.save({ transaction: t });
+
+        await MaterialMovimento.create(
+          {
+            material_id: material.id,
+            tipo_movimento: 'SAIDA_MANUTENCAO',
+            quantidade: qtdAdicao,
+            referencia_manutencaoItem_id: item.id,
+            referencia_computador_id: computadorId,
+            observacao: 'Peça adicionada na manutenção',
+          },
+          { transaction: t }
+        );
+
+        const resultadoEstruturado =
+          await this.computadorEstruturadoService.adicionarComponenteEstruturado({
+            computadorId,
+            materialInstaladoId: material.id,
+            quantidadeInstalada: qtdAdicao,
+            transaction: t,
+          });
+
+        item.specs_depois = resultadoEstruturado.specsText || specs_antes;
+        await item.save({ transaction: t });
+
+        return true;
+      });
+    }
+
     if (!procedimentoComPeca) {
       await ManutencaoItem.create({
         manutencaoId,
